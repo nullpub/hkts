@@ -1,6 +1,5 @@
-import * as M from "./maybe.ts";
-import * as E from "./either.ts";
-import { sequenceTuple, sequenceTuple2 } from "./sequence.ts";
+import * as O from "./option.ts";
+import { sequenceTuple } from "./sequence.ts";
 
-const sequenceMaybe = sequenceTuple(M.Apply);
-const testMaybe = sequenceMaybe(M.some(1), M.some(2));
+const sequenceOption = sequenceTuple(O.Apply);
+const testOption = sequenceOption(O.some(1), O.some(2));

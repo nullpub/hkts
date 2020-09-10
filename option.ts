@@ -19,6 +19,10 @@ export const none: None = { tag: "None" };
 export const some = <A>(value: A): Option<A> => ({ tag: "Some", value });
 export const constNone = () => none;
 
+export const getShow = <A>({ show }: SL.Show<A>): SL.Show<Option<A>> => ({
+  show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
+});
+
 /***************************************************************************************************
  * @section Destructors
  **************************************************************************************************/
@@ -37,33 +41,23 @@ export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
  * @section Instances
  **************************************************************************************************/
 
-/**
- * Show
- */
-export const getShow = <A>({ show }: SL.Show<A>): SL.Show<Option<A>> => ({
-  show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
-});
-
-/**
- * Monad
- */
 export const Monad = SL.createMonad<Option<_>>({
   of: some,
   map: (fab, ta) => pipe(ta, fold(compose(fab)(some), constNone)),
   join: (tta) => (isNone(tta) ? tta : tta.value),
 });
 
-/**
- * Apply
- */
+export const Applicative: SL.Applicative<Option<_>> = {
+  of: some,
+  ap: Monad.ap,
+  map: Monad.map,
+};
+
 export const Apply: SL.Apply<Option<_>> = {
   ap: Monad.ap,
   map: Monad.map,
 };
 
-/**
- * Alternative
- */
 export const Alternative: SL.Alternative<Option<_>> = {
   of: Monad.of,
   ap: Monad.ap,
@@ -72,25 +66,14 @@ export const Alternative: SL.Alternative<Option<_>> = {
   alt: (a, b) => (isSome(a) ? a : b),
 };
 
-/**
- * Foldable
- */
 export const Foldable: SL.Foldable<Option<_>> = {
-  reduce: <A, B>(faba: (a: A, b: B) => A, a: A, tb: Option<B>): A =>
-    isSome(tb) ? faba(a, tb.value) : a,
+  reduce: (faba, a, tb) => (isSome(tb) ? faba(a, tb.value) : a),
 };
 
-/**
- * Traversable
- */
 export const Traversable: SL.Traversable<Option<_>> = {
   map: Monad.map,
   reduce: Foldable.reduce,
-  traverse: <U, A, B>(
-    F: SL.Applicative<U>,
-    faub: (x: A) => $<U, [B]>,
-    ta: Option<A>
-  ): $<U, [Option<B>]> =>
+  traverse: (F, faub, ta) =>
     isNone(ta) ? F.of(none) : F.map(some, faub(ta.value)),
 };
 
