@@ -38,7 +38,7 @@ export interface Fixed<T> {
  *     type ArrayInstance = FunctorFn<Array<_>>;
  *     // ArrayInstance = <A, B>(fab: (a: A) => B, ta: A[]): B[]
  *     type RecordInstance = FunctorFn<{ value: _ }>;
- *     // PromiseInstance = <A, B>(fab: (a: A) => B, ta: { value: A }): { value: B }
+ *     // RecordInstance = <A, B>(fab: (a: A) => B, ta: { value: A }): { value: B }
  **************************************************************************************************/
 
 // prettier-ignore

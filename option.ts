@@ -1,7 +1,7 @@
 import { compose, identity } from "./fns.ts";
 import { $, _ } from "./hkts.ts";
 import * as SL from "./type-classes.ts";
-import { pipe } from "./pipe.ts";
+import { pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -23,6 +23,8 @@ export const getShow = <A>({ show }: SL.Show<A>): SL.Show<Option<A>> => ({
   show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
 });
 
+// export
+
 /***************************************************************************************************
  * @section Destructors
  **************************************************************************************************/
@@ -43,8 +45,8 @@ export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
 
 export const Monad = SL.createMonad<Option<_>>({
   of: some,
-  map: (fab, ta) => pipe(ta, fold(compose(fab)(some), constNone)),
-  join: (tta) => (isNone(tta) ? tta : tta.value),
+  map: (fab, ta) => (isSome(ta) ? some(fab(ta.value)) : ta),
+  join: (tta) => (isSome(tta) ? tta.value : tta),
 });
 
 export const Applicative: SL.Applicative<Option<_>> = {
@@ -59,7 +61,7 @@ export const Apply: SL.Apply<Option<_>> = {
 };
 
 export const Alternative: SL.Alternative<Option<_>> = {
-  of: Monad.of,
+  of: some,
   ap: Monad.ap,
   map: Monad.map,
   zero: constNone,

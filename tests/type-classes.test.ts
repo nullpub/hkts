@@ -1,12 +1,12 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import { _ } from "./hkts.ts";
-import * as O from "./option.ts";
-import * as S from "./type-classes.ts";
+import { _ } from "../hkts.ts";
+import * as O from "../option.ts";
+import * as S from "../type-classes.ts";
 
 const addOne = (n: number): number => n + 1;
 
-Deno.test("createMonad", () => {
+Deno.test("Type Classes createMonad", () => {
   const { join, map } = S.createMonad<O.Option<_>>(O.Monad);
 
   assertEquals(join(O.some(O.some(1))), O.some(1));
