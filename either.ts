@@ -64,3 +64,11 @@ export const Apply: SL.Apply2<Either<_0, _1>> = {
   ap: Monad.ap,
   map: Monad.map,
 };
+
+/***************************************************************************************************
+ * @section Pipeables
+ **************************************************************************************************/
+
+export const { of, ap, map, join, chain } = SL.createPipeableMonad2(Monad);
+
+export const { reduce, traverse } = SL.createPipeableTraversable2(Traversable);

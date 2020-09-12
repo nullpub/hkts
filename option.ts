@@ -42,8 +42,12 @@ export const tryCatch = <A>(f: Lazy<A>): Option<A> => {
  * @section Destructors
  **************************************************************************************************/
 
+export const fold = <A, B>(onSome: (a: A) => B, onNone: () => B) => (
+  ta: Option<A>
+): B => (isNone(ta) ? onNone() : onSome(ta.value));
+
 export const getOrElse = <B>(onNone: () => B, ta: Option<B>): B =>
-  pipe(ta, fold(identity, onNone));
+  isNone(ta) ? onNone() : ta.value;
 
 export const toNullable = <A>(ma: Option<A>): A | null =>
   isNone(ma) ? null : ma.value;
@@ -109,17 +113,6 @@ export const Traversable: SL.Traversable<Option<_>> = {
  * @section Pipeables
  **************************************************************************************************/
 
-export const fold = <A, B>(onSome: (a: A) => B, onNone: () => B) => (
-  ta: Option<A>
-): B => (isNone(ta) ? onNone() : onSome(ta.value));
+export const { of, ap, map, join, chain } = SL.createPipeableMonad(Monad);
 
-export const of = some;
-
-export const map = <A, B>(fab: (a: A) => B) => (ta: Option<A>): Option<B> =>
-  Monad.map(fab, ta);
-
-export const join = <A>(tta: Option<Option<A>>): Option<A> => Monad.join(tta);
-
-export const chain = <A, B>(fatb: (a: A) => Option<B>) => (
-  ta: Option<A>
-): Option<B> => Monad.chain(fatb, ta);
+export const { reduce, traverse } = SL.createPipeableTraversable(Traversable);

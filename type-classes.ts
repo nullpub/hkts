@@ -286,6 +286,169 @@ export type Traversable2<T> = Functor2<T> &
   };
 
 /***************************************************************************************************
+ * @section Pipeable
+ **************************************************************************************************/
+
+/**
+ * Pipeable Alt
+ */
+export type AltP<T> = FunctorP<T> & {
+  alt: <A>(ta: $<T, [A]>) => (tb: $<T, [A]>) => $<T, [A]>;
+};
+export type Alt2P<T> = Functor2P<T> & {
+  alt: <E, A>(ta: $<T, [E, A]>) => (tb: $<T, [E, A]>) => $<T, [E, A]>;
+};
+
+/**
+ * Pipeable Applicative
+ */
+export type ApplicativeP<T> = ApplyP<T> & {
+  of: <A>(a: A) => $<T, [A]>;
+};
+export type Applicative2P<T> = Apply2P<T> & {
+  of: <E, A>(a: A) => $<T, [E, A]>;
+};
+
+/**
+ * Pipeable Apply
+ */
+export type ApplyP<T> = FunctorP<T> & {
+  ap: <A, B>(tfab: $<T, [(a: A) => B]>) => (ta: $<T, [A]>) => $<T, [B]>;
+};
+export type Apply2P<T> = Functor2P<T> & {
+  ap: <E, A, B>(
+    tfab: $<T, [E, (a: A) => B]>
+  ) => (ta: $<T, [E, A]>) => $<T, [E, B]>;
+};
+
+/**
+ * Pipeable Bifunctor
+ */
+export type BifunctorP<T> = {
+  bimap: <A, B, C, D>(
+    fab: (a: A) => B,
+    fcd: (c: C) => D
+  ) => (tac: $<T, [A, C]>) => $<T, [B, D]>;
+};
+
+/**
+ * Pipeable Chain
+ */
+export type ChainP<T> = ApplyP<T> & {
+  chain: <A, B>(fatb: (a: A) => $<T, [B]>) => (ta: $<T, [A]>) => $<T, [B]>;
+};
+export type Chain2P<T> = Apply2P<T> & {
+  chain: <E, A, B>(
+    fatb: (a: A) => $<T, [E, B]>
+  ) => (ta: $<T, [E, A]>) => $<T, [E, B]>;
+};
+
+/**
+ * Pipeable Contravariant
+ */
+export type ContravariantP<T> = {
+  contramap: <A, B>(fab: (a: A) => B) => (tb: $<T, [B]>) => $<T, [A]>;
+};
+export type Contravariant2P<T> = {
+  contramap: <E, A, B>(fab: (a: A) => B) => (tb: $<T, [E, B]>) => $<T, [E, A]>;
+};
+
+/**
+ * Pipeable Extend
+ */
+export type ExtendP<T> = FunctorP<T> & {
+  extend: <A, B>(ftab: (t: $<T, [A]>) => B) => (ta: $<T, [A]>) => $<T, [B]>;
+};
+export type Extend2P<T> = Functor2P<T> & {
+  extend: <E, A, B>(
+    ftab: (t: $<T, [E, A]>) => B
+  ) => (ta: $<T, [E, A]>) => $<T, [E, B]>;
+};
+
+/**
+ * Pipeable Filterable
+ */
+export type FilterableP<T> = {
+  filter: <A>(predicate: (x: A) => boolean) => (ta: $<T, [A]>) => $<T, [A]>;
+};
+export type Filterable2P<T> = {
+  filter: <E, A>(
+    predicate: (x: A) => boolean
+  ) => (ta: $<T, [E, A]>) => $<T, [E, A]>;
+};
+
+/**
+ * Pipeable Foldable
+ */
+export type FoldableP<T> = {
+  reduce: <A, B>(faba: (a: A, b: B) => A, a: A) => (tb: $<T, [B]>) => A;
+};
+export type Foldable2P<T> = {
+  reduce: <E, A, B>(faba: (a: A, b: B) => A, a: A) => (tb: $<T, [E, B]>) => A;
+};
+
+/**
+ * Pipeable Functor
+ */
+export type FunctorP<T> = {
+  map: <A, B>(fab: (a: A) => B) => (ta: $<T, [A]>) => $<T, [B]>;
+};
+export type Functor2P<T> = {
+  map: <E, A, B>(fab: (a: A) => B) => (ta: $<T, [E, A]>) => $<T, [E, B]>;
+};
+
+/**
+ * Pipeable Monad
+ */
+export type MonadP<T> = ApplicativeP<T> &
+  ChainP<T> & {
+    join: <A>(tta: $<T, [$<T, [A]>]>) => $<T, [A]>;
+  };
+export type Monad2P<T> = Applicative2P<T> &
+  Chain2P<T> & {
+    join: <E, A>(tta: $<T, [E, $<T, [E, A]>]>) => $<T, [E, A]>;
+  };
+
+/**
+ * Pipeable Profunctor
+ */
+export type ProfunctorP<T> = {
+  promap: <A, B, C, D>(
+    fab: (x: A) => B,
+    fcd: (x: C) => D
+  ) => (tbc: $<T, [B, C]>) => $<T, [A, D]>;
+};
+
+/**
+ * Pipeable Semigroupoid
+ */
+export type SemigroupoidP<T> = {
+  compose: <I, J, K>(tij: $<T, [I, J]>) => (tjk: $<T, [J, K]>) => $<T, [I, K]>;
+};
+
+/**
+ * Pipeable Traversable
+ */
+export type TraversableP<T> = FunctorP<T> &
+  FoldableP<T> & {
+    traverse: <U, A, B>(
+      A: Applicative<U>,
+      faub: (a: A) => $<U, [B]>
+    ) => (ta: $<T, [A]>) => $<U, [$<T, [B]>]>;
+  };
+export type Traversable2P<T> = Functor2P<T> &
+  Foldable2P<T> & {
+    traverse: <U, E, A, B>(
+      A: Applicative<U>,
+      faub: (a: A) => $<U, [B]>
+    ) => (ta: $<T, [E, A]>) => $<U, [$<T, [E, B]>]>;
+  };
+
+/***************************************************************************************************
+ * @section Composition
+ **************************************************************************************************/
+
+/***************************************************************************************************
  * @section Derivations
  **************************************************************************************************/
 
@@ -311,4 +474,46 @@ export function createMonad<T>({
  */
 export function createMonad2<T>(M: Pick<Monad2<T>, "of" | "chain">): Monad2<T> {
   return createMonad<T>(M as Monad<T>) as Monad2<T>;
+}
+
+/**
+ * Derive MonadP from Monad.
+ */
+export function createPipeableMonad<T>({
+  of,
+  ap,
+  map,
+  join,
+  chain,
+}: Monad<T>): MonadP<T> {
+  return {
+    of,
+    join,
+    map: (fab) => (ta) => map(fab, ta),
+    chain: (fatb) => (ta) => chain(fatb, ta),
+    ap: (tfab) => (ta) => ap(tfab, ta),
+  };
+}
+export function createPipeableMonad2<T>(M: Monad2<T>): Monad2P<T> {
+  return createPipeableMonad<T>(M as any) as Monad2P<T>;
+}
+
+/**
+ * Derive TraversableP from Traversable.
+ */
+export function createPipeableTraversable<T>({
+  traverse,
+  reduce,
+  map,
+}: Traversable<T>): TraversableP<T> {
+  return {
+    map: (fab) => (ta) => map(fab, ta),
+    reduce: (faba, a) => (ta) => reduce(faba, a, ta),
+    traverse: (A, faub) => (ta) => traverse(A, faub, ta),
+  };
+}
+export function createPipeableTraversable2<T>(
+  M: Traversable2<T>
+): Traversable2P<T> {
+  return createPipeableTraversable<T>(M as any) as Traversable2P<T>;
 }
