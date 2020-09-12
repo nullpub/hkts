@@ -8,12 +8,9 @@
 - port monocle-ts (likely will need additional adts for this)
 - task and taskEither implementations
 - investigate Functor/Functor2 overloads (instead of duplication)
+- port hyper-ts to Deno
 
 # Version 1.0.0 features
 
 - auto documentation (port docs-ts)
 - spend a week on examples and introduction posts
-
-# Version 1.0.0 follow up
-
-- port hyper-ts to Deno

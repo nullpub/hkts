@@ -18,10 +18,6 @@ export const none: None = { tag: "None" };
 export const some = <A>(value: A): Option<A> => ({ tag: "Some", value });
 export const constNone = () => none;
 
-export const getShow = <A>({ show }: SL.Show<A>): SL.Show<Option<A>> => ({
-  show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
-});
-
 export const fromNullable = <A>(a: A): Option<NonNullable<A>> =>
   isNotNil(a) ? some(a) : none;
 
@@ -70,8 +66,12 @@ export const isNone = <A>(m: Option<A>): m is None => m.tag === "None";
 export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
 
 /***************************************************************************************************
- * @section Instances
+ * @section Modules
  **************************************************************************************************/
+
+export const getShow = <A>({ show }: SL.Show<A>): SL.Show<Option<A>> => ({
+  show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
+});
 
 export const Monad = SL.createMonad<Option<_>>({
   of: some,

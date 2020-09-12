@@ -19,3 +19,13 @@ const result = pipe(
 );
 // result = O.none.
 ```
+
+## Conventions
+
+This library focuses first on implementing [static-land](https://github.com/fantasyland/static-land) type classes for a given Algebraic Data Type (ie. Either or Option) first. These type class instances are then exported from the ADT's namespace (eg. `import { Monad } from 'https://deno.land/x/hkts/option.ts'`). With the exception of instance constructors (ie. getShow or getSemigroup) other ADT functions should all be pipeable. For functions that derive from type class modules, like `chain` or `map`, there are helpers in `type-classes.ts` that will generate the pipeable versions for you.
+
+For good examples of the above conventions look at the `either.ts` or `option.ts`.
+
+# Documentation
+
+For the foreseeable future this library will not focus on documentation. Questions are welcome via [github issues](https://github.com/nullpub/hkts/issues) but I can't guaruntee speedy responses. Once a decent collection of ADTs and other utilities are ported and all the pre-1.0.0 todo items in `TODO.md` are complete I'll shift to documentation. Even then it's likely that I'll auto-generate the raw docs from exported function and statement types and will devote any time to building an example library that doubles as extra tests.

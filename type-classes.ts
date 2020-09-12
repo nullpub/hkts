@@ -517,3 +517,14 @@ export function createPipeableTraversable2<T>(
 ): Traversable2P<T> {
   return createPipeableTraversable<T>(M as any) as Traversable2P<T>;
 }
+
+/**
+ * Derive BifunctorP from Bifunctor.
+ */
+export function createPipeableBifunctor<T>({
+  bimap,
+}: Bifunctor<T>): BifunctorP<T> {
+  return {
+    bimap: (fab, fcd) => (tac) => bimap(fab, fcd, tac),
+  };
+}
