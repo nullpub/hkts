@@ -1,11 +1,10 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import { assertMonad } from "./_asserts.ts";
 
 import * as O from "../option.ts";
-import { assertMonad } from "./_asserts.ts";
 
 const add = (a: number, b: number) => a + b;
 const addOne = (n: number): number => n + 1;
-const addTwo = (n: number): number => n + 2;
 const chainOne = (n: number): O.Option<number> =>
   n !== 1 ? O.some(n) : O.none;
 

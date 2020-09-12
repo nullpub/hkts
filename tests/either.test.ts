@@ -2,7 +2,6 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as E from "../either.ts";
 import * as O from "../option.ts";
-import * as TC from "../type-classes.ts";
 import { assertMonad2 } from "./_asserts.ts";
 
 const add = (a: number, b: number) => a + b;

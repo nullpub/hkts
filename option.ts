@@ -1,6 +1,5 @@
-import { identity, isNotNil, Lazy, Predicate } from "./fns.ts";
+import { isNotNil, Lazy, Predicate } from "./fns.ts";
 import * as SL from "./type-classes.ts";
-import { pipe } from "./fns.ts";
 import { _ } from "./hkts.ts";
 
 /***************************************************************************************************
