@@ -1,4 +1,4 @@
-import { _0, _1 } from "./hkts.ts";
+import { _0, _1, $ } from "./hkts.ts";
 import * as SL from "./type-classes.ts";
 
 /***************************************************************************************************
@@ -23,14 +23,8 @@ export const right = <R>(right: R): Right<R> => ({ tag: "Right", right });
 export const fold = <L, R, B>(
   onLeft: (left: L) => B,
   onRight: (right: R) => B
-) => (ma: Either<L, R>): B => {
-  switch (ma.tag) {
-    case "Left":
-      return onLeft(ma.left);
-    case "Right":
-      return onRight(ma.right);
-  }
-};
+) => (ma: Either<L, R>): B =>
+  isLeft(ma) ? onLeft(ma.left) : onRight(ma.right);
 
 /***************************************************************************************************
  * @section Guards
@@ -49,9 +43,8 @@ export const Foldable: SL.Foldable2<Either<_0, _1>> = {
 };
 
 export const Monad = SL.createMonad2<Either<_0, _1>>({
-  of: (a) => right(a),
-  map: (fab, ta) => (isRight(ta) ? right(fab(ta.right)) : ta),
-  join: (tta) => (isRight(tta) ? tta.right : tta),
+  of: right,
+  chain: (fatb, ta) => (isRight(ta) ? fatb(ta.right) : ta),
 });
 
 export const Traversable: SL.Traversable2<Either<_0, _1>> = {
@@ -62,9 +55,9 @@ export const Traversable: SL.Traversable2<Either<_0, _1>> = {
 };
 
 export const Applicative: SL.Applicative2<Either<_0, _1>> = {
+  of: Monad.of,
   ap: Monad.ap,
   map: Monad.map,
-  of: Monad.of,
 };
 
 export const Apply: SL.Apply2<Either<_0, _1>> = {

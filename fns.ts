@@ -6,7 +6,26 @@ export type Fn<AS extends unknown[], B> = (...as: AS) => B;
 
 export type Nil = undefined | null;
 
-export type NotNil<A> = Exclude<A, Nil>;
+export interface Lazy<A> {
+  (): A;
+}
+
+export interface Predicate<A> {
+  (a: A): boolean;
+}
+
+export interface Refinement<A, B extends A> {
+  (a: A): a is B;
+}
+
+/***************************************************************************************************
+ * @section Guards
+ **************************************************************************************************/
+
+export const isNotNil = <A>(a: A): a is NonNullable<A> =>
+  a !== null && a !== undefined;
+
+export const isNil = (a: unknown): a is Nil => a === null || a === undefined;
 
 /***************************************************************************************************
  * @section Helper Functions

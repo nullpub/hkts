@@ -86,6 +86,7 @@ export function assertChain<T>(
  */
 export function assertMonad<T>(M: TC.Monad<T>, name: string): void {
   const famb = (n: number) => (n < 0 ? M.of(0) : M.of(n));
+  const fbmc = (n: number) => M.of(n.toString());
 
   // Monad Left Identity: M.chain(f, M.of(a)) ≡ f(a)
   assertEquals(
@@ -99,6 +100,19 @@ export function assertMonad<T>(M: TC.Monad<T>, name: string): void {
     M.chain(M.of, M.of(1)),
     M.of(1),
     `${name} : Monad Right Identity`
+  );
+
+  // Monad Associativity: M.chain(b => Mc, M.chain(a => Mb, Ma)) === M.chain(a => M.chain(b => Mc, (a => Mb)(a)), Ma)
+  assertEquals(
+    M.chain(fbmc, M.chain(famb, M.of(1))),
+    M.chain((a) => M.chain(fbmc, famb(a)), M.of(1)),
+    `${name} : Monad Associativity 1`
+  );
+
+  assertEquals(
+    M.chain(fbmc, M.chain(famb, M.of(-1))),
+    M.chain((a) => M.chain(fbmc, famb(a)), M.of(-1)),
+    `${name} : Monad Associativity 2`
   );
 
   // Monads must support Applicative

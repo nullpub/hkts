@@ -42,15 +42,7 @@ export function sequenceTuple<T>({ map, ap }: Apply<T>) {
   ): $<
     T,
     [[A, ...{ [K in keyof M]: M[K] extends $<T, [infer U]> ? U : never }]]
-  > => {
-    const len = tail.length;
-    const f = getTupleConstructor(len);
-    let fas = map(f, head);
-    for (let i = 1; i < len; i++) {
-      fas = ap(fas, tail[i]);
-    }
-    return fas;
-  };
+  > => tail.reduce(ap, map(getTupleConstructor(tail.length + 1), head));
 }
 
 export function sequenceTuple2<T>({ map, ap }: Apply2<T>) {
@@ -60,13 +52,5 @@ export function sequenceTuple2<T>({ map, ap }: Apply2<T>) {
   ): $<
     T,
     [E, [R, ...{ [K in keyof M]: M[K] extends $<T, [E, infer A]> ? A : never }]]
-  > => {
-    const len = tail.length;
-    const f = getTupleConstructor(len);
-    let fas = map(f, head);
-    for (let i = 0; i < len; i++) {
-      fas = ap(fas, tail[i]);
-    }
-    return fas;
-  };
+  > => tail.reduce(ap, map(getTupleConstructor(tail.length + 1), head));
 }

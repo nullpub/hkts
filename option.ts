@@ -1,7 +1,7 @@
-import { compose, identity } from "./fns.ts";
-import { $, _ } from "./hkts.ts";
+import { identity, isNotNil, Lazy, Predicate } from "./fns.ts";
 import * as SL from "./type-classes.ts";
 import { pipe } from "./fns.ts";
+import { _ } from "./hkts.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -23,7 +23,20 @@ export const getShow = <A>({ show }: SL.Show<A>): SL.Show<Option<A>> => ({
   show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
 });
 
-// export
+export const fromNullable = <A>(a: A): Option<NonNullable<A>> =>
+  isNotNil(a) ? some(a) : none;
+
+export const fromPredicate = <A>(predicate: Predicate<A>) => (
+  a: A
+): Option<A> => (predicate(a) ? some(a) : none);
+
+export const tryCatch = <A>(f: Lazy<A>): Option<A> => {
+  try {
+    return some(f());
+  } catch (e) {
+    return none;
+  }
+};
 
 /***************************************************************************************************
  * @section Destructors
@@ -31,6 +44,20 @@ export const getShow = <A>({ show }: SL.Show<A>): SL.Show<Option<A>> => ({
 
 export const getOrElse = <B>(onNone: () => B, ta: Option<B>): B =>
   pipe(ta, fold(identity, onNone));
+
+export const toNullable = <A>(ma: Option<A>): A | null =>
+  isNone(ma) ? null : ma.value;
+
+export const toUndefined = <A>(ma: Option<A>): A | undefined =>
+  isNone(ma) ? undefined : ma.value;
+
+/***************************************************************************************************
+ * @section Combinators
+ **************************************************************************************************/
+
+export const mapNullable = <A, B>(f: (a: A) => B | null | undefined) => (
+  ma: Option<A>
+): Option<B> => (isNone(ma) ? none : fromNullable(f(ma.value)));
 
 /***************************************************************************************************
  * @section Guards
@@ -45,8 +72,7 @@ export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
 
 export const Monad = SL.createMonad<Option<_>>({
   of: some,
-  map: (fab, ta) => (isSome(ta) ? some(fab(ta.value)) : ta),
-  join: (tta) => (isSome(tta) ? tta.value : tta),
+  chain: (fatb, ta) => (isSome(ta) ? fatb(ta.value) : ta),
 });
 
 export const Applicative: SL.Applicative<Option<_>> = {
@@ -85,14 +111,7 @@ export const Traversable: SL.Traversable<Option<_>> = {
 
 export const fold = <A, B>(onSome: (a: A) => B, onNone: () => B) => (
   ta: Option<A>
-): B => {
-  switch (ta.tag) {
-    case "None":
-      return onNone();
-    case "Some":
-      return onSome(ta.value);
-  }
-};
+): B => (isNone(ta) ? onNone() : onSome(ta.value));
 
 export const of = some;
 

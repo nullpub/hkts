@@ -1,3 +1,4 @@
+import { identity } from "./fns.ts";
 import { $ } from "./hkts.ts";
 
 /***************************************************************************************************
@@ -293,23 +294,21 @@ export type Traversable2<T> = Functor2<T> &
  */
 export function createMonad<T>({
   of,
-  map,
-  join,
-}: Pick<Monad<T>, "of" | "join" | "map">): Monad<T> {
+  chain,
+}: Pick<Monad<T>, "of" | "chain">): Monad<T> {
+  const map: Functor<T>["map"] = (fab, ta) => chain((a) => of(fab(a)), ta);
   return {
     of,
     map,
-    join,
-    ap: (tfab, ta) => join(map((a) => map((fab) => fab(a), tfab), ta)),
-    chain: (fatb, ta) => join(map(fatb, ta)),
+    chain,
+    join: (tta) => chain(identity, tta),
+    ap: (tfab, ta) => chain((f) => map(f, ta), tfab),
   };
 }
 
 /**
  * Derive Monad2 from of, map, and join.
  */
-export function createMonad2<T>(
-  M: Pick<Monad2<T>, "of" | "join" | "map">
-): Monad2<T> {
+export function createMonad2<T>(M: Pick<Monad2<T>, "of" | "chain">): Monad2<T> {
   return createMonad<T>(M as Monad<T>) as Monad2<T>;
 }
