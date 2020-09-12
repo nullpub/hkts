@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.5](https://github.com/nullpub/hkts/compare/v0.0.4...v0.0.5) (2020-09-12)
+
+
+### Features
+
+* expand on either adt ([fad661f](https://github.com/nullpub/hkts/commit/fad661f932d386832cd9c3d9a3407166573c2a53))
+* initial work with monad transformers ([cd8ceaf](https://github.com/nullpub/hkts/commit/cd8ceaf5a27741dbfe6c1db12dac894e3fd5ff68))
+
 ### [0.0.4](https://github.com/nullpub/hkts/compare/v0.0.3...v0.0.4) (2020-09-12)
 
 
