@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.4](https://github.com/nullpub/hkts/compare/v0.0.3...v0.0.4) (2020-09-12)
+
+
+### Features
+
+* add pipeable typeclasses ([f5cd5d0](https://github.com/nullpub/hkts/commit/f5cd5d08327b448c49bd741690ba5a2590192d8d))
+
+
+### Bug Fixes
+
+* various fixes ([4274a3a](https://github.com/nullpub/hkts/commit/4274a3a8d01f3646260d40d9e78fc3c27a276290))
+
 ### [0.0.3](https://github.com/nullpub/hkts/compare/v0.0.2...v0.0.3) (2020-09-11)
 
 ### [0.0.2](https://github.com/nullpub/hkts/compare/v0.0.1...v0.0.2) (2020-09-11)
