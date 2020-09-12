@@ -10,7 +10,7 @@ This library is meant to be used with Deno, thus it follows the [Deno imports](h
 
 ```ts
 import * as O from "https://deno.land/x/hkts/option.ts";
-import { pipe } from "https://deno.land/x/hkts/pipe.ts";
+import { pipe } from "https://deno.land/x/hkts/fns.ts";
 
 const result = pipe(
     O.some(1),
