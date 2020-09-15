@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
-import { assertMonad } from "./_asserts.ts";
+import { assertMonad } from "./assert.ts";
 
 import * as O from "../option.ts";
 

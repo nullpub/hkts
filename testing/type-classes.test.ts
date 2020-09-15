@@ -1,6 +1,6 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import { _ } from "../hkts.ts";
+import type { _ } from "../hkts.ts";
 import * as O from "../option.ts";
 import * as S from "../type-classes.ts";
 

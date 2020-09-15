@@ -1,6 +1,13 @@
-import * as TC from "./type-classes.ts";
-import { _0, _1 } from "./hkts.ts";
+import type * as TC from "./type-classes.ts";
+import type { _0, _1 } from "./hkts.ts";
+
 import { isNotNil, Lazy, Predicate, Refinement } from "./fns.ts";
+import {
+  createMonad2,
+  createPipeableBifunctor,
+  createPipeableMonad,
+  createPipeableTraversable,
+} from "./derivations.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -95,7 +102,7 @@ export const Foldable: TC.Foldable2<Either<_0, _1>> = {
   reduce: (faba, a, tb) => (isRight(tb) ? faba(a, tb.right) : a),
 };
 
-export const Monad = TC.createMonad2<Either<_0, _1>>({
+export const Monad = createMonad2<Either<_0, _1>>({
   of: right,
   chain: (fatb, ta) => (isRight(ta) ? fatb(ta.right) : ta),
 });
@@ -127,8 +134,8 @@ export const Bifunctor: TC.Bifunctor<Either<_0, _1>> = {
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = TC.createPipeableMonad2(Monad);
+export const { of, ap, map, join, chain } = createPipeableMonad(Monad);
 
-export const { reduce, traverse } = TC.createPipeableTraversable2(Traversable);
+export const { reduce, traverse } = createPipeableTraversable(Traversable);
 
-export const { bimap } = TC.createPipeableBifunctor(Bifunctor);
+export const { bimap } = createPipeableBifunctor(Bifunctor);

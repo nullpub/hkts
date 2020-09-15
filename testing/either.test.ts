@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as E from "../either.ts";
 import * as O from "../option.ts";
-import { assertMonad2 } from "./_asserts.ts";
+import { assertMonad } from "./assert.ts";
 
 const add = (a: number, b: number) => a + b;
 const addOne = (n: number): number => n + 1;
@@ -41,7 +41,7 @@ Deno.test({
   name: "Either Instances",
   fn(): void {
     // Test Laws
-    assertMonad2(E.Monad, "Either");
+    assertMonad(E.Monad, "Either");
 
     // Monad
     const { ap, chain, map, join, of } = E.Monad;

@@ -1,5 +1,5 @@
-import { $ } from "./hkts.ts";
-import * as TC from "./type-classes.ts";
+import type { $ } from "./hkts.ts";
+import type * as TC from "./type-classes.ts";
 
 /***************************************************************************************************
  * @section Composition Modules

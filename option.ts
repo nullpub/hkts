@@ -1,6 +1,12 @@
+import type * as TC from "./type-classes.ts";
+import type { _ } from "./hkts.ts";
+
 import { isNotNil, Lazy, Predicate } from "./fns.ts";
-import * as SL from "./type-classes.ts";
-import { _ } from "./hkts.ts";
+import {
+  createMonad,
+  createPipeableMonad,
+  createPipeableTraversable,
+} from "./derivations.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -69,27 +75,27 @@ export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
  * @section Modules
  **************************************************************************************************/
 
-export const getShow = <A>({ show }: SL.Show<A>): SL.Show<Option<A>> => ({
+export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Option<A>> => ({
   show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
 });
 
-export const Monad = SL.createMonad<Option<_>>({
+export const Monad = createMonad<Option<_>>({
   of: some,
   chain: (fatb, ta) => (isSome(ta) ? fatb(ta.value) : ta),
 });
 
-export const Applicative: SL.Applicative<Option<_>> = {
+export const Applicative: TC.Applicative<Option<_>> = {
   of: some,
   ap: Monad.ap,
   map: Monad.map,
 };
 
-export const Apply: SL.Apply<Option<_>> = {
+export const Apply: TC.Apply<Option<_>> = {
   ap: Monad.ap,
   map: Monad.map,
 };
 
-export const Alternative: SL.Alternative<Option<_>> = {
+export const Alternative: TC.Alternative<Option<_>> = {
   of: some,
   ap: Monad.ap,
   map: Monad.map,
@@ -97,11 +103,11 @@ export const Alternative: SL.Alternative<Option<_>> = {
   alt: (a, b) => (isSome(a) ? a : b),
 };
 
-export const Foldable: SL.Foldable<Option<_>> = {
+export const Foldable: TC.Foldable<Option<_>> = {
   reduce: (faba, a, tb) => (isSome(tb) ? faba(a, tb.value) : a),
 };
 
-export const Traversable: SL.Traversable<Option<_>> = {
+export const Traversable: TC.Traversable<Option<_>> = {
   map: Monad.map,
   reduce: Foldable.reduce,
   traverse: (F, faub, ta) =>
@@ -112,6 +118,6 @@ export const Traversable: SL.Traversable<Option<_>> = {
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = SL.createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = createPipeableMonad(Monad);
 
-export const { reduce, traverse } = SL.createPipeableTraversable(Traversable);
+export const { reduce, traverse } = createPipeableTraversable(Traversable);

@@ -1,6 +1,6 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import * as TC from "../type-classes.ts";
+import type * as TC from "../type-classes.ts";
 
 /**
  * Applicative Functor Laws Tests
@@ -8,7 +8,10 @@ import * as TC from "../type-classes.ts";
  * * Includes Functor Laws
  * * Includes Apply Laws
  */
-export function assertApplicative<T>(M: TC.Applicative<T>, name: string): void {
+export const assertApplicative: {
+  <T>(M: TC.Applicative<T>, name: string): void;
+  <T>(M: TC.Applicative2<T>, name: string): void;
+} = <T>(M: TC.Applicative<T>, name: string): void => {
   const fab = (n: number) => n + 1;
   const fbc = (n: number): string => n.toString();
   const fgab = (f: typeof fbc) => (g: typeof fab) => (n: number) => f(g(n));
@@ -60,16 +63,16 @@ export function assertApplicative<T>(M: TC.Applicative<T>, name: string): void {
     ),
     `${name} : Applicative Interchange`
   );
-}
+};
 
 /**
  * Chain Laws Tests
  * * Requires Applicative instance for of
  */
-export function assertChain<T>(
-  M: TC.Applicative<T> & TC.Chain<T>,
-  name: string
-): void {
+export const assertChain: {
+  <T>(M: TC.Applicative<T> & TC.Chain<T>, name: string): void;
+  <T>(M: TC.Applicative2<T> & TC.Chain2<T>, name: string): void;
+} = <T>(M: TC.Applicative<T> & TC.Chain<T>, name: string): void => {
   const fatb = (n: number) => M.of(n + 1);
   const fbtc = (n: number) => M.of(n.toString());
 
@@ -79,12 +82,15 @@ export function assertChain<T>(
     M.chain((x) => M.chain(fbtc, fatb(x)), M.of(1)),
     `${name} : Chain Associativity`
   );
-}
+};
 
 /**
  * Monad Laws Tests
  */
-export function assertMonad<T>(M: TC.Monad<T>, name: string): void {
+export const assertMonad: {
+  <T>(M: TC.Monad<T>, name: string): void;
+  <T>(M: TC.Monad2<T>, name: string): void;
+} = <T>(M: TC.Monad<T>, name: string): void => {
   const famb = (n: number) => (n < 0 ? M.of(0) : M.of(n));
   const fbmc = (n: number) => M.of(n.toString());
 
@@ -120,7 +126,4 @@ export function assertMonad<T>(M: TC.Monad<T>, name: string): void {
 
   // Monads must support Chain
   assertChain(M as any, name);
-}
-export function assertMonad2<T>(M: TC.Monad2<T>, name: string): void {
-  assertMonad(M as any, name);
-}
+};
