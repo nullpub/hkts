@@ -90,44 +90,22 @@ export type MonadComposition2<F, G> = ApplicativeComposition2<F, G> &
 /**
  * Functor
  */
-export const getFunctorComposition = <F, G>(
-  F: TC.Functor<F>,
-  G: TC.Functor<G>
-): FunctorComposition<F, G> => ({
+export const getFunctorComposition: {
+  <F, G>(F: TC.Functor<F>, G: TC.Functor<G>): FunctorComposition<F, G>;
+  <F, G>(F: TC.Functor2<F>, G: TC.Functor<G>): FunctorComposition2<F, G>;
+} = <F, G>(F: TC.Functor<F>, G: TC.Functor<G>): FunctorComposition<F, G> => ({
   map: (fab, FGa) => F.map((Ga) => G.map(fab, Ga), FGa),
-});
-
-export const getFunctor2Composition = <F, G>(
-  F: TC.Functor2<F>,
-  G: TC.Functor<G>
-): FunctorComposition2<F, G> => ({
-  map: (fab, fga) => F.map((ga) => G.map(fab, ga), fga),
 });
 
 /**
  * Apply
  */
-export const getApplyComposition = <F, G>(
-  F: TC.Apply<F>,
-  G: TC.Apply<G>
-): ApplyComposition<F, G> => ({
+export const getApplyComposition: {
+  <F, G>(F: TC.Apply<F>, G: TC.Apply<G>): ApplyComposition<F, G>;
+  <F, G>(F: TC.Apply2<F>, G: TC.Apply<G>): ApplyComposition2<F, G>;
+} = <F, G>(F: TC.Apply<F>, G: TC.Apply<G>): ApplyComposition<F, G> => ({
   ...getFunctorComposition(F, G),
   ap: <A, B>(FGfab: $<F, [$<G, [(a: A) => B]>]>, FGfa: $<F, [$<G, [A]>]>) =>
-    F.ap(
-      F.map((h) => (ga: $<G, [A]>) => G.ap(h, ga), FGfab),
-      FGfa
-    ),
-});
-
-export const getApply2Composition = <F, G>(
-  F: TC.Apply2<F>,
-  G: TC.Apply<G>
-): ApplyComposition2<F, G> => ({
-  ...getFunctor2Composition(F, G),
-  ap: <E, A, B>(
-    FGfab: $<F, [E, $<G, [(a: A) => B]>]>,
-    FGfa: $<F, [E, $<G, [A]>]>
-  ) =>
     F.ap(
       F.map((h) => (ga: $<G, [A]>) => G.ap(h, ga), FGfab),
       FGfa
@@ -137,18 +115,19 @@ export const getApply2Composition = <F, G>(
 /**
  * Applicative
  */
-export const getApplicativeComposition = <F, G>(
+export const getApplicativeComposition: {
+  <F, G>(F: TC.Applicative<F>, G: TC.Applicative<G>): ApplicativeComposition<
+    F,
+    G
+  >;
+  <F, G>(F: TC.Applicative2<F>, G: TC.Applicative<G>): ApplicativeComposition2<
+    F,
+    G
+  >;
+} = <F, G>(
   F: TC.Applicative<F>,
   G: TC.Applicative<G>
 ): ApplicativeComposition<F, G> => ({
   ...getApplyComposition(F, G),
-  of: (a) => F.of(G.of(a)),
-});
-
-export const getApplicative2Composition = <F, G>(
-  F: TC.Applicative2<F>,
-  G: TC.Applicative<G>
-): ApplicativeComposition2<F, G> => ({
-  ...getApply2Composition(F, G),
   of: (a) => F.of(G.of(a)),
 });
