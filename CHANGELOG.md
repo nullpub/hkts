@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.6](https://github.com/nullpub/hkts/compare/v0.0.5...v0.0.6) (2020-09-15)
+
+
+### Features
+
+* simplify typeclass composition functions ([50afb19](https://github.com/nullpub/hkts/commit/50afb197e707697efd46b181b01ed4dd84028f8b))
+* task adt and reorganize ([79e762e](https://github.com/nullpub/hkts/commit/79e762ebe472549c6b1b8c0e879523bbef126aac))
+
+
+### Bug Fixes
+
+* fix derivation tests ([00a85b4](https://github.com/nullpub/hkts/commit/00a85b4634338a57b6e862586ba99dcc74dd9ace))
+
 ### [0.0.5](https://github.com/nullpub/hkts/compare/v0.0.4...v0.0.5) (2020-09-12)
 
 
