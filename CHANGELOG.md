@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.7](https://github.com/nullpub/hkts/compare/v0.0.6...v0.0.7) (2020-09-18)
+
+
+### Features
+
+* datum, reader adts and new type classes ([e5c7c2a](https://github.com/nullpub/hkts/commit/e5c7c2a71e6b9487bc56b0e275c74eb464cc13e4))
+
 ### [0.0.6](https://github.com/nullpub/hkts/compare/v0.0.5...v0.0.6) (2020-09-15)
 
 
