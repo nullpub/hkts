@@ -80,7 +80,7 @@ Deno.test({
     const { traverse } = E.Traversable;
     assertEquals(
       traverse(O.Applicative, (a) => O.some(1), E.left(1)),
-      O.some(E.left(1))
+      O.some(E.left(1)),
     );
   },
 });

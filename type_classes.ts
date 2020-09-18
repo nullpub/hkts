@@ -38,15 +38,15 @@ export type AddLength<A extends LS, B extends LS> = {
  * Alt
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#alt
  */
+export type Alt<T, L extends LS = 1> = Functor<T, L> & {
+  alt: AltFn<T, L>;
+};
+
 export type AltFn<T, L extends LS> = {
   1: <A>(ta: $<T, [A]>, tb: $<T, [A]>) => $<T, [A]>;
   2: <E, A>(ta: $<T, [E, A]>, tb: $<T, [E, A]>) => $<T, [E, A]>;
   3: <R, E, A>(ta: $<T, [R, E, A]>, tb: $<T, [R, E, A]>) => $<T, [R, E, A]>;
 }[L];
-
-export type Alt<T, L extends LS = 1> = Functor<T, L> & {
-  alt: AltFn<T, L>;
-};
 
 /**
  * Alternative
@@ -58,32 +58,32 @@ export type Alternative<T, L extends LS = 1> = Applicative<T, L> & Plus<T, L>;
  * Applicative
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#applicative
  */
+export type Applicative<T, L extends LS = 1> = Apply<T, L> & {
+  of: ApplicativeFn<T, L>;
+};
+
 export type ApplicativeFn<T, L extends LS> = {
   1: <A>(a: A) => $<T, [A]>;
   2: <E, A>(a: A) => $<T, [E, A]>;
   3: <R, E, A>(a: A) => $<T, [R, E, A]>;
 }[L];
 
-export type Applicative<T, L extends LS = 1> = Apply<T, L> & {
-  of: ApplicativeFn<T, L>;
-};
-
 /**
  * Apply
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#apply
  */
+export type Apply<T, L extends LS = 1> = Functor<T, L> & {
+  ap: ApplyFn<T, L>;
+};
+
 export type ApplyFn<T, L extends LS> = {
   1: <A, B>(tfab: $<T, [(a: A) => B]>, ta: $<T, [A]>) => $<T, [B]>;
   2: <E, A, B>(tfab: $<T, [E, (a: A) => B]>, ta: $<T, [E, A]>) => $<T, [E, B]>;
   3: <R, E, A, B>(
     tfab: $<T, [R, E, (a: A) => B]>,
-    ta: $<T, [R, E, A]>
+    ta: $<T, [R, E, A]>,
   ) => $<T, [R, E, B]>;
 }[L];
-
-export type Apply<T, L extends LS = 1> = Functor<T, L> & {
-  ap: ApplyFn<T, L>;
-};
 
 /**
  * Bifunctor
@@ -93,7 +93,7 @@ export type Bifunctor<T> = {
   bimap: <A, B, C, D>(
     fab: (a: A) => B,
     fcd: (c: C) => D,
-    tac: $<T, [A, C]>
+    tac: $<T, [A, C]>,
   ) => $<T, [B, D]>;
 };
 
@@ -109,18 +109,18 @@ export type Category<T> = Semigroupoid<T> & {
  * Chain
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#chain
  */
+export type Chain<T, L extends LS = 1> = Apply<T, L> & {
+  chain: ChainFn<T, L>;
+};
+
 export type ChainFn<T, L extends LS> = {
   1: <A, B>(fatb: (a: A) => $<T, [B]>, ta: $<T, [A]>) => $<T, [B]>;
   2: <E, A, B>(fatb: (a: A) => $<T, [E, B]>, ta: $<T, [E, A]>) => $<T, [E, B]>;
   3: <R, E, A, B>(
     fatb: (a: A) => $<T, [R, E, B]>,
-    ta: $<T, [R, E, A]>
+    ta: $<T, [R, E, A]>,
   ) => $<T, [R, E, B]>;
 }[L];
-
-export type Chain<T, L extends LS = 1> = Apply<T, L> & {
-  chain: ChainFn<T, L>;
-};
 
 /**
  * ChainRec
@@ -128,111 +128,112 @@ export type Chain<T, L extends LS = 1> = Apply<T, L> & {
  *
  * @todo Confirm type
  */
-export type ChainRecFn<T, L extends LS> = {
-  1: <A, B, C>(
-    f: (next: (a: A) => C, done: (b: B) => C, a: A) => $<T, [C]>,
-    a: A
-  ) => $<T, [B]>;
-  2: <E, A, B, C>(
-    f: (next: (a: A) => C, done: (b: B) => C, a: A) => $<T, [E, C]>,
-    a: A
-  ) => $<T, [E, B]>;
-  3: <R, E, A, B, C>(
-    f: (next: (a: A) => C, done: (b: B) => C, a: A) => $<T, [R, E, C]>,
-    a: A
-  ) => $<T, [R, E, B]>;
-}[L];
-
 export type ChainRec<T, L extends LS = 1> = Chain<T, L> & {
   chainRec: ChainRecFn<T, L>;
 };
+
+export type ChainRecFn<T, L extends LS> = {
+  1: <A, B, C>(
+    f: (next: (a: A) => C, done: (b: B) => C, a: A) => $<T, [C]>,
+    a: A,
+  ) => $<T, [B]>;
+  2: <E, A, B, C>(
+    f: (next: (a: A) => C, done: (b: B) => C, a: A) => $<T, [E, C]>,
+    a: A,
+  ) => $<T, [E, B]>;
+  3: <R, E, A, B, C>(
+    f: (next: (a: A) => C, done: (b: B) => C, a: A) => $<T, [R, E, C]>,
+    a: A,
+  ) => $<T, [R, E, B]>;
+}[L];
 
 /**
  * Comonad
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#comonad
  */
+export type Comonad<T, L extends LS = 1> = Extend<T, L> & {
+  extract: ComonadFn<T, L>;
+};
+
 export type ComonadFn<T, L extends LS> = {
   1: <A>(ta: $<T, [A]>) => A;
   2: <E, A>(ta: $<T, [E, A]>) => A;
   3: <R, E, A>(ta: $<T, [R, E, A]>) => A;
 }[L];
 
-export type Comonad<T, L extends LS = 1> = Extend<T, L> & {
-  extract: ComonadFn<T, L>;
-};
-
 /**
  * Contravariant
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#contravariant
  */
+export type Contravariant<T, L extends LS = 1> = {
+  contramap: ContravariantFn<T, L>;
+};
+
 export type ContravariantFn<T, L extends LS> = {
   1: <A, B>(fab: (a: A) => B, tb: $<T, [B]>) => $<T, [A]>;
   2: <E, A, B>(fab: (a: A) => B, tb: $<T, [E, B]>) => $<T, [E, A]>;
   3: <R, E, A, B>(fab: (a: A) => B, tb: $<T, [R, E, B]>) => $<T, [R, E, A]>;
 }[L];
 
-export type Contravariant<T, L extends LS = 1> = {
-  contramap: ContravariantFn<T, L>;
-};
-
 /**
  * Extend
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#extend
  */
+export type Extend<T, L extends LS = 1> = Functor<T, L> & {
+  extend: ExtendFn<T, L>;
+};
+
 export type ExtendFn<T, L extends LS> = {
   1: <A, B>(ftab: (t: $<T, [A]>) => B, ta: $<T, [A]>) => $<T, [B]>;
   2: <E, A, B>(ftab: (t: $<T, [E, A]>) => B, ta: $<T, [E, A]>) => $<T, [E, B]>;
   3: <R, E, A, B>(
     ftab: (t: $<T, [R, E, A]>) => B,
-    ta: $<T, [R, E, A]>
+    ta: $<T, [R, E, A]>,
   ) => $<T, [R, E, B]>;
 }[L];
-
-export type Extend<T, L extends LS = 1> = Functor<T, L> & {
-  extend: ExtendFn<T, L>;
-};
 
 /**
  * Filterable
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#filterable
  */
+export type Filterable<T, L extends LS = 1> = {
+  filter: FilterableFn<T, L>;
+};
+
 export type FilterableFn<T, L extends LS> = {
   1: <A>(predicate: Predicate<A>, ta: $<T, [A]>) => $<T, [A]>;
   2: <E, A>(predicate: Predicate<A>, ta: $<T, [E, A]>) => $<T, [E, A]>;
   3: <R, E, A>(predicate: Predicate<A>, ta: $<T, [R, E, A]>) => $<T, [R, E, A]>;
 }[L];
 
-export type Filterable<T, L extends LS = 1> = {
-  filter: FilterableFn<T, L>;
-};
-
 /**
  * Foldable
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#foldable
  */
+
+export type Foldable<T, L extends LS = 1> = {
+  reduce: FoldableFn<T, L>;
+};
+
 export type FoldableFn<T, L extends LS> = {
   1: <A, B>(faba: (a: A, b: B) => A, a: A, tb: $<T, [B]>) => A;
   2: <E, A, B>(faba: (a: A, b: B) => A, a: A, tb: $<T, [E, B]>) => A;
   3: <R, E, A, B>(faba: (a: A, b: B) => A, a: A, tb: $<T, [R, E, B]>) => A;
 }[L];
 
-export type Foldable<T, L extends LS = 1> = {
-  reduce: FoldableFn<T, L>;
-};
-
 /**
  * Functor
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#functor
  */
+export type Functor<T, L extends LS = 1> = {
+  map: FunctorFn<T, L>;
+};
+
 export type FunctorFn<T, L extends LS> = {
   1: <A, B>(fab: (a: A) => B, ta: $<T, [A]>) => $<T, [B]>;
   2: <E, A, B>(fab: (a: A) => B, ta: $<T, [E, A]>) => $<T, [E, B]>;
   3: <R, E, A, B>(fab: (a: A) => B, ta: $<T, [R, E, A]>) => $<T, [R, E, B]>;
 }[L];
-
-export type Functor<T, L extends LS = 1> = {
-  map: FunctorFn<T, L>;
-};
 
 /**
  * Group
@@ -252,8 +253,10 @@ export type MonadFn<T, L extends LS> = {
   3: <R, E, A>(tta: $<T, [R, E, $<T, [R, E, A]>]>) => $<T, [R, E, A]>;
 }[L];
 
-export type Monad<T, L extends LS = 1> = Applicative<T, L> &
-  Chain<T, L> & {
+export type Monad<T, L extends LS = 1> =
+  & Applicative<T, L>
+  & Chain<T, L>
+  & {
     join: MonadFn<T, L>;
   };
 
@@ -295,7 +298,7 @@ export type Profunctor<T> = {
   promap: <A, B, C, D>(
     fab: (x: A) => B,
     fcd: (x: C) => D,
-    tbc: $<T, [B, C]>
+    tbc: $<T, [B, C]>,
   ) => $<T, [A, D]>;
 };
 
@@ -339,22 +342,24 @@ export type TraversableFn<T, L extends LS> = {
   1: <U, A, B>(
     A: Applicative<U>,
     faUb: (a: A) => $<U, [B]>,
-    Ta: $<T, [A]>
+    Ta: $<T, [A]>,
   ) => $<U, [$<T, [B]>]>;
   2: <U, E, A, B>(
     A: Applicative<U>,
     faUb: (a: A) => $<U, [B]>,
-    Ta: $<T, [E, A]>
+    Ta: $<T, [E, A]>,
   ) => $<U, [$<T, [E, B]>]>;
   3: <U, R, E, A, B>(
     A: Applicative<U>,
     faUb: (a: A) => $<U, [B]>,
-    Ta: $<T, [R, E, A]>
+    Ta: $<T, [R, E, A]>,
   ) => $<U, [$<T, [R, E, B]>]>;
 }[L];
 
-export type Traversable<T, L extends LS = 1> = Functor<T, L> &
-  Foldable<T, L> & {
+export type Traversable<T, L extends LS = 1> =
+  & Functor<T, L>
+  & Foldable<T, L>
+  & {
     traverse: TraversableFn<T, L>;
   };
 
@@ -394,10 +399,10 @@ export type ApplicativeP<T, L extends LS = 1> = ApplyP<T, L> & {
 export type ApplyFnP<T, L extends LS> = {
   1: <A, B>(tfab: $<T, [(a: A) => B]>) => (ta: $<T, [A]>) => $<T, [B]>;
   2: <E, A, B>(
-    tfab: $<T, [E, (a: A) => B]>
+    tfab: $<T, [E, (a: A) => B]>,
   ) => (ta: $<T, [E, A]>) => $<T, [E, B]>;
   3: <R, E, A, B>(
-    tfab: $<T, [R, E, (a: A) => B]>
+    tfab: $<T, [R, E, (a: A) => B]>,
   ) => (ta: $<T, [R, E, A]>) => $<T, [R, E, B]>;
 }[L];
 
@@ -411,7 +416,7 @@ export type ApplyP<T, L extends LS = 1> = FunctorP<T, L> & {
 export type BifunctorP<T> = {
   bimap: <A, B, C, D>(
     fab: (a: A) => B,
-    fcd: (c: C) => D
+    fcd: (c: C) => D,
   ) => (tac: $<T, [A, C]>) => $<T, [B, D]>;
 };
 
@@ -421,10 +426,10 @@ export type BifunctorP<T> = {
 export type ChainFnP<T, L extends LS> = {
   1: <A, B>(fatb: (a: A) => $<T, [B]>) => (ta: $<T, [A]>) => $<T, [B]>;
   2: <E, A, B>(
-    fatb: (a: A) => $<T, [E, B]>
+    fatb: (a: A) => $<T, [E, B]>,
   ) => (ta: $<T, [E, A]>) => $<T, [E, B]>;
   3: <R, E, A, B>(
-    fatb: (a: A) => $<T, [R, E, B]>
+    fatb: (a: A) => $<T, [R, E, B]>,
   ) => (ta: $<T, [R, E, A]>) => $<T, [R, E, B]>;
 }[L];
 
@@ -451,10 +456,10 @@ export type ContravariantP<T, L extends LS = 1> = {
 export type ExtendFnP<T, L extends LS> = {
   1: <A, B>(ftab: (t: $<T, [A]>) => B) => (ta: $<T, [A]>) => $<T, [B]>;
   2: <E, A, B>(
-    ftab: (t: $<T, [E, A]>) => B
+    ftab: (t: $<T, [E, A]>) => B,
   ) => (ta: $<T, [E, A]>) => $<T, [E, B]>;
   3: <R, E, A, B>(
-    ftab: (t: $<T, [R, E, A]>) => B
+    ftab: (t: $<T, [R, E, A]>) => B,
   ) => (ta: $<T, [R, E, A]>) => $<T, [R, E, B]>;
 }[L];
 
@@ -469,7 +474,7 @@ export type FilterableFnP<T, L extends LS> = {
   1: <A>(predicate: Predicate<A>) => (ta: $<T, [A]>) => $<T, [A]>;
   2: <E, A>(predicate: Predicate<A>) => (ta: $<T, [E, A]>) => $<T, [E, A]>;
   3: <R, E, A>(
-    predicate: Predicate<A>
+    predicate: Predicate<A>,
   ) => (ta: $<T, [R, E, A]>) => $<T, [R, E, A]>;
 }[L];
 
@@ -512,8 +517,10 @@ export type MonadFnP<T, L extends LS> = {
   3: <R, E, A>(tta: $<T, [R, E, $<T, [R, E, A]>]>) => $<T, [R, E, A]>;
 }[L];
 
-export type MonadP<T, L extends LS = 1> = ApplicativeP<T, L> &
-  ChainP<T, L> & {
+export type MonadP<T, L extends LS = 1> =
+  & ApplicativeP<T, L>
+  & ChainP<T, L>
+  & {
     join: MonadFnP<T, L>;
   };
 
@@ -523,7 +530,7 @@ export type MonadP<T, L extends LS = 1> = ApplicativeP<T, L> &
 export type ProfunctorP<T> = {
   promap: <A, B, C, D>(
     fab: (x: A) => B,
-    fcd: (x: C) => D
+    fcd: (x: C) => D,
   ) => (tbc: $<T, [B, C]>) => $<T, [A, D]>;
 };
 
@@ -540,19 +547,21 @@ export type SemigroupoidP<T> = {
 export type TraversableFnP<T, L extends LS> = {
   1: <U, A, B>(
     A: Applicative<U>,
-    faub: (a: A) => $<U, [B]>
+    faub: (a: A) => $<U, [B]>,
   ) => (ta: $<T, [A]>) => $<U, [$<T, [B]>]>;
   2: <U, E, A, B>(
     A: Applicative<U>,
-    faub: (a: A) => $<U, [B]>
+    faub: (a: A) => $<U, [B]>,
   ) => (ta: $<T, [E, A]>) => $<U, [$<T, [E, B]>]>;
   3: <U, R, E, A, B>(
     A: Applicative<U>,
-    faub: (a: A) => $<U, [B]>
+    faub: (a: A) => $<U, [B]>,
   ) => (ta: $<T, [R, E, A]>) => $<U, [$<T, [R, E, B]>]>;
 }[L];
 
-export type TraversableP<T, L extends LS = 1> = FunctorP<T, L> &
-  FoldableP<T, L> & {
+export type TraversableP<T, L extends LS = 1> =
+  & FunctorP<T, L>
+  & FoldableP<T, L>
+  & {
     traverse: TraversableFnP<T, L>;
   };

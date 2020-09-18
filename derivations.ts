@@ -7,7 +7,7 @@ import { identity } from "./fns.ts";
  **************************************************************************************************/
 
 /**
- * Derive Monad from of, map, and join.
+ * Derive Monad module from of and chain
  */
 type CreateMonad = {
   <T>(M: Pick<TC.Monad<T>, "of" | "chain">): TC.Monad<T>;
@@ -32,7 +32,7 @@ export const createMonad: CreateMonad = <T>({
 };
 
 /**
- * Derive MonadP from Monad.
+ * Derive Pipeable Monad from Monad.
  */
 type CreatePipeableMonad = {
   <T>(M: TC.Monad<T>): TC.MonadP<T>;
@@ -42,7 +42,7 @@ type CreatePipeableMonad = {
 };
 
 export const createPipeableMonad: CreatePipeableMonad = <T>(
-  M: TC.Monad<T>
+  M: TC.Monad<T>,
 ): TC.MonadP<T> => ({
   of: M.of,
   join: M.join,
@@ -52,7 +52,7 @@ export const createPipeableMonad: CreatePipeableMonad = <T>(
 });
 
 /**
- * Derive TraversableP from Traversable.
+ * Derive Pipeable Traversable from Traversable.
  */
 type CreatePipeableTraversable = {
   <T>(M: TC.Traversable<T>): TC.TraversableP<T>;
@@ -62,7 +62,7 @@ type CreatePipeableTraversable = {
 };
 
 export const createPipeableTraversable: CreatePipeableTraversable = <T>(
-  T: TC.Traversable<T>
+  T: TC.Traversable<T>,
 ): TC.TraversableP<T> => ({
   map: (fab) => (ta) => T.map(fab, ta),
   reduce: (faba, a) => (tb) => T.reduce(faba, a, tb),
@@ -70,7 +70,7 @@ export const createPipeableTraversable: CreatePipeableTraversable = <T>(
 });
 
 /**
- * Derive BifunctorP from Bifunctor.
+ * Derive Pipeable Bifunctor from Bifunctor.
  */
 export const createPipeableBifunctor = <T>({
   bimap,

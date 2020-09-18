@@ -33,25 +33,25 @@ Deno.test("Fn pipe", () => {
   assertEquals(
     pipe(O.some(1), addOneMap, addOneMap),
     O.some(3),
-    "Pipe 3 Functions"
+    "Pipe 3 Functions",
   );
 
   assertEquals(
     pipe(O.some(1), addOneMap, addOneMap, addOneMap),
     O.some(4),
-    "Pipe 4 Functions"
+    "Pipe 4 Functions",
   );
 
   assertEquals(
     pipe(O.some(1), addOneMap, addOneMap, addOneMap, addOneMap),
     O.some(5),
-    "Pipe 5 Functions"
+    "Pipe 5 Functions",
   );
 
   assertEquals(
     pipe(O.some(1), addOneMap, addOneMap, addOneMap, addOneMap, addOneMap),
     O.some(6),
-    "Pipe 6 Functions"
+    "Pipe 6 Functions",
   );
 
   assertEquals(
@@ -62,10 +62,10 @@ Deno.test("Fn pipe", () => {
       addOneMap,
       addOneMap,
       addOneMap,
-      addOneMap
+      addOneMap,
     ),
     O.some(7),
-    "Pipe 7 Functions"
+    "Pipe 7 Functions",
   );
 
   assertEquals(
@@ -77,10 +77,10 @@ Deno.test("Fn pipe", () => {
       addOneMap,
       addOneMap,
       addOneMap,
-      addOneMap
+      addOneMap,
     ),
     O.some(8),
-    "Pipe 8 Functions"
+    "Pipe 8 Functions",
   );
 
   assertEquals(
@@ -93,9 +93,9 @@ Deno.test("Fn pipe", () => {
       addOneMap,
       addOneMap,
       addOneMap,
-      addOneMap
+      addOneMap,
     ),
     O.some(9),
-    "Pipe 9 Functions"
+    "Pipe 9 Functions",
   );
 });

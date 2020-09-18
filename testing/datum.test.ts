@@ -58,7 +58,7 @@ Deno.test({
     const { traverse } = D.Traversable;
     assertEquals(
       traverse(D.Applicative, (_) => D.replete(1), D.initial),
-      D.replete(D.initial)
+      D.replete(D.initial),
     );
   },
 });

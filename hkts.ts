@@ -41,15 +41,13 @@ export interface Fixed<T> {
  *     // RecordInstance = <A, B>(fab: (a: A) => B, ta: { value: A }): { value: B }
  **************************************************************************************************/
 
-// prettier-ignore
 export type $<T, S extends any[]> = (
-  T extends Fixed<infer U> ? U :
-  T extends _<infer N> ? S[N] :
-  T extends any[] ? { [K in keyof T]: $<T[K], S> } :
-  T extends Promise<infer I> ? Promise<$<I, S>> :
-  // T extends (...x: infer I) => (...x: infer J) => infer O ? (...x: $<I, S>) => (...x: $<J, S>) => $<O, S> :
-  T extends (...x: infer I) => infer O ? (...x: $<I, S>) => $<O, S> :
-  T extends object ? { [K in keyof T]: $<T[K], S> } :
-  T extends undefined | null | boolean | string | number ? T :
-  T
+  T extends Fixed<infer U> ? U
+    : T extends _<infer N> ? S[N]
+    : T extends any[] ? { [K in keyof T]: $<T[K], S> }
+    : T extends Promise<infer I> ? Promise<$<I, S>>
+    T extends (...x: infer I) => infer O ? (...x: $<I, S>) => $<O, S>
+    : T extends object ? { [K in keyof T]: $<T[K], S> }
+    : T extends undefined | null | boolean | string | number ? T
+    : T
 );

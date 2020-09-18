@@ -24,12 +24,14 @@ export const of = <A>(a: A): Task<A> => () => Promise.resolve(a);
  * @section Combinators
  **************************************************************************************************/
 
-export const delay = (ms: number) => <A>(ma: Task<A>): Task<A> => () =>
-  new Promise((resolve) => {
-    setTimeout(() => {
-      ma().then(resolve);
-    }, ms);
-  });
+export const delay = (ms: number) =>
+  <A>(ma: Task<A>): Task<A> =>
+    () =>
+      new Promise((resolve) => {
+        setTimeout(() => {
+          ma().then(resolve);
+        }, ms);
+      });
 
 /***************************************************************************************************
  * @section Guards

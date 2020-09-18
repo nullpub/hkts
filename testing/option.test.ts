@@ -5,8 +5,7 @@ import * as O from "../option.ts";
 
 const add = (a: number, b: number) => a + b;
 const addOne = (n: number): number => n + 1;
-const chainOne = (n: number): O.Option<number> =>
-  n !== 1 ? O.some(n) : O.none;
+const chainOne = (n: number): O.Option<number> => n !== 1 ? O.some(n) : O.none;
 
 Deno.test({
   name: "Option Constructors",
@@ -77,7 +76,7 @@ Deno.test({
     const { traverse } = O.Traversable;
     assertEquals(
       traverse(O.Applicative, (a) => O.some(1), O.none),
-      O.some(O.none)
+      O.some(O.none),
     );
   },
 });

@@ -1,13 +1,13 @@
 import type * as TC from "./type_classes.ts";
 import type { _ } from "./hkts.ts";
 
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { isNotNil, Lazy, Predicate } from "./fns.ts";
 import {
   createMonad,
   createPipeableMonad,
   createPipeableTraversable,
 } from "./derivations.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -28,9 +28,10 @@ export const constNone = () => none;
 export const fromNullable = <A>(a: A): Option<NonNullable<A>> =>
   isNotNil(a) ? some(a) : none;
 
-export const fromPredicate = <A>(predicate: Predicate<A>) => (
-  a: A
-): Option<A> => (predicate(a) ? some(a) : none);
+export const fromPredicate = <A>(predicate: Predicate<A>) =>
+  (
+    a: A,
+  ): Option<A> => (predicate(a) ? some(a) : none);
 
 export const tryCatch = <A>(f: Lazy<A>): Option<A> => {
   try {
@@ -44,9 +45,10 @@ export const tryCatch = <A>(f: Lazy<A>): Option<A> => {
  * @section Destructors
  **************************************************************************************************/
 
-export const fold = <A, B>(onSome: (a: A) => B, onNone: () => B) => (
-  ta: Option<A>
-): B => (isNone(ta) ? onNone() : onSome(ta.value));
+export const fold = <A, B>(onSome: (a: A) => B, onNone: () => B) =>
+  (
+    ta: Option<A>,
+  ): B => (isNone(ta) ? onNone() : onSome(ta.value));
 
 export const getOrElse = <B>(onNone: () => B, ta: Option<B>): B =>
   isNone(ta) ? onNone() : ta.value;
@@ -61,9 +63,10 @@ export const toUndefined = <A>(ma: Option<A>): A | undefined =>
  * @section Combinators
  **************************************************************************************************/
 
-export const mapNullable = <A, B>(f: (a: A) => B | null | undefined) => (
-  ma: Option<A>
-): Option<B> => (isNone(ma) ? none : fromNullable(f(ma.value)));
+export const mapNullable = <A, B>(f: (a: A) => B | null | undefined) =>
+  (
+    ma: Option<A>,
+  ): Option<B> => (isNone(ma) ? none : fromNullable(f(ma.value)));
 
 /***************************************************************************************************
  * @section Guards
@@ -78,6 +81,13 @@ export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
 
 export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Option<A>> => ({
   show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
+});
+
+export const getSemigroup = <A>(
+  S: TC.Semigroup<A>,
+): TC.Semigroup<Option<A>> => ({
+  concat: (x, y) =>
+    isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value, y.value)),
 });
 
 export const Monad = createMonad<Option<_>>({

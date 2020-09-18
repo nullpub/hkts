@@ -66,19 +66,20 @@ export const fold = <A, B>(
   onInitial: () => B,
   onPending: () => B,
   onRefresh: (a: A) => B,
-  onReplete: (a: A) => B
-) => (ma: Datum<A>): B => {
-  switch (ma.tag) {
-    case "Initial":
-      return onInitial();
-    case "Pending":
-      return onPending();
-    case "Refresh":
-      return onRefresh(ma.value);
-    case "Replete":
-      return onReplete(ma.value);
-  }
-};
+  onReplete: (a: A) => B,
+) =>
+  (ma: Datum<A>): B => {
+    switch (ma.tag) {
+      case "Initial":
+        return onInitial();
+      case "Pending":
+        return onPending();
+      case "Refresh":
+        return onRefresh(ma.value);
+      case "Replete":
+        return onReplete(ma.value);
+    }
+  };
 
 export const getOrElse = <A>(onNone: Lazy<A>) =>
   fold<A, A>(onNone, onNone, identity, identity);
@@ -87,9 +88,10 @@ export const getOrElse = <A>(onNone: Lazy<A>) =>
  * @section Combinators
  **************************************************************************************************/
 
-export const mapNullable = <A, B>(f: (a: A) => B | null | undefined) => (
-  ma: Datum<A>
-): Datum<B> => (isNone(ma) ? initial : fromNullable(f(ma.value)));
+export const mapNullable = <A, B>(f: (a: A) => B | null | undefined) =>
+  (
+    ma: Datum<A>,
+  ): Datum<B> => (isNone(ma) ? initial : fromNullable(f(ma.value)));
 
 /***************************************************************************************************
  * @section Modules
@@ -100,7 +102,7 @@ export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Datum<A>> => ({
     () => `Initial`,
     () => `Pending`,
     (a) => `Refresh(${show(a)})`,
-    (a) => `Replete(${show(a)})`
+    (a) => `Replete(${show(a)})`,
   ),
 });
 
@@ -108,8 +110,10 @@ export const getSemigroup = <E, A>({
   concat,
 }: TC.Semigroup<A>): TC.Semigroup<Datum<A>> => ({
   concat: (mx, my) => {
-    if (isNone(my) || isNone(mx)) {
+    if (isNone(my)) {
       return mx;
+    } else if (isNone(mx)) {
+      return my;
     } else {
       if (isRefresh(my) || isRefresh(mx)) {
         return refresh(concat(mx.value, my.value));

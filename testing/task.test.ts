@@ -20,39 +20,39 @@ Deno.test({
     assertEquals(
       await T.Monad.chain(famb, T.Monad.of(1))(),
       await famb(1)(),
-      `Task : Monad Left Identity`
+      `Task : Monad Left Identity`,
     );
 
     // Monad Right Identity: M.chain(M.of, u) ≡ u
     assertEquals(
       await T.Monad.chain<number, number>(T.Monad.of, T.Monad.of(1))(),
       await T.Monad.of(1)(),
-      `Task : Monad Right Identity`
+      `Task : Monad Right Identity`,
     );
 
     // Monad Associativity: M.chain(b => Mc, M.chain(a => Mb, Ma)) === M.chain(a => M.chain(b => Mc, (a => Mb)(a)), Ma)
     assertEquals(
       await T.Monad.chain<number, string>(
         fbmc,
-        T.Monad.chain<number, number>(famb, T.Monad.of(1))
+        T.Monad.chain<number, number>(famb, T.Monad.of(1)),
       )(),
       await T.Monad.chain<number, string>(
         (a) => T.Monad.chain<number, string>(fbmc, famb(a)),
-        T.Monad.of(1)
+        T.Monad.of(1),
       )(),
-      `Task : Monad Associativity 1`
+      `Task : Monad Associativity 1`,
     );
 
     assertEquals(
       T.Monad.chain(
         fbmc,
-        T.Monad.chain<number, number>(famb, T.Monad.of(-1))
+        T.Monad.chain<number, number>(famb, T.Monad.of(-1)),
       )(),
       T.Monad.chain<number, string>(
         (a) => T.Monad.chain<number, string>(fbmc, famb(a)),
-        T.Monad.of(-1)
+        T.Monad.of(-1),
       )(),
-      `Task : Monad Associativity 2`
+      `Task : Monad Associativity 2`,
     );
 
     const fatb = (n: number) => T.Monad.of(n + 1);
@@ -62,13 +62,13 @@ Deno.test({
     assertEquals(
       await T.Monad.chain(
         fbtc,
-        T.Monad.chain<number, number>(fatb, T.Monad.of(1))
+        T.Monad.chain<number, number>(fatb, T.Monad.of(1)),
       )(),
       await T.Monad.chain<number, string>(
         (x) => T.Monad.chain<number, string>(fbtc, fatb(x)),
-        T.Monad.of(1)
+        T.Monad.of(1),
       )(),
-      `Task : Chain Associativity`
+      `Task : Chain Associativity`,
     );
 
     const fab = (n: number) => n + 1;
@@ -80,68 +80,68 @@ Deno.test({
       await T.Apply.ap(
         T.Monad.ap<any, any>(
           T.Monad.map(fgab, T.Monad.of(fbc)),
-          T.Monad.of(fab)
+          T.Monad.of(fab),
         ),
-        T.Monad.of(1)
+        T.Monad.of(1),
       )(),
       await T.Monad.ap<any, any>(
         T.Monad.of(fbc),
-        T.Monad.ap(T.Monad.of<any>(fab), T.Monad.of(1))
+        T.Monad.ap(T.Monad.of<any>(fab), T.Monad.of(1)),
       )(),
-      `Task : Apply Composition`
+      `Task : Apply Composition`,
     );
 
     // Functor Identity: F.map(x => x, a) ≡ a
     assertEquals(
       await T.Applicative.map((n: number) => n, T.Applicative.of(1))(),
       await T.Applicative.of(1)(),
-      `Task : Functor Identity`
+      `Task : Functor Identity`,
     );
 
     // Functor Composition: F.map(x => f(g(x)), a) ≡ F.map(f, F.map(g, a))
     assertEquals(
       await T.Applicative.map(
         (x: number) => fbc(fab(x)),
-        T.Applicative.of(1)
+        T.Applicative.of(1),
       )(),
       await T.Applicative.map(
         fbc,
-        T.Applicative.map(fab, T.Applicative.of(1))
+        T.Applicative.map(fab, T.Applicative.of(1)),
       )(),
-      `Task : Functor Composition`
+      `Task : Functor Composition`,
     );
 
     // Applicative Identity: A.ap(A.of(x => x), v) ≡ v
     assertEquals(
       await T.Applicative.ap<number, number>(
         T.Applicative.of((n: number): number => n),
-        T.Applicative.of(1)
+        T.Applicative.of(1),
       )(),
       await T.Applicative.of(1)(),
-      `Task : Applicative Identity`
+      `Task : Applicative Identity`,
     );
 
     // Applicative Homomorphism: M.ap(A.of(f), A.of(x)) ≡ A.of(f(x))
     assertEquals(
       await T.Applicative.ap<number, number>(
         T.Applicative.of(fab),
-        T.Applicative.of(1)
+        T.Applicative.of(1),
       )(),
       await T.Applicative.of(fab(1))(),
-      `Task : Applicative Homomorphism`
+      `Task : Applicative Homomorphism`,
     );
 
     // Applicative Interchange: A.ap(u, A.of(y)) ≡ A.ap(A.of(f => f(y)), u)
     assertEquals(
       await T.Applicative.ap<number, number>(
         T.Applicative.of(fab),
-        T.Applicative.of(2)
+        T.Applicative.of(2),
       )(),
       await T.Applicative.ap<number, number>(
         T.Applicative.of<any>((f: typeof fab) => f(2)),
-        T.Applicative.of<any>(fab)
+        T.Applicative.of<any>(fab),
       )(),
-      `Task : Applicative Interchange`
+      `Task : Applicative Interchange`,
     );
   },
 });

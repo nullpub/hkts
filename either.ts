@@ -26,7 +26,7 @@ export function fromNullable<E>(e: E): <A>(a: A) => Either<E, NonNullable<A>> {
 
 export function tryCatch<E, A>(
   f: Lazy<A>,
-  onError: (e: unknown) => E
+  onError: (e: unknown) => E,
 ): Either<E, A> {
   try {
     return right(f());
@@ -37,11 +37,11 @@ export function tryCatch<E, A>(
 
 export const fromPredicate: {
   <E, A, B extends A>(refinement: Refinement<A, B>, onFalse: (a: A) => E): (
-    a: A
+    a: A,
   ) => Either<E, B>;
   <E, A>(predicate: Predicate<A>, onFalse: (a: A) => E): (a: A) => Either<E, A>;
-} = <E, A>(predicate: Predicate<A>, onFalse: (a: A) => E) => (a: A) =>
-  predicate(a) ? right(a) : left(onFalse(a));
+} = <E, A>(predicate: Predicate<A>, onFalse: (a: A) => E) =>
+  (a: A) => predicate(a) ? right(a) : left(onFalse(a));
 
 /***************************************************************************************************
  * @section Destructors
@@ -49,12 +49,11 @@ export const fromPredicate: {
 
 export const fold = <L, R, B>(
   onLeft: (left: L) => B,
-  onRight: (right: R) => B
-) => (ma: Either<L, R>): B =>
-  isLeft(ma) ? onLeft(ma.left) : onRight(ma.right);
+  onRight: (right: R) => B,
+) => (ma: Either<L, R>): B => isLeft(ma) ? onLeft(ma.left) : onRight(ma.right);
 
-export const getOrElse = <E, A>(onLeft: (e: E) => A) => (ma: Either<E, A>): A =>
-  isLeft(ma) ? onLeft(ma.left) : ma.right;
+export const getOrElse = <E, A>(onLeft: (e: E) => A) =>
+  (ma: Either<E, A>): A => isLeft(ma) ? onLeft(ma.left) : ma.right;
 
 /***************************************************************************************************
  * @section Combinators
@@ -63,9 +62,10 @@ export const getOrElse = <E, A>(onLeft: (e: E) => A) => (ma: Either<E, A>): A =>
 export const swap = <E, A>(ma: Either<E, A>): Either<A, E> =>
   isLeft(ma) ? right(ma.left) : left(ma.right);
 
-export const orElse = <E, A, M>(onLeft: (e: E) => Either<M, A>) => (
-  ma: Either<E, A>
-): Either<M, A> => (isLeft(ma) ? onLeft(ma.left) : ma);
+export const orElse = <E, A, M>(onLeft: (e: E) => Either<M, A>) =>
+  (
+    ma: Either<E, A>,
+  ): Either<M, A> => (isLeft(ma) ? onLeft(ma.left) : ma);
 
 /***************************************************************************************************
  * @section Guards
@@ -81,14 +81,14 @@ export const isRight = <L, R>(m: Either<L, R>): m is Right<R> =>
 
 export const getShow = <E, A>(
   Se: TC.Show<E>,
-  Sa: TC.Show<A>
+  Sa: TC.Show<A>,
 ): TC.Show<Either<E, A>> => ({
   show: (ma) =>
     isLeft(ma) ? `Left(${Se.show(ma.left)})` : `Right(${Sa.show(ma.right)})`,
 });
 
 export const getSemigroup = <E, A>(
-  S: TC.Semigroup<A>
+  S: TC.Semigroup<A>,
 ): TC.Semigroup<Either<E, A>> => ({
   concat: (x, y) =>
     isLeft(y) ? x : isLeft(x) ? y : right(S.concat(x.right, y.right)),

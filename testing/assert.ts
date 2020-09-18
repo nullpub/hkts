@@ -16,7 +16,7 @@ type AssertApplicative = {
 
 export const assertApplicative: AssertApplicative = <T>(
   M: TC.Applicative<T>,
-  name: string
+  name: string,
 ): void => {
   const fab = (n: number) => n + 1;
   const fbc = (n: number): string => n.toString();
@@ -26,38 +26,38 @@ export const assertApplicative: AssertApplicative = <T>(
   assertEquals(
     M.ap(M.ap(M.map(fgab, M.of(fbc)), M.of(fab)), M.of(1)),
     M.ap(M.of(fbc), M.ap(M.of(fab), M.of(1))),
-    `${name} : Apply Composition`
+    `${name} : Apply Composition`,
   );
 
   // Functor Identity: F.map(x => x, a) ≡ a
   assertEquals(
     M.map((n: number) => n, M.of(1)),
     M.of(1),
-    `${name} : Functor Identity`
+    `${name} : Functor Identity`,
   );
 
   // Functor Composition: F.map(x => f(g(x)), a) ≡ F.map(f, F.map(g, a))
   assertEquals(
     M.map((x: number) => fbc(fab(x)), M.of(1)),
     M.map(fbc, M.map(fab, M.of(1))),
-    `${name} : Functor Composition`
+    `${name} : Functor Composition`,
   );
 
   // Applicative Identity: A.ap(A.of(x => x), v) ≡ v
   assertEquals(
     M.ap(
       M.of((n: number) => n),
-      M.of(1)
+      M.of(1),
     ),
     M.of(1),
-    `${name} : Applicative Identity`
+    `${name} : Applicative Identity`,
   );
 
   // Applicative Homomorphism: M.ap(A.of(f), A.of(x)) ≡ A.of(f(x))
   assertEquals(
     M.ap(M.of(fab), M.of(1)),
     M.of(fab(1)),
-    `${name} : Applicative Homomorphism`
+    `${name} : Applicative Homomorphism`,
   );
 
   // Applicative Interchange: A.ap(u, A.of(y)) ≡ A.ap(A.of(f => f(y)), u)
@@ -65,9 +65,9 @@ export const assertApplicative: AssertApplicative = <T>(
     M.ap(M.of(fab), M.of(2)),
     M.ap(
       M.of((f: typeof fab) => f(2)),
-      M.of(fab)
+      M.of(fab),
     ),
-    `${name} : Applicative Interchange`
+    `${name} : Applicative Interchange`,
   );
 };
 
@@ -78,21 +78,21 @@ export const assertApplicative: AssertApplicative = <T>(
 type AssertChain = {
   <T, L extends 1>(
     M: TC.Applicative<T, L> & TC.Chain<T, L>,
-    name: string
+    name: string,
   ): void;
   <T, L extends 2>(
     M: TC.Applicative<T, L> & TC.Chain<T, L>,
-    name: string
+    name: string,
   ): void;
   <T, L extends 3>(
     M: TC.Applicative<T, L> & TC.Chain<T, L>,
-    name: string
+    name: string,
   ): void;
 };
 
 export const assertChain: AssertChain = <T>(
   M: TC.Applicative<T> & TC.Chain<T>,
-  name: string
+  name: string,
 ): void => {
   const fatb = (n: number) => M.of(n + 1);
   const fbtc = (n: number) => M.of(n.toString());
@@ -101,7 +101,7 @@ export const assertChain: AssertChain = <T>(
   assertEquals(
     M.chain(fbtc, M.chain(fatb, M.of(1))),
     M.chain((x) => M.chain(fbtc, fatb(x)), M.of(1)),
-    `${name} : Chain Associativity`
+    `${name} : Chain Associativity`,
   );
 };
 
@@ -116,7 +116,7 @@ type AssertMonad = {
 
 export const assertMonad: AssertMonad = <T>(
   M: TC.Monad<T>,
-  name: string
+  name: string,
 ): void => {
   const famb = (n: number) => (n < 0 ? M.of(0) : M.of(n));
   const fbmc = (n: number) => M.of(n.toString());
@@ -125,27 +125,27 @@ export const assertMonad: AssertMonad = <T>(
   assertEquals(
     M.chain(famb, M.of(1)),
     famb(1),
-    `${name} : Monad Left Identity`
+    `${name} : Monad Left Identity`,
   );
 
   // Monad Right Identity: M.chain(M.of, u) ≡ u
   assertEquals(
     M.chain(M.of, M.of(1)),
     M.of(1),
-    `${name} : Monad Right Identity`
+    `${name} : Monad Right Identity`,
   );
 
   // Monad Associativity: M.chain(b => Mc, M.chain(a => Mb, Ma)) === M.chain(a => M.chain(b => Mc, (a => Mb)(a)), Ma)
   assertEquals(
     M.chain(fbmc, M.chain(famb, M.of(1))),
     M.chain((a) => M.chain(fbmc, famb(a)), M.of(1)),
-    `${name} : Monad Associativity 1`
+    `${name} : Monad Associativity 1`,
   );
 
   assertEquals(
     M.chain(fbmc, M.chain(famb, M.of(-1))),
     M.chain((a) => M.chain(fbmc, famb(a)), M.of(-1)),
-    `${name} : Monad Associativity 2`
+    `${name} : Monad Associativity 2`,
   );
 
   // Monads must support Applicative

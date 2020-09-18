@@ -31,21 +31,27 @@ export const isNil = (a: unknown): a is Nil => a === null || a === undefined;
  * @section Helper Functions
  **************************************************************************************************/
 
-export const curry2 = <A, B, C>(fn: (a: A, b: B) => C) => (a: A) => (b: B): C =>
-  fn(a, b);
-export const curry3 = <A, B, C, D>(fn: (a: A, b: B, c: C) => D) => (a: A) => (
-  b: B
-) => (c: C): D => fn(a, b, c);
+export const curry2 = <A, B, C>(fn: (a: A, b: B) => C) =>
+  (a: A) => (b: B): C => fn(a, b);
+export const curry3 = <A, B, C, D>(fn: (a: A, b: B, c: C) => D) =>
+  (a: A) =>
+    (
+      b: B,
+    ) => (c: C): D => fn(a, b, c);
 
 export const identity = <A>(a: A): A => a;
 
-export const flip = <A, B, C>(f: (a: A) => (b: B) => C) => (b: B) => (
-  a: A
-): C => f(a)(b);
+export const flip = <A, B, C>(f: (a: A) => (b: B) => C) =>
+  (b: B) =>
+    (
+      a: A,
+    ): C => f(a)(b);
 
-export const compose = <A, B>(fab: (a: A) => B) => <C>(fbc: (b: B) => C) => (
-  a: A
-): C => fbc(fab(a));
+export const compose = <A, B>(fab: (a: A) => B) =>
+  <C>(fbc: (b: B) => C) =>
+    (
+      a: A,
+    ): C => fbc(fab(a));
 
 export const constant = <A>(a: A): Lazy<A> => () => a;
 
@@ -64,14 +70,14 @@ export function pipe<A, B, C, D>(
   a: A,
   ab: (a: A) => B,
   bc: (b: B) => C,
-  cd: (c: C) => D
+  cd: (c: C) => D,
 ): D;
 export function pipe<A, B, C, D, E>(
   a: A,
   ab: (a: A) => B,
   bc: (b: B) => C,
   cd: (c: C) => D,
-  de: (d: D) => E
+  de: (d: D) => E,
 ): E;
 export function pipe<A, B, C, D, E, F>(
   a: A,
@@ -79,7 +85,7 @@ export function pipe<A, B, C, D, E, F>(
   bc: (b: B) => C,
   cd: (c: C) => D,
   de: (d: D) => E,
-  ef: (e: E) => F
+  ef: (e: E) => F,
 ): F;
 export function pipe<A, B, C, D, E, F, G>(
   a: A,
@@ -88,7 +94,7 @@ export function pipe<A, B, C, D, E, F, G>(
   cd: (c: C) => D,
   de: (d: D) => E,
   ef: (e: E) => F,
-  fg: (f: F) => G
+  fg: (f: F) => G,
 ): G;
 export function pipe<A, B, C, D, E, F, G, H>(
   a: A,
@@ -98,7 +104,7 @@ export function pipe<A, B, C, D, E, F, G, H>(
   de: (d: D) => E,
   ef: (e: E) => F,
   fg: (f: F) => G,
-  gh: (g: G) => H
+  gh: (g: G) => H,
 ): H;
 export function pipe<A, B, C, D, E, F, G, H, I>(
   a: A,
@@ -109,7 +115,7 @@ export function pipe<A, B, C, D, E, F, G, H, I>(
   ef: (e: E) => F,
   fg: (f: F) => G,
   gh: (g: G) => H,
-  hi: (h: H) => I
+  hi: (h: H) => I,
 ): I;
 export function pipe<A, B, C, D, E, F, G, H, I, J, K>(
   a: A,
@@ -122,7 +128,7 @@ export function pipe<A, B, C, D, E, F, G, H, I, J, K>(
   gh: (g: G) => H,
   hi: (h: H) => I,
   ij: (i: I) => J,
-  jk: (j: J) => K
+  jk: (j: J) => K,
 ): K;
 export function pipe<A, B, C, D, E, F, G, H, I, J, K, L>(
   a: A,
@@ -136,7 +142,7 @@ export function pipe<A, B, C, D, E, F, G, H, I, J, K, L>(
   hi: (h: H) => I,
   ij: (i: I) => J,
   jk: (j: J) => K,
-  kl: (K: K) => L
+  kl: (K: K) => L,
 ): L;
 export function pipe<A, B, C, D, E, F, G, H, I, J, K, L>(
   a: A,
@@ -151,7 +157,7 @@ export function pipe<A, B, C, D, E, F, G, H, I, J, K, L>(
   ij: (i: I) => J,
   jk: (j: J) => K,
   kl: (K: K) => L,
-  end: never
+  end: never,
 ): L;
 export function pipe(a: unknown, ...fns: Function[]): unknown {
   return fns.reduce((val, fn) => fn(val), a);
