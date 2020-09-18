@@ -1,13 +1,9 @@
-import type * as TC from "./type-classes.ts";
+import type * as TC from "./type_classes.ts";
 import type { _0, _1 } from "./hkts.ts";
 
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { isNotNil, Lazy, Predicate, Refinement } from "./fns.ts";
-import {
-  createMonad2,
-  createPipeableBifunctor,
-  createPipeableMonad,
-  createPipeableTraversable,
-} from "./derivations.ts";
+import * as D from "./derivations.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -98,29 +94,29 @@ export const getSemigroup = <E, A>(
     isLeft(y) ? x : isLeft(x) ? y : right(S.concat(x.right, y.right)),
 });
 
-export const Foldable: TC.Foldable2<Either<_0, _1>> = {
+export const Foldable: TC.Foldable<Either<_0, _1>, 2> = {
   reduce: (faba, a, tb) => (isRight(tb) ? faba(a, tb.right) : a),
 };
 
-export const Monad = createMonad2<Either<_0, _1>>({
+export const Monad = D.createMonad<Either<_0, _1>, 2>({
   of: right,
   chain: (fatb, ta) => (isRight(ta) ? fatb(ta.right) : ta),
 });
 
-export const Traversable: TC.Traversable2<Either<_0, _1>> = {
+export const Traversable: TC.Traversable<Either<_0, _1>, 2> = {
   map: Monad.map,
   reduce: Foldable.reduce,
   traverse: (F, faub, ta) =>
     isLeft(ta) ? F.of(left(ta.left)) : F.map(right, faub(ta.right)),
 };
 
-export const Applicative: TC.Applicative2<Either<_0, _1>> = {
+export const Applicative: TC.Applicative<Either<_0, _1>, 2> = {
   of: Monad.of,
   ap: Monad.ap,
   map: Monad.map,
 };
 
-export const Apply: TC.Apply2<Either<_0, _1>> = {
+export const Apply: TC.Apply<Either<_0, _1>, 2> = {
   ap: Monad.ap,
   map: Monad.map,
 };
@@ -134,8 +130,16 @@ export const Bifunctor: TC.Bifunctor<Either<_0, _1>> = {
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
 
-export const { reduce, traverse } = createPipeableTraversable(Traversable);
+export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
 
-export const { bimap } = createPipeableBifunctor(Bifunctor);
+export const { bimap } = D.createPipeableBifunctor(Bifunctor);
+
+/***************************************************************************************************
+ * @section Sequence
+ **************************************************************************************************/
+
+export const sequenceTuple = createSequenceTuple(Apply);
+
+export const sequenceStruct = createSequenceStruct(Apply);

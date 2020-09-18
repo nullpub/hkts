@@ -1,4 +1,5 @@
-import type * as TC from "./type-classes.ts";
+import type * as TC from "./type_classes.ts";
+
 import { identity } from "./fns.ts";
 
 /***************************************************************************************************
@@ -8,11 +9,19 @@ import { identity } from "./fns.ts";
 /**
  * Derive Monad from of, map, and join.
  */
-export function createMonad<T>({
+type CreateMonad = {
+  <T>(M: Pick<TC.Monad<T>, "of" | "chain">): TC.Monad<T>;
+  <T, L extends 1>(M: Pick<TC.Monad<T, L>, "of" | "chain">): TC.Monad<T, L>;
+  <T, L extends 2>(M: Pick<TC.Monad<T, L>, "of" | "chain">): TC.Monad<T, L>;
+  <T, L extends 3>(M: Pick<TC.Monad<T, L>, "of" | "chain">): TC.Monad<T, L>;
+};
+
+export const createMonad: CreateMonad = <T>({
   of,
   chain,
-}: Pick<TC.Monad<T>, "of" | "chain">): TC.Monad<T> {
-  const map: TC.Functor<T>["map"] = (fab, ta) => chain((a) => of(fab(a)), ta);
+}: Pick<TC.Monad<T>, "of" | "chain">): TC.Monad<T> => {
+  const map: TC.FunctorFn<T, 1> = (fab, ta) => chain((a) => of(fab(a)), ta);
+
   return {
     of,
     map,
@@ -20,41 +29,44 @@ export function createMonad<T>({
     join: (tta) => chain(identity, tta),
     ap: (tfab, ta) => chain((f) => map(f, ta), tfab),
   };
-}
+};
 
 /**
- * Derive Monad2 from of, map, and join.
+ * Derive MonadP from Monad.
  */
-export function createMonad2<T>(
-  M: Pick<TC.Monad2<T>, "of" | "chain">
-): TC.Monad2<T> {
-  return createMonad<T>(M as TC.Monad<T>) as TC.Monad2<T>;
-}
-
-/**
- * Derive MonadP from Monad or Monad2.
- */
-export const createPipeableMonad: {
+type CreatePipeableMonad = {
   <T>(M: TC.Monad<T>): TC.MonadP<T>;
-  <T>(M: TC.Monad2<T>): TC.Monad2P<T>;
-} = <T>({ of, ap, map, join, chain }: TC.Monad<T>): TC.MonadP<T> => ({
-  of,
-  join,
-  map: (fab) => (ta) => map(fab, ta),
-  chain: (fatb) => (ta) => chain(fatb, ta),
-  ap: (tfab) => (ta) => ap(tfab, ta),
+  <T, L extends 1>(M: TC.Monad<T>): TC.MonadP<T, L>;
+  <T, L extends 2>(M: TC.Monad<T, L>): TC.MonadP<T, L>;
+  <T, L extends 3>(M: TC.Monad<T, L>): TC.MonadP<T, L>;
+};
+
+export const createPipeableMonad: CreatePipeableMonad = <T>(
+  M: TC.Monad<T>
+): TC.MonadP<T> => ({
+  of: M.of,
+  join: M.join,
+  map: (fab) => (ta) => M.map(fab, ta),
+  chain: (fatb) => (ta) => M.chain(fatb, ta),
+  ap: (tfab) => (ta) => M.ap(tfab, ta),
 });
 
 /**
- * Derive TraversableP from Traversable or Traversable2.
+ * Derive TraversableP from Traversable.
  */
-export const createPipeableTraversable: {
+type CreatePipeableTraversable = {
   <T>(M: TC.Traversable<T>): TC.TraversableP<T>;
-  <T>(M: TC.Traversable2<T>): TC.Traversable2P<T>;
-} = <T>({ traverse, reduce, map }: TC.Traversable<T>): TC.TraversableP<T> => ({
-  map: (fab) => (ta) => map(fab, ta),
-  reduce: (faba, a) => (ta) => reduce(faba, a, ta),
-  traverse: (A, faub) => (ta) => traverse(A, faub, ta),
+  <T, L extends 1>(M: TC.Traversable<T, L>): TC.TraversableP<T, L>;
+  <T, L extends 2>(M: TC.Traversable<T, L>): TC.TraversableP<T, L>;
+  <T, L extends 3>(M: TC.Traversable<T, L>): TC.TraversableP<T, L>;
+};
+
+export const createPipeableTraversable: CreatePipeableTraversable = <T>(
+  T: TC.Traversable<T>
+): TC.TraversableP<T> => ({
+  map: (fab) => (ta) => T.map(fab, ta),
+  reduce: (faba, a) => (tb) => T.reduce(faba, a, tb),
+  traverse: (A, faub) => (ta) => T.traverse(A, faub, ta),
 });
 
 /**

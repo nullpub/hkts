@@ -1,9 +1,10 @@
 import type { $, _, _0, _1 } from "./hkts.ts";
-import type { Apply, Apply2 } from "./type-classes.ts";
+import type { Apply, LS } from "./type_classes.ts";
 
 /**
  * @todo Credit gcanti or reimplemment
- * Sequence is not yet in its final implementation
+ * Sequence is not yet in its final implementation.
+ * These helpers might be made easier to reason about
  */
 
 function _tuple<T extends ReadonlyArray<any>>(...t: T): T {
@@ -36,22 +37,103 @@ function _getTupleConstructor(len: number): (a: unknown) => any {
   return _tupleConstructors[len];
 }
 
-export function _sequenceTuple<T>({ map, ap }: Apply<T>) {
-  return <A, M extends $<T, [any]>[]>(
-    head: $<T, [A]>,
-    ...tail: M
-  ): $<
-    T,
-    [[A, ...{ [K in keyof M]: M[K] extends $<T, [infer U]> ? U : never }]]
-  > => tail.reduce(ap, map(_getTupleConstructor(tail.length + 1), head));
+function _getRecordConstructor(keys: ReadonlyArray<string>) {
+  const len = keys.length;
+  switch (len) {
+    case 1:
+      return (a: any) => ({ [keys[0]]: a });
+    case 2:
+      return (a: any) => (b: any) => ({ [keys[0]]: a, [keys[1]]: b });
+    case 3:
+      return (a: any) => (b: any) => (c: any) => ({
+        [keys[0]]: a,
+        [keys[1]]: b,
+        [keys[2]]: c,
+      });
+    case 4:
+      return (a: any) => (b: any) => (c: any) => (d: any) => ({
+        [keys[0]]: a,
+        [keys[1]]: b,
+        [keys[2]]: c,
+        [keys[3]]: d,
+      });
+    case 5:
+      return (a: any) => (b: any) => (c: any) => (d: any) => (e: any) => ({
+        [keys[0]]: a,
+        [keys[1]]: b,
+        [keys[2]]: c,
+        [keys[3]]: d,
+        [keys[4]]: e,
+      });
+    default:
+      return _curried(
+        (...args: ReadonlyArray<unknown>) => {
+          const r: Record<string, unknown> = {};
+          for (let i = 0; i < len; i++) {
+            r[keys[i]] = args[i];
+          }
+          return r;
+        },
+        len - 1,
+        []
+      );
+  }
 }
 
-export function _sequenceTuple2<T>({ map, ap }: Apply2<T>) {
-  return <E, R, M extends $<T, [E, any]>[]>(
-    head: $<T, [E, R]>,
-    ...tail: M
-  ): $<
-    T,
-    [E, [R, ...{ [K in keyof M]: M[K] extends $<T, [E, infer A]> ? A : never }]]
-  > => tail.reduce(ap, map(_getTupleConstructor(tail.length + 1), head));
+type NonEmptyArray<T> = [T, ...T[]];
+type EnforceNonEmptyRecord<R> = keyof R extends never ? never : R;
+
+// prettier-ignore
+type SequenceTuple<T, R extends NonEmptyArray<$<T, any[]>>, L extends LS = 1> = {
+  1: $<T, [[...{ [K in keyof R]: R[K] extends $<T, [infer A]> ? A : never }]]>;
+  2: $<T, [[...{ [K in keyof R]: R[K] extends $<T, [infer e, infer A]> ? A : never }]]>;
+  3: $<T, [[...{ [K in keyof R]: R[K] extends $<T, [infer r, infer e, infer A]> ? A : never }]]>;
+}[L];
+
+// prettier-ignore
+type CreateSequenceTuple = {
+  <T, L extends 1>(A: Apply<T, L>): <R extends NonEmptyArray<$<T, [any]>>>(...r: R) => SequenceTuple<T, R, L>;
+  <T, L extends 2>(A: Apply<T, L>): <R extends NonEmptyArray<$<T, [any, any]>>>(...r: R) => SequenceTuple<T, R, L>;
+  <T, L extends 3>(A: Apply<T, L>): <R extends NonEmptyArray<$<T, [any, any, any]>>>(...r: R) => SequenceTuple<T, R, L>;
 }
+
+/**
+ * Create a sequence over tuple function from Apply
+ */
+export const createSequenceTuple: CreateSequenceTuple = <T>({
+  map,
+  ap,
+}: Apply<T>) => <R extends NonEmptyArray<$<T, [any]>>>(
+  ...r: R
+): SequenceTuple<T, R> => {
+  const [head, ...tail] = r;
+  return tail.reduce(ap, map(_getTupleConstructor(tail.length + 1), head));
+};
+
+// prettier-ignore
+type SequenceStruct<T, R extends Record<string, $<T, any[]>>, L extends LS = 1> = {
+  1: $<T, [{ [K in keyof R]: R[K] extends $<T, [infer A]> ? A : never }]>;
+  2: $<T, [{ [K in keyof R]: R[K] extends $<T, [infer e, infer A]> ? A : never }]>;
+  3: $<T, [{ [K in keyof R]: R[K] extends $<T, [infer r, infer e, infer A]> ? A : never }]>;
+}[L];
+
+// prettier-ignore
+type CreateSequenceStruct = {
+  <T, L extends 1>(A: Apply<T, L>): <R extends Record<string, $<T, [any]>>>(r: EnforceNonEmptyRecord<R>) => SequenceStruct<T, R, L>;
+  <T, L extends 2>(A: Apply<T, L>): <R extends Record<string, $<T, [any, any]>>>(r: EnforceNonEmptyRecord<R>) => SequenceStruct<T, R, L>;
+  <T, L extends 3>(A: Apply<T, L>): <R extends Record<string, $<T, [any, any, any]>>>(r: EnforceNonEmptyRecord<R>) => SequenceStruct<T, R, L>;
+}
+
+export const createSequenceStruct: CreateSequenceStruct = <T>({
+  ap,
+  map,
+}: Apply<T>) => <R extends Record<string, $<T, [any]>>>(
+  r: EnforceNonEmptyRecord<R>
+): SequenceStruct<T, R> => {
+  const keys = Object.keys(r);
+  const [head, ...tail] = keys;
+  return tail.reduce(
+    (f, key) => ap(f, r[key]),
+    map(_getRecordConstructor(keys), r[head])
+  );
+};

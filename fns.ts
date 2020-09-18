@@ -47,7 +47,7 @@ export const compose = <A, B>(fab: (a: A) => B) => <C>(fbc: (b: B) => C) => (
   a: A
 ): C => fbc(fab(a));
 
-export const constant = <A>(a: A) => () => a;
+export const constant = <A>(a: A): Lazy<A> => () => a;
 
 // export const isNil = <A>(a: A): a is Nul
 

@@ -1,6 +1,6 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import type * as TC from "../type-classes.ts";
+import type * as TC from "../type_classes.ts";
 
 /**
  * Applicative Functor Laws Tests
@@ -8,10 +8,16 @@ import type * as TC from "../type-classes.ts";
  * * Includes Functor Laws
  * * Includes Apply Laws
  */
-export const assertApplicative: {
-  <T>(M: TC.Applicative<T>, name: string): void;
-  <T>(M: TC.Applicative2<T>, name: string): void;
-} = <T>(M: TC.Applicative<T>, name: string): void => {
+type AssertApplicative = {
+  <T, L extends 1>(M: TC.Applicative<T, L>, name: string): void;
+  <T, L extends 2>(M: TC.Applicative<T, L>, name: string): void;
+  <T, L extends 3>(M: TC.Applicative<T, L>, name: string): void;
+};
+
+export const assertApplicative: AssertApplicative = <T>(
+  M: TC.Applicative<T>,
+  name: string
+): void => {
   const fab = (n: number) => n + 1;
   const fbc = (n: number): string => n.toString();
   const fgab = (f: typeof fbc) => (g: typeof fab) => (n: number) => f(g(n));
@@ -69,10 +75,25 @@ export const assertApplicative: {
  * Chain Laws Tests
  * * Requires Applicative instance for of
  */
-export const assertChain: {
-  <T>(M: TC.Applicative<T> & TC.Chain<T>, name: string): void;
-  <T>(M: TC.Applicative2<T> & TC.Chain2<T>, name: string): void;
-} = <T>(M: TC.Applicative<T> & TC.Chain<T>, name: string): void => {
+type AssertChain = {
+  <T, L extends 1>(
+    M: TC.Applicative<T, L> & TC.Chain<T, L>,
+    name: string
+  ): void;
+  <T, L extends 2>(
+    M: TC.Applicative<T, L> & TC.Chain<T, L>,
+    name: string
+  ): void;
+  <T, L extends 3>(
+    M: TC.Applicative<T, L> & TC.Chain<T, L>,
+    name: string
+  ): void;
+};
+
+export const assertChain: AssertChain = <T>(
+  M: TC.Applicative<T> & TC.Chain<T>,
+  name: string
+): void => {
   const fatb = (n: number) => M.of(n + 1);
   const fbtc = (n: number) => M.of(n.toString());
 
@@ -87,10 +108,16 @@ export const assertChain: {
 /**
  * Monad Laws Tests
  */
-export const assertMonad: {
-  <T>(M: TC.Monad<T>, name: string): void;
-  <T>(M: TC.Monad2<T>, name: string): void;
-} = <T>(M: TC.Monad<T>, name: string): void => {
+type AssertMonad = {
+  <T, L extends 1>(M: TC.Monad<T, L>, name: string): void;
+  <T, L extends 2>(M: TC.Monad<T, L>, name: string): void;
+  <T, L extends 3>(M: TC.Monad<T, L>, name: string): void;
+};
+
+export const assertMonad: AssertMonad = <T>(
+  M: TC.Monad<T>,
+  name: string
+): void => {
   const famb = (n: number) => (n < 0 ? M.of(0) : M.of(n));
   const fbmc = (n: number) => M.of(n.toString());
 

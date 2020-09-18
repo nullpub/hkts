@@ -1,4 +1,4 @@
-import type * as TC from "./type-classes.ts";
+import type * as TC from "./type_classes.ts";
 import type { _ } from "./hkts.ts";
 
 import { isNotNil, Lazy, Predicate } from "./fns.ts";
@@ -7,6 +7,7 @@ import {
   createPipeableMonad,
   createPipeableTraversable,
 } from "./derivations.ts";
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -121,3 +122,11 @@ export const Traversable: TC.Traversable<Option<_>> = {
 export const { of, ap, map, join, chain } = createPipeableMonad(Monad);
 
 export const { reduce, traverse } = createPipeableTraversable(Traversable);
+
+/***************************************************************************************************
+ * @section Utilities
+ **************************************************************************************************/
+
+export const sequenceTuple = createSequenceTuple(Apply);
+
+export const sequenceStruct = createSequenceStruct(Apply);

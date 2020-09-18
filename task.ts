@@ -1,6 +1,8 @@
-import type * as TC from "./type-classes.ts";
+import type * as TC from "./type_classes.ts";
 import type { _ } from "./hkts.ts";
+
 import { createMonad, createPipeableMonad } from "./derivations.ts";
+import { createSequenceTuple, createSequenceStruct } from "./sequence.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -39,7 +41,7 @@ export const delay = (ms: number) => <A>(ma: Task<A>): Task<A> => () =>
 
 export const Monad = createMonad<Task<_>>({
   of,
-  chain: (fatb, ta) => () => ta().then((a) => fatb(a)()) as Promise<any>,
+  chain: (fatb, ta) => () => ta().then((a) => fatb(a)()),
 });
 
 export const Applicative: TC.Applicative<Task<_>> = {
@@ -58,3 +60,11 @@ export const Apply: TC.Apply<Task<_>> = {
  **************************************************************************************************/
 
 export const { ap, map, join, chain } = createPipeableMonad(Monad);
+
+/***************************************************************************************************
+ * @section Sequence
+ **************************************************************************************************/
+
+export const sequenceTuple = createSequenceTuple(Apply);
+
+export const sequenceStruct = createSequenceStruct(Apply);
