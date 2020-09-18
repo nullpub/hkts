@@ -1,4 +1,4 @@
-import { Predicate } from "./fns.ts";
+import type { Predicate } from "./fns.ts";
 import type { $ } from "./hkts.ts";
 
 /***************************************************************************************************
