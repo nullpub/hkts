@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.11](https://github.com/nullpub/hkts/compare/v0.0.10...v0.0.11) (2020-09-20)
+
+
+### Features
+
+* implement task either adt ([36aa339](https://github.com/nullpub/hkts/commit/36aa339cd298b33759e415086e4d458f950ba420))
+
 ### [0.0.10](https://github.com/nullpub/hkts/compare/v0.0.9...v0.0.10) (2020-09-20)
 
 ### [0.0.9](https://github.com/nullpub/hkts/compare/v0.0.8...v0.0.9) (2020-09-20)
