@@ -1,7 +1,7 @@
 import type * as TC from "./type_classes.ts";
-import type { $, _0, _1, _2, _3 } from "./hkts.ts";
+import type { _0, _1, _2, _3 } from "./hkts.ts";
+import type { Lazy } from "./fns.ts";
 
-import { isNotNil, Lazy, Predicate, Refinement } from "./fns.ts";
 import * as E from "./either.ts";
 import * as T from "./task.ts";
 import * as S from "./sequence.ts";
