@@ -26,20 +26,19 @@ export const right = <E = never, A = never>(right: A): Either<E, A> => ({
   right,
 });
 
-export function fromNullable<E>(e: E): <A>(a: A) => Either<E, NonNullable<A>> {
-  return <A>(a: A) => (isNotNil(a) ? right(a) : left(e));
-}
+export const fromNullable = <E>(e: E) =>
+  <A>(a: A): Either<E, NonNullable<A>> => (isNotNil(a) ? right(a) : left(e));
 
-export function tryCatch<E, A>(
+export const tryCatch = <E, A>(
   f: Lazy<A>,
   onError: (e: unknown) => E,
-): Either<E, A> {
+): Either<E, A> => {
   try {
     return right(f());
   } catch (e) {
     return left(onError(e));
   }
-}
+};
 
 export const fromPredicate: {
   <E, A, B extends A>(refinement: Refinement<A, B>, onFalse: (a: A) => E): (

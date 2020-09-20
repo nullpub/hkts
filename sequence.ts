@@ -7,12 +7,10 @@ import type { Apply, LS } from "./type_classes.ts";
  * These helpers might be made easier to reason about
  */
 
-function _tuple<T extends ReadonlyArray<any>>(...t: T): T {
-  return t;
-}
+const _tuple = <T extends ReadonlyArray<any>>(...t: T): T => t;
 
-function _curried(f: Function, n: number, acc: ReadonlyArray<unknown>) {
-  return function (x: unknown) {
+const _curried = (f: Function, n: number, acc: ReadonlyArray<unknown>) =>
+  (x: unknown) => {
     const combined = Array(acc.length + 1);
     for (let i = 0; i < acc.length; i++) {
       combined[i] = acc[i];
@@ -20,7 +18,6 @@ function _curried(f: Function, n: number, acc: ReadonlyArray<unknown>) {
     combined[acc.length] = x;
     return n === 0 ? f.apply(null, combined) : _curried(f, n - 1, combined);
   };
-}
 
 const _tupleConstructors: Record<number, (a: unknown) => any> = {
   1: (a) => [a],
@@ -30,14 +27,14 @@ const _tupleConstructors: Record<number, (a: unknown) => any> = {
   5: (a) => (b: any) => (c: any) => (d: any) => (e: any) => [a, b, c, d, e],
 };
 
-function _getTupleConstructor(len: number): (a: unknown) => any {
+const _getTupleConstructor = (len: number): (a: unknown) => any => {
   if (!_tupleConstructors.hasOwnProperty(len)) {
     _tupleConstructors[len] = _curried(_tuple, len - 1, []);
   }
   return _tupleConstructors[len];
-}
+};
 
-function _getRecordConstructor(keys: ReadonlyArray<string>) {
+const _getRecordConstructor = (keys: ReadonlyArray<string>) => {
   const len = keys.length;
   switch (len) {
     case 1:
@@ -87,7 +84,7 @@ function _getRecordConstructor(keys: ReadonlyArray<string>) {
         [],
       );
   }
-}
+};
 
 type NonEmptyArray<T> = [T, ...T[]];
 type EnforceNonEmptyRecord<R> = keyof R extends never ? never : R;

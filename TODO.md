@@ -1,11 +1,9 @@
 # Initial Push Todos
 
-- clean sequenceT and sequenceS implementations
-- optionT and eitherT implementations
-- datumEither implemtations
+- taskEither implementations
 - port io-ts (likely will need additional adts for this)
 - port monocle-ts (likely will need additional adts for this)
-- taskEither implementations
+- clean sequenceT and sequenceS implementations
 - port hyper-ts to Deno
 
 # Version 1.0.0 features
