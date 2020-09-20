@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.12](https://github.com/nullpub/hkts/compare/v0.0.11...v0.0.12) (2020-09-20)
+
+
+### Bug Fixes
+
+* remove unused imports from task either ([511fcb2](https://github.com/nullpub/hkts/commit/511fcb2bf2b5256cbc038a83638d91d2369b40e5))
+
 ### [0.0.11](https://github.com/nullpub/hkts/compare/v0.0.10...v0.0.11) (2020-09-20)
 
 
