@@ -3,7 +3,7 @@ import type * as TC from "./type_classes.ts";
 import { identity } from "./fns.ts";
 
 /***************************************************************************************************
- * @section Derivations
+ * @section Module Derivations
  **************************************************************************************************/
 
 /**
@@ -30,6 +30,10 @@ export const createMonad: CreateMonad = <T>({
     ap: (tfab, ta) => chain((f) => map(f, ta), tfab),
   };
 };
+
+/***************************************************************************************************
+ * @section Pipeable Module Derivations
+ **************************************************************************************************/
 
 /**
  * Derive Pipeable Monad from Monad.
@@ -77,3 +81,7 @@ export const createPipeableBifunctor = <T>({
 }: TC.Bifunctor<T>): TC.BifunctorP<T> => ({
   bimap: (fab, fcd) => (tac) => bimap(fab, fcd, tac),
 });
+
+/***************************************************************************************************
+ * @section Composition Derivations
+ **************************************************************************************************/

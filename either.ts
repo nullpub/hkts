@@ -1,8 +1,8 @@
 import type * as TC from "./type_classes.ts";
-import type { Fix, _0, _1 } from "./hkts.ts";
+import type { $, _0, _1, _2, _3 } from "./hkts.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-import { Fn, isNotNil, Lazy, Predicate, Refinement } from "./fns.ts";
+import { isNotNil, Lazy, Predicate, Refinement } from "./fns.ts";
 import * as D from "./derivations.ts";
 
 /***************************************************************************************************
@@ -17,8 +17,14 @@ export type Either<L, R> = Left<L> | Right<R>;
  * @section Constructors
  **************************************************************************************************/
 
-export const left = <L>(left: L): Left<L> => ({ tag: "Left", left });
-export const right = <R>(right: R): Right<R> => ({ tag: "Right", right });
+export const left = <E = never, A = never>(left: E): Either<E, A> => ({
+  tag: "Left",
+  left,
+});
+export const right = <E = never, A = never>(right: A): Either<E, A> => ({
+  tag: "Right",
+  right,
+});
 
 export function fromNullable<E>(e: E): <A>(a: A) => Either<E, NonNullable<A>> {
   return <A>(a: A) => (isNotNil(a) ? right(a) : left(e));
@@ -90,10 +96,22 @@ export const getShow = <E, A>(
 });
 
 export const getSemigroup = <E, A>(
-  S: TC.Semigroup<A>,
+  SE: TC.Semigroup<E>,
+  SA: TC.Semigroup<A>,
 ): TC.Semigroup<Either<E, A>> => ({
-  concat: (x, y) =>
-    isLeft(y) ? x : isLeft(x) ? y : right(S.concat(x.right, y.right)),
+  concat: (x, y) => {
+    if (isLeft(x)) {
+      if (isLeft(y)) {
+        return left(SE.concat(x.left, y.left));
+      }
+      return y;
+    }
+
+    if (isLeft(y)) {
+      return x;
+    }
+    return right(SA.concat(x.right, y.right));
+  },
 });
 
 /***************************************************************************************************
@@ -135,6 +153,30 @@ export const Traversable: TC.Traversable<Either<_0, _1>, 2> = {
   traverse: (F, faub, ta) =>
     isLeft(ta) ? F.of(left(ta.left)) : F.map(right, faub(ta.right)),
 };
+
+/***************************************************************************************************
+ * @section Transformers
+ **************************************************************************************************/
+
+type GetEitherMonad = {
+  <T, L extends 1>(M: TC.Monad<T, L>): TC.Monad<$<T, [Either<_0, _1>]>, 2>;
+  <T, L extends 2>(M: TC.Monad<T, L>): TC.Monad<$<T, [Either<_1, _2>]>, 3>;
+};
+
+/**
+ * This is an experimental interface. Ideally, the substitution type would handle this
+ * a bit better so we wouldn't have to do unsafe coercion.
+ * @experimental
+ */
+export const getEitherM: GetEitherMonad = <T>(M: TC.Monad<T>) =>
+  D.createMonad<$<T, [Either<_0, _1>]>, 2>({
+    of: (a) => M.of(right(a)) as any,
+    chain: (fatb: any, ta: any) =>
+      M.chain(
+        (e: any) => (isLeft(e) ? M.of(left(e.left)) : fatb(e.right)),
+        ta,
+      ) as any,
+  }) as any;
 
 /***************************************************************************************************
  * @section Pipeables

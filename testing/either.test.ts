@@ -7,8 +7,6 @@ import { assertMonad } from "./assert.ts";
 const add = (a: number, b: number) => a + b;
 const addOne = (n: number): number => n + 1;
 const addTwo = (n: number): number => n + 2;
-const chainOne = (n: number): E.Either<number, number> =>
-  n !== 1 ? E.right(n) : E.left(1);
 
 Deno.test({
   name: "Either Constructors",
@@ -38,38 +36,10 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Either Instances",
+  name: "Either Modules",
   fn(): void {
     // Test Laws
     assertMonad(E.Monad, "Either");
-
-    // Monad
-    const { ap, chain, map, join, of } = E.Monad;
-
-    // Left identity: M.chain(f, M.of(a)) ≡ f(a)
-    assertEquals(chain(chainOne, of(1)), chainOne(1));
-    // Right identity: M.chain(M.of, u) ≡ u
-    assertEquals(chain(of, of(1)), of(1));
-
-    assertEquals(of(1), E.right(1));
-
-    assertEquals(ap(E.right(addOne), E.right(1)), E.right(2));
-    assertEquals(ap(E.right(addOne), E.left(1)), E.left(1));
-    assertEquals(ap(E.left(1), E.right(1)), E.left(1));
-    assertEquals(ap(E.left(1), E.left(1)), E.left(1));
-
-    assertEquals(chain(chainOne, E.left(1)), E.left(1));
-    assertEquals(chain(chainOne, E.right(1)), E.left(1));
-    assertEquals(chain(chainOne, E.left(2)), E.left(2));
-    assertEquals(chain(chainOne, E.right(2)), E.right(2));
-
-    assertEquals(map(addOne, E.left(1)), E.left(1));
-    assertEquals(map(addOne, E.right(1)), E.right(2));
-
-    assertEquals(join(E.right(E.right(1))), E.right(1));
-    assertEquals(join(E.right(E.left(1))), E.left(1));
-    assertEquals(join(E.left(E.right(1))), E.left(E.right(1)));
-    assertEquals(join(E.left(E.left(1))), E.left(E.left(1)));
 
     // Foldable
     const { reduce } = E.Foldable;

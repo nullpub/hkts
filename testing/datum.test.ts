@@ -37,7 +37,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Datum Instances",
+  name: "Datum Modules",
   fn(): void {
     // Test Laws
     assertMonad(D.Monad, "Datum");

@@ -35,37 +35,10 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Option Instances",
+  name: "Option Modules",
   fn(): void {
     // Test Laws
     assertMonad(O.Monad, "Option");
-
-    // Monad
-    const { ap, chain, map, join, of } = O.Monad;
-
-    // Left identity: M.chain(f, M.of(a)) ≡ f(a)
-    assertEquals(chain(chainOne, of(1)), chainOne(1));
-    // Right identity: M.chain(M.of, u) ≡ u
-    assertEquals(chain(of, of(1)), of(1));
-
-    assertEquals(of(1), O.some(1));
-
-    assertEquals(ap(O.some(addOne), O.some(1)), O.some(2));
-    assertEquals(ap(O.some(addOne), O.none), O.none);
-    assertEquals(ap(O.none, O.some(1)), O.none);
-    assertEquals(ap(O.none, O.none), O.none);
-
-    assertEquals(chain(chainOne, O.none), O.none);
-    assertEquals(chain(chainOne, O.some(1)), O.none);
-    assertEquals(chain(chainOne, O.none), O.none);
-    assertEquals(chain(chainOne, O.some(2)), O.some(2));
-
-    assertEquals(map(addOne, O.none), O.none);
-    assertEquals(map(addOne, O.some(1)), O.some(2));
-
-    assertEquals(join(O.some(O.some(1))), O.some(1));
-    assertEquals(join(O.some(O.none)), O.none);
-    assertEquals(join(O.none), O.none);
 
     // Foldable
     const { reduce } = O.Foldable;

@@ -94,7 +94,7 @@ export const mapNullable = <A, B>(f: (a: A) => B | null | undefined) =>
   ): Datum<B> => (isNone(ma) ? initial : fromNullable(f(ma.value)));
 
 /***************************************************************************************************
- * @section Modules
+ * @section Module Getters
  **************************************************************************************************/
 
 export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Datum<A>> => ({
@@ -106,7 +106,7 @@ export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Datum<A>> => ({
   ),
 });
 
-export const getSemigroup = <E, A>({
+export const getSemigroup = <A>({
   concat,
 }: TC.Semigroup<A>): TC.Semigroup<Datum<A>> => ({
   concat: (mx, my) => {
@@ -124,6 +124,19 @@ export const getSemigroup = <E, A>({
   },
 });
 
+/***************************************************************************************************
+ * @section Modules
+ **************************************************************************************************/
+
+export const Functor: TC.Functor<Datum<_>> = {
+  map: (fab, ta) =>
+    isRefresh(ta)
+      ? refresh(fab(ta.value))
+      : isReplete(ta)
+      ? replete(fab(ta.value))
+      : ta,
+};
+
 export const Monad = D.createMonad<Datum<_>>({
   of: replete,
   chain: (fatb, ta) => (isSome(ta) ? fatb(ta.value) : ta),
@@ -132,18 +145,18 @@ export const Monad = D.createMonad<Datum<_>>({
 export const Applicative: TC.Applicative<Datum<_>> = {
   of: replete,
   ap: Monad.ap,
-  map: Monad.map,
+  map: Functor.map,
 };
 
 export const Apply: TC.Apply<Datum<_>> = {
   ap: Monad.ap,
-  map: Monad.map,
+  map: Functor.map,
 };
 
 export const Alternative: TC.Alternative<Datum<_>> = {
   of: replete,
   ap: Monad.ap,
-  map: Monad.map,
+  map: Functor.map,
   zero: constInitial,
   alt: (a, b) => (isSome(a) ? a : b),
 };
@@ -153,7 +166,7 @@ export const Foldable: TC.Foldable<Datum<_>> = {
 };
 
 export const Traversable: TC.Traversable<Datum<_>> = {
-  map: Monad.map,
+  map: Functor.map,
   reduce: Foldable.reduce,
   traverse: (F, faub, ta) =>
     isNone(ta) ? F.of(initial) : F.map(replete, faub(ta.value)),

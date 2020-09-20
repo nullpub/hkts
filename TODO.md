@@ -1,13 +1,11 @@
 # Initial Push Todos
 
-- feature parity on option and either with fp-ts
 - clean sequenceT and sequenceS implementations
 - optionT and eitherT implementations
-- datum and datumEither implemtations
+- datumEither implemtations
 - port io-ts (likely will need additional adts for this)
 - port monocle-ts (likely will need additional adts for this)
-- task and taskEither implementations
-- investigate Functor/Functor2 overloads (instead of duplication)
+- taskEither implementations
 - port hyper-ts to Deno
 
 # Version 1.0.0 features

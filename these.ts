@@ -3,7 +3,6 @@ import type { Fix, _0, _1 } from "./hkts.ts";
 
 import * as D from "./derivations.ts";
 import * as E from "./either.ts";
-import { getLastSemigroup } from "./semigroup.ts";
 
 /***************************************************************************************************
  * @section Types

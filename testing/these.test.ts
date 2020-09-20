@@ -42,7 +42,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "These Instances",
+  name: "These Module",
   fn(): void {
     const Monad = T.getMonad({ concat: add });
 

@@ -1,13 +1,9 @@
 import type * as TC from "./type_classes.ts";
-import type { _ } from "./hkts.ts";
+import type { $, _ } from "./hkts.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { isNotNil, Lazy, Predicate } from "./fns.ts";
-import {
-  createMonad,
-  createPipeableMonad,
-  createPipeableTraversable,
-} from "./derivations.ts";
+import * as D from "./derivations.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -79,7 +75,7 @@ export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
  * @section Modules
  **************************************************************************************************/
 
-export const Monad = createMonad<Option<_>>({
+export const Monad = D.createMonad<Option<_>>({
   of: some,
   chain: (fatb, ta) => (isSome(ta) ? fatb(ta.value) : ta),
 });
@@ -126,12 +122,37 @@ export const getSemigroup = <A>(
 });
 
 /***************************************************************************************************
+ * @section Transformers
+ **************************************************************************************************/
+
+type GetOptionMonad = {
+  <T, L extends 1>(M: TC.Monad<T, L>): TC.Monad<$<T, [Option<_>]>, L>;
+  <T, L extends 2>(M: TC.Monad<T, L>): TC.Monad<$<T, [Option<_>]>, L>;
+  <T, L extends 3>(M: TC.Monad<T, L>): TC.Monad<$<T, [Option<_>]>, L>;
+};
+
+/**
+ * This is an experimental interface. Ideally, the substitution type would handle this
+ * a bit better so we wouldn't have to do unsafe coercion.
+ * @experimental
+ */
+export const getOptionM: GetOptionMonad = <T>(M: TC.Monad<T>) =>
+  D.createMonad<$<T, [Option<_>]>>({
+    of: (a) => M.of(some(a)) as any,
+    chain: <A, B>(fatb: any, ta: any) =>
+      M.chain(
+        (e: Option<A>) => (isNone(e) ? M.of(none) : fatb(e.value)),
+        ta,
+      ) as any,
+  }) as any;
+
+/***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
 
-export const { reduce, traverse } = createPipeableTraversable(Traversable);
+export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
 
 /***************************************************************************************************
  * @section Utilities
