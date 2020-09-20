@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.9](https://github.com/nullpub/hkts/compare/v0.0.8...v0.0.9) (2020-09-20)
+
+
+### Features
+
+* implement datum either adt with eitherT ([9f2b4dc](https://github.com/nullpub/hkts/commit/9f2b4dc9c517f5220d33e6fc92d9c813e8414256))
+
+
+### Bug Fixes
+
+* implementation of these was a little wrong ([532c96a](https://github.com/nullpub/hkts/commit/532c96a6135fb0aff79d566fd9779493ae9e9653))
+
 ### [0.0.8](https://github.com/nullpub/hkts/compare/v0.0.7...v0.0.8) (2020-09-20)
 
 
