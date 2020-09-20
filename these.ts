@@ -1,9 +1,9 @@
 import type * as TC from "./type_classes.ts";
-import type { Fixed, _0, _1 } from "./hkts.ts";
+import type { Fix, _0, _1 } from "./hkts.ts";
 
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import * as D from "./derivations.ts";
 import * as E from "./either.ts";
+import { getLastSemigroup } from "./semigroup.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -62,50 +62,8 @@ export const isBoth = <L, R>(m: These<L, R>): m is Both<L, R> =>
   m.tag === "Both";
 
 /***************************************************************************************************
- * @section Modules
+ * @section Module Getters
  **************************************************************************************************/
-
-export const Foldable: TC.Foldable<These<_0, _1>, 2> = {
-  reduce: (faba, a, tb) =>
-    isLeft(tb) ? a : isRight(tb) ? faba(a, tb.right) : faba(a, tb.right),
-};
-
-export const Traversable: TC.Traversable<These<_0, _1>, 2> = {
-  reduce: Foldable.reduce,
-  map: (fab, ta) =>
-    isLeft(ta)
-      ? ta
-      : isRight(ta)
-      ? right(fab(ta.right))
-      : both(ta.left, fab(ta.right)),
-  traverse: (F, faub, ta) =>
-    isLeft(ta)
-      ? F.of(ta)
-      : isRight(ta)
-      ? F.map(right, faub(ta.right))
-      : F.map((r) => both(ta.left, r), faub(ta.right)),
-};
-
-export const Apply: TC.Apply<These<_0, _1>, 2> = {
-  map: Traversable.map,
-  ap: (tfab, ta) =>
-    join(Traversable.map((fab) => Traversable.map(fab, ta), tfab)),
-};
-
-export const Applicative: TC.Applicative<These<_0, _1>, 2> = {
-  of: right,
-  ap: Apply.ap,
-  map: Apply.map,
-};
-
-export const Bifunctor: TC.Bifunctor<These<_0, _1>> = {
-  bimap: (fab, fcd, tac) =>
-    isLeft(tac)
-      ? left(fab(tac.left))
-      : isRight(tac)
-      ? right(fcd(tac.right))
-      : both(fab(tac.left), fcd(tac.right)),
-};
 
 export const getShow = <E, A>(
   SE: TC.Show<E>,
@@ -119,53 +77,102 @@ export const getShow = <E, A>(
 });
 
 export const getSemigroup = <E, A>(
-  S: TC.Semigroup<A>,
-): TC.Semigroup<These<E, A>> => ({
-  concat: (x, y) =>
-    isLeft(y) ? x : isLeft(x) ? y : right(S.concat(x.right, y.right)),
-});
-
-export const getApplicative = <E>(
   SE: TC.Semigroup<E>,
-): TC.Applicative<These<Fixed<E>, _0>> => ({
-  of: right,
-  map: Applicative.map,
-  ap: (tfab, ta) =>
-    isLeft(tfab)
-      ? isLeft(ta) ? left(SE.concat(tfab.left, ta.left)) : tfab
-      : isLeft(ta)
-      ? ta
-      : right(tfab.right(ta.right)),
+  SA: TC.Semigroup<A>,
+): TC.Semigroup<These<E, A>> => ({
+  concat: (x, y) => {
+    if (isLeft(x)) {
+      if (isLeft(y)) {
+        return left(SE.concat(x.left, y.left));
+      } else if (isRight(y)) {
+        return both(x.left, y.right);
+      }
+      return both(SE.concat(x.left, y.left), y.right);
+    }
+
+    if (isRight(x)) {
+      if (isLeft(y)) {
+        return both(y.left, x.right);
+      } else if (isRight(y)) {
+        return right(SA.concat(x.right, y.right));
+      }
+      return both(y.left, SA.concat(x.right, y.right));
+    }
+
+    if (isLeft(y)) {
+      return both(SE.concat(x.left, y.left), x.right);
+    } else if (isRight(y)) {
+      return both(x.left, SA.concat(x.right, y.right));
+    }
+    return both(SE.concat(x.left, y.left), SA.concat(x.right, y.right));
+  },
 });
 
 export const getMonad = <E>(
   SE: TC.Semigroup<E>,
-): TC.Monad<These<Fixed<E>, _0>> => {
-  const { of, ap, map } = getApplicative(SE);
-  return {
-    of,
-    ap,
-    map,
-    join: join,
-    chain: (fatb, ta) => join(map(fatb, ta)),
-  };
+): TC.Monad<These<Fix<E>, _0>> =>
+  D.createMonad<These<Fix<E>, _0>>({
+    of: right,
+    chain: (fatb, ta) => {
+      if (isLeft(ta)) {
+        return ta;
+      } else if (isRight(ta)) {
+        return fatb(ta.right);
+      }
+
+      const tb = fatb(ta.right);
+
+      if (isLeft(tb)) {
+        return left(SE.concat(ta.left, tb.left));
+      } else if (isRight(tb)) {
+        return both(ta.left, tb.right);
+      }
+      return both(SE.concat(ta.left, tb.left), tb.right);
+    },
+  });
+
+/***************************************************************************************************
+ * @section Modules
+ **************************************************************************************************/
+
+export const Functor: TC.Functor<These<_0, _1>, 2> = {
+  map: (fab, ta) =>
+    isLeft(ta)
+      ? ta
+      : isRight(ta)
+      ? right(fab(ta.right))
+      : both(ta.left, fab(ta.right)),
+};
+
+export const Bifunctor: TC.Bifunctor<These<_0, _1>> = {
+  bimap: (fab, fcd, tac) =>
+    isLeft(tac)
+      ? left(fab(tac.left))
+      : isRight(tac)
+      ? right(fcd(tac.right))
+      : both(fab(tac.left), fcd(tac.right)),
+};
+
+export const Foldable: TC.Foldable<These<_0, _1>, 2> = {
+  reduce: (faba, a, tb) =>
+    isLeft(tb) ? a : isRight(tb) ? faba(a, tb.right) : faba(a, tb.right),
+};
+
+export const Traversable: TC.Traversable<These<_0, _1>, 2> = {
+  reduce: Foldable.reduce,
+  map: Functor.map,
+  traverse: (F, faub, ta) =>
+    isLeft(ta)
+      ? F.of(ta)
+      : isRight(ta)
+      ? F.map(right, faub(ta.right))
+      : F.map((r) => both(ta.left, r), faub(ta.right)),
 };
 
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
 
-export const join: TC.MonadFn<These<_0, _1>, 2> = (tta) =>
-  isRight(tta) || isBoth(tta) ? tta.right : tta;
-
 export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
 
 export const { bimap } = D.createPipeableBifunctor(Bifunctor);
-
-/***************************************************************************************************
- * @section Sequence
- **************************************************************************************************/
-
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);

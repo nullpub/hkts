@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { Fixed, _0, _1 } from "./hkts.ts";
+import type { Fix, _0, _1 } from "./hkts.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { Fn, isNotNil, Lazy, Predicate, Refinement } from "./fns.ts";
@@ -76,47 +76,17 @@ export const isRight = <L, R>(m: Either<L, R>): m is Right<R> =>
   m.tag === "Right";
 
 /***************************************************************************************************
- * @section Modules
+ * @section Module Getters
  **************************************************************************************************/
 
-export const Foldable: TC.Foldable<Either<_0, _1>, 2> = {
-  reduce: (faba, a, tb) => (isRight(tb) ? faba(a, tb.right) : a),
-};
-
-export const Monad = D.createMonad<Either<_0, _1>, 2>({
-  of: right,
-  chain: (fatb, ta) => (isRight(ta) ? fatb(ta.right) : ta),
-});
-
-export const Traversable: TC.Traversable<Either<_0, _1>, 2> = {
-  map: Monad.map,
-  reduce: Foldable.reduce,
-  traverse: (F, faub, ta) =>
-    isLeft(ta) ? F.of(left(ta.left)) : F.map(right, faub(ta.right)),
-};
-
-export const Applicative: TC.Applicative<Either<_0, _1>, 2> = {
-  of: Monad.of,
-  ap: Monad.ap,
-  map: Monad.map,
-};
-
-export const Apply: TC.Apply<Either<_0, _1>, 2> = {
-  ap: Monad.ap,
-  map: Monad.map,
-};
-
-export const Bifunctor: TC.Bifunctor<Either<_0, _1>> = {
-  bimap: (fab, fcd, tac) =>
-    isLeft(tac) ? left(fab(tac.left)) : right(fcd(tac.right)),
-};
-
 export const getShow = <E, A>(
-  Se: TC.Show<E>,
-  Sa: TC.Show<A>,
+  SE: TC.Show<E>,
+  SA: TC.Show<A>,
 ): TC.Show<Either<E, A>> => ({
-  show: (ma) =>
-    isLeft(ma) ? `Left(${Se.show(ma.left)})` : `Right(${Sa.show(ma.right)})`,
+  show: fold(
+    (left) => `Left(${SE.show(left)})`,
+    (right) => `Right(${SA.show(right)})`,
+  ),
 });
 
 export const getSemigroup = <E, A>(
@@ -126,30 +96,44 @@ export const getSemigroup = <E, A>(
     isLeft(y) ? x : isLeft(x) ? y : right(S.concat(x.right, y.right)),
 });
 
-export const getApplicative = <E>(
-  SE: TC.Semigroup<E>,
-): TC.Applicative<Either<Fixed<E>, _0>> => ({
+/***************************************************************************************************
+ * @section Modules
+ **************************************************************************************************/
+
+export const Functor: TC.Functor<Either<_0, _1>, 2> = {
+  map: (fab, ta) => isLeft(ta) ? ta : right(fab(ta.right)),
+};
+
+export const Bifunctor: TC.Bifunctor<Either<_0, _1>> = {
+  bimap: (fab, fcd, tac) =>
+    isLeft(tac) ? left(fab(tac.left)) : right(fcd(tac.right)),
+};
+
+export const Monad = D.createMonad<Either<_0, _1>, 2>({
   of: right,
-  map: Applicative.map,
-  ap: (tfab, ta) =>
-    isLeft(tfab)
-      ? isLeft(ta) ? left(SE.concat(tfab.left, ta.left)) : tfab
-      : isLeft(ta)
-      ? ta
-      : right(tfab.right(ta.right)),
+  chain: (fatb, ta) => (isRight(ta) ? fatb(ta.right) : ta),
 });
 
-export const getMonad = <E>(
-  SE: TC.Semigroup<E>,
-): TC.Monad<Either<Fixed<E>, _0>> => {
-  const { of, ap, map } = getApplicative(SE);
-  return {
-    of,
-    ap,
-    map,
-    join: Monad.join,
-    chain: (fatb, ta) => Monad.join(map(fatb, ta)),
-  };
+export const Applicative: TC.Applicative<Either<_0, _1>, 2> = {
+  of: Monad.of,
+  ap: Monad.ap,
+  map: Functor.map,
+};
+
+export const Apply: TC.Apply<Either<_0, _1>, 2> = {
+  ap: Monad.ap,
+  map: Functor.map,
+};
+
+export const Foldable: TC.Foldable<Either<_0, _1>, 2> = {
+  reduce: (faba, a, tb) => (isRight(tb) ? faba(a, tb.right) : a),
+};
+
+export const Traversable: TC.Traversable<Either<_0, _1>, 2> = {
+  map: Functor.map,
+  reduce: Foldable.reduce,
+  traverse: (F, faub, ta) =>
+    isLeft(ta) ? F.of(left(ta.left)) : F.map(right, faub(ta.right)),
 };
 
 /***************************************************************************************************

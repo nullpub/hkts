@@ -20,14 +20,14 @@ export type _8 = _<8>;
 export type _9 = _<9>;
 
 /***************************************************************************************************
- * @section Fixed Type
+ * @section Fix Type
  * @description Fixes a type so it is not replaced by the substitution ($) type
  **************************************************************************************************/
 
-declare const fixed: unique symbol;
+declare const Fix: unique symbol;
 
-export interface Fixed<T> {
-  [fixed]: T;
+export interface Fix<T> {
+  [Fix]: T;
 }
 
 /***************************************************************************************************
@@ -41,7 +41,7 @@ export interface Fixed<T> {
  *     // RecordInstance = <A, B>(fab: (a: A) => B, ta: { value: A }): { value: B }
  **************************************************************************************************/
 
-export type $<T, S extends any[]> = T extends Fixed<infer U> ? U
+export type $<T, S extends any[]> = T extends Fix<infer U> ? U
   : T extends _<infer N> ? S[N]
   : T extends any[] ? { [K in keyof T]: $<T[K], S> }
   : T extends Promise<infer I> ? Promise<$<I, S>>

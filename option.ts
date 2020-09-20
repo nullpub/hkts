@@ -79,17 +79,6 @@ export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
  * @section Modules
  **************************************************************************************************/
 
-export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Option<A>> => ({
-  show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
-});
-
-export const getSemigroup = <A>(
-  S: TC.Semigroup<A>,
-): TC.Semigroup<Option<A>> => ({
-  concat: (x, y) =>
-    isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value, y.value)),
-});
-
 export const Monad = createMonad<Option<_>>({
   of: some,
   chain: (fatb, ta) => (isSome(ta) ? fatb(ta.value) : ta),
@@ -124,6 +113,17 @@ export const Traversable: TC.Traversable<Option<_>> = {
   traverse: (F, faub, ta) =>
     isNone(ta) ? F.of(none) : F.map(some, faub(ta.value)),
 };
+
+export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Option<A>> => ({
+  show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
+});
+
+export const getSemigroup = <A>(
+  S: TC.Semigroup<A>,
+): TC.Semigroup<Option<A>> => ({
+  concat: (x, y) =>
+    isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value, y.value)),
+});
 
 /***************************************************************************************************
  * @section Pipeables
