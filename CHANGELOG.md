@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.13](https://github.com/nullpub/hkts/compare/v0.0.12...v0.0.13) (2020-09-21)
+
+
+### Features
+
+* more module getters for option and either ([930b087](https://github.com/nullpub/hkts/commit/930b087537d568934226fc2597ada30887ffeb67))
+
 ### [0.0.12](https://github.com/nullpub/hkts/compare/v0.0.11...v0.0.12) (2020-09-20)
 
 
