@@ -94,6 +94,45 @@ export const getShow = <E, A>(
   ),
 });
 
+export const getSetoid = <E, A>(
+  SE: TC.Setoid<E>,
+  SA: TC.Setoid<A>,
+): TC.Setoid<Either<E, A>> => ({
+  equals: (x, y) => {
+    if (isLeft(x)) {
+      if (isLeft(y)) {
+        return SE.equals(x.left, y.left);
+      }
+      return false;
+    }
+
+    if (isLeft(y)) {
+      return false;
+    }
+    return SA.equals(x.right, y.right);
+  },
+});
+
+export const getOrd = <E, A>(
+  OE: TC.Ord<E>,
+  OA: TC.Ord<A>,
+): TC.Ord<Either<E, A>> => ({
+  ...getSetoid(OE, OA),
+  lte: (x, y) => {
+    if (isLeft(x)) {
+      if (isLeft(y)) {
+        return OE.lte(x.left, y.left);
+      }
+      return false;
+    }
+
+    if (isLeft(y)) {
+      return false;
+    }
+    return OA.lte(x.right, y.right);
+  },
+});
+
 export const getSemigroup = <E, A>(
   SE: TC.Semigroup<E>,
   SA: TC.Semigroup<A>,
@@ -111,6 +150,29 @@ export const getSemigroup = <E, A>(
     }
     return right(SA.concat(x.right, y.right));
   },
+});
+
+export const getMonoid = <E, A>(
+  ME: TC.Monoid<E>,
+  MA: TC.Monoid<A>,
+): TC.Monoid<Either<E, A>> => ({
+  ...getSemigroup(ME, MA),
+  empty: () => right(MA.empty()),
+});
+
+/**
+ * @todo Run this through a truth table to check that the law holds since empty is
+ * right(MA.empty()). It's likely I'll need to create right/left semigroup, monoid,
+ * etc instances or research how this is done elsewhere. I think maybe we focus on
+ * a RightSemigroup, RightMonoidd, and RightGroup and fix E.
+ */
+export const getGroup = <E, A>(
+  GE: TC.Group<E>,
+  GA: TC.Group<A>,
+): TC.Group<Either<E, A>> => ({
+  ...getMonoid(GE, GA),
+  invert: (ta) =>
+    isLeft(ta) ? left(GE.invert(ta.left)) : right(GA.invert(ta.right)),
 });
 
 /***************************************************************************************************
@@ -131,6 +193,11 @@ export const Monad = D.createMonad<Either<_0, _1>, 2>({
   chain: (fatb, ta) => (isRight(ta) ? fatb(ta.right) : ta),
 });
 
+export const Alt: TC.Alt<Either<_0, _1>, 2> = {
+  map: Functor.map,
+  alt: (ta, tb) => isLeft(ta) ? tb : ta,
+};
+
 export const Applicative: TC.Applicative<Either<_0, _1>, 2> = {
   of: Monad.of,
   ap: Monad.ap,
@@ -140,6 +207,17 @@ export const Applicative: TC.Applicative<Either<_0, _1>, 2> = {
 export const Apply: TC.Apply<Either<_0, _1>, 2> = {
   ap: Monad.ap,
   map: Functor.map,
+};
+
+export const Chain: TC.Chain<Either<_0, _1>, 2> = {
+  ap: Monad.ap,
+  map: Functor.map,
+  chain: Monad.chain,
+};
+
+export const Extend: TC.Extend<Either<_0, _1>, 2> = {
+  map: Functor.map,
+  extend: (ftab, ta) => right(ftab(ta)),
 };
 
 export const Foldable: TC.Foldable<Either<_0, _1>, 2> = {

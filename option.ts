@@ -72,46 +72,26 @@ export const isNone = <A>(m: Option<A>): m is None => m.tag === "None";
 export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
 
 /***************************************************************************************************
- * @section Modules
+ * @section Module Getters
  **************************************************************************************************/
-
-export const Monad = D.createMonad<Option<_>>({
-  of: some,
-  chain: (fatb, ta) => (isSome(ta) ? fatb(ta.value) : ta),
-});
-
-export const Applicative: TC.Applicative<Option<_>> = {
-  of: some,
-  ap: Monad.ap,
-  map: Monad.map,
-};
-
-export const Apply: TC.Apply<Option<_>> = {
-  ap: Monad.ap,
-  map: Monad.map,
-};
-
-export const Alternative: TC.Alternative<Option<_>> = {
-  of: some,
-  ap: Monad.ap,
-  map: Monad.map,
-  zero: constNone,
-  alt: (a, b) => (isSome(a) ? a : b),
-};
-
-export const Foldable: TC.Foldable<Option<_>> = {
-  reduce: (faba, a, tb) => (isSome(tb) ? faba(a, tb.value) : a),
-};
-
-export const Traversable: TC.Traversable<Option<_>> = {
-  map: Monad.map,
-  reduce: Foldable.reduce,
-  traverse: (F, faub, ta) =>
-    isNone(ta) ? F.of(none) : F.map(some, faub(ta.value)),
-};
 
 export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Option<A>> => ({
   show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
+});
+
+export const getSetoid = <A>(S: TC.Setoid<A>): TC.Setoid<Option<A>> => ({
+  equals: (a, b) =>
+    a === b || isNone(a)
+      ? isNone(b)
+      : (isNone(b) ? false : S.equals(a.value, b.value)),
+});
+
+export const getOrd = <A>(O: TC.Ord<A>): TC.Ord<Option<A>> => ({
+  ...getSetoid(O),
+  lte: (a, b) =>
+    a === b || isNone(a)
+      ? isNone(b)
+      : (isNone(b) ? false : O.lte(a.value, b.value)),
 });
 
 export const getSemigroup = <A>(
@@ -120,6 +100,85 @@ export const getSemigroup = <A>(
   concat: (x, y) =>
     isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value, y.value)),
 });
+
+export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<Option<A>> => ({
+  ...getSemigroup(M),
+  empty: constNone,
+});
+
+export const getGroup = <A>(G: TC.Group<A>): TC.Group<Option<A>> => ({
+  ...getMonoid(G),
+  invert: (ta) => isNone(ta) ? ta : some(G.invert(ta.value)),
+});
+
+/***************************************************************************************************
+ * @section Modules
+ **************************************************************************************************/
+
+export const Functor: TC.Functor<Option<_>> = {
+  map: (fab, ta) => isNone(ta) ? ta : some(fab(ta.value)),
+};
+
+export const Monad = D.createMonad<Option<_>>({
+  of: some,
+  chain: (fatb, ta) => (isSome(ta) ? fatb(ta.value) : ta),
+});
+
+export const Alt: TC.Alt<Option<_>> = {
+  alt: (a, b) => (isSome(a) ? a : b),
+  map: Functor.map,
+};
+
+export const Applicative: TC.Applicative<Option<_>> = {
+  of: some,
+  ap: Monad.ap,
+  map: Functor.map,
+};
+
+export const Apply: TC.Apply<Option<_>> = {
+  ap: Monad.ap,
+  map: Functor.map,
+};
+
+export const Alternative: TC.Alternative<Option<_>> = {
+  of: some,
+  ap: Monad.ap,
+  map: Functor.map,
+  zero: constNone,
+  alt: Alt.alt,
+};
+
+export const Chain: TC.Chain<Option<_>> = {
+  ap: Monad.ap,
+  map: Functor.map,
+  chain: Monad.chain,
+};
+
+export const Extends: TC.Extend<Option<_>> = {
+  map: Functor.map,
+  extend: (ftab, ta) => some(ftab(ta)),
+};
+
+export const Filterable: TC.Filterable<Option<_>> = {
+  filter: (predicate, ta) => isNone(ta) ? ta : predicate(ta.value) ? ta : none,
+};
+
+export const Foldable: TC.Foldable<Option<_>> = {
+  reduce: (faba, a, tb) => (isSome(tb) ? faba(a, tb.value) : a),
+};
+
+export const Plus: TC.Plus<Option<_>> = {
+  alt: Alt.alt,
+  map: Functor.map,
+  zero: constNone,
+};
+
+export const Traversable: TC.Traversable<Option<_>> = {
+  map: Functor.map,
+  reduce: Foldable.reduce,
+  traverse: (F, faub, ta) =>
+    isNone(ta) ? F.of(none) : F.map(some, faub(ta.value)),
+};
 
 /***************************************************************************************************
  * @section Transformers
