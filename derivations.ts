@@ -74,6 +74,31 @@ export const createPipeableTraversable: CreatePipeableTraversable = <T>(
 });
 
 /**
+ * Derive Pipeable IndexedTraversable from IndexedTraversable.
+ */
+type CreatePipeableIndexedTraversable = {
+  <T, I>(M: TC.IndexedTraversable<T>): TC.IndexedTraversableP<T, 1, I>;
+  <T, L extends 1, I>(
+    M: TC.IndexedTraversable<T, L, I>,
+  ): TC.IndexedTraversableP<T, L, I>;
+  <T, L extends 2, I>(
+    M: TC.IndexedTraversable<T, L, I>,
+  ): TC.IndexedTraversableP<T, L, I>;
+  <T, L extends 3, I>(
+    M: TC.IndexedTraversable<T, L, I>,
+  ): TC.IndexedTraversableP<T, L, I>;
+};
+
+export const createPipeableIndexedTraversable:
+  CreatePipeableIndexedTraversable = <T>(
+    T: TC.IndexedTraversable<T>,
+  ): TC.IndexedTraversableP<T> => ({
+    map: (fab) => (ta) => T.map(fab, ta),
+    reduce: (faba, a) => (tb) => T.reduce(faba, a, tb),
+    traverse: (A, faub) => (ta) => T.traverse(A, faub, ta),
+  });
+
+/**
  * Derive Pipeable Bifunctor from Bifunctor.
  */
 export const createPipeableBifunctor = <T>({

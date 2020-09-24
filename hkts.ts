@@ -1,3 +1,5 @@
+import { Refinement } from "./fns.ts";
+
 /***************************************************************************************************
  * @section Hole Types
  * @description Marks a type hole to be filled by the substitution ($) type
@@ -45,6 +47,7 @@ export type $<T, S extends any[]> = T extends Fix<infer U> ? U
   : T extends _<infer N> ? S[N]
   : T extends any[] ? { [K in keyof T]: $<T[K], S> }
   : T extends Promise<infer I> ? Promise<$<I, S>>
+  : T extends Refinement<infer A, infer B> ? Refinement<$<A, S>, $<B, S>>
   : T extends (...x: infer I) => infer O ? (...x: $<I, S>) => $<O, S>
   : T extends object ? { [K in keyof T]: $<T[K], S> }
   : T extends undefined | null | boolean | string | number ? T

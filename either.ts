@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { $, _0, _1, _2, _3 } from "./hkts.ts";
+import type { $, _0, _1, _2, _3, Fix } from "./hkts.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { isNotNil, Lazy, Predicate, Refinement } from "./fns.ts";
@@ -175,6 +175,23 @@ export const getGroup = <E, A>(
     isLeft(ta) ? left(GE.invert(ta.left)) : right(GA.invert(ta.right)),
 });
 
+export const getRightMonad = <E>(
+  S: TC.Semigroup<E>,
+): TC.Monad<Either<Fix<E>, _0>> => ({
+  of: right,
+  ap: (tfab, ta) =>
+    isLeft(tfab)
+      ? (isLeft(ta) ? left(S.concat(tfab.left, ta.left)) : tfab)
+      : (isLeft(ta) ? ta : right(tfab.right(ta.right))),
+  map: (fab, ta) => isLeft(ta) ? ta : right(fab(ta.right)),
+  join: (tta) => isLeft(tta) ? tta : tta.right,
+  chain: (fatb, ta) => isLeft(ta) ? ta : fatb(ta.right),
+});
+
+export const getRightBifunctor = <E>(): TC.Bifunctor<Either<Fix<E>, _0>> => ({
+  bimap: Bifunctor.bimap,
+});
+
 /***************************************************************************************************
  * @section Modules
  **************************************************************************************************/
@@ -191,6 +208,11 @@ export const Bifunctor: TC.Bifunctor<Either<_0, _1>> = {
 export const Monad = D.createMonad<Either<_0, _1>, 2>({
   of: right,
   chain: (fatb, ta) => (isRight(ta) ? fatb(ta.right) : ta),
+});
+
+export const MonadThrow: TC.MonadThrow<Either<_0, _1>, 2> = ({
+  ...Monad,
+  throwError: left,
 });
 
 export const Alt: TC.Alt<Either<_0, _1>, 2> = {
@@ -237,7 +259,7 @@ export const Traversable: TC.Traversable<Either<_0, _1>, 2> = {
 
 type GetEitherMonad = {
   <T, L extends 1>(M: TC.Monad<T, L>): TC.Monad<$<T, [Either<_0, _1>]>, 2>;
-  <T, L extends 2>(M: TC.Monad<T, L>): TC.Monad<$<T, [Either<_1, _2>]>, 3>;
+  <T, L extends 2>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, Either<_1, _2>]>, 3>;
 };
 
 /**

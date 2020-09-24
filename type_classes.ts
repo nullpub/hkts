@@ -89,12 +89,26 @@ export type ApplyFn<T, L extends LS> = {
  * Bifunctor
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#bifunctor
  */
-export type Bifunctor<T> = {
-  bimap: <A, B, C, D>(
+export type BifunctorFn<T, L extends LS> = {
+  1: <A, B, C, D>(
+    fab: (a: A) => B,
+    fcd: (c: C) => D,
+    ta: $<T, [A]>,
+  ) => $<T, [B]>;
+  2: <A, B, C, D>(
     fab: (a: A) => B,
     fcd: (c: C) => D,
     tac: $<T, [A, C]>,
   ) => $<T, [B, D]>;
+  3: <R, A, B, C, D>(
+    fab: (a: A) => B,
+    fcd: (c: C) => D,
+    tac: $<T, [R, A, C]>,
+  ) => $<T, [R, B, D]>;
+}[L];
+
+export type Bifunctor<T, L extends LS = 2> = {
+  bimap: BifunctorFn<T, L>;
 };
 
 /**
@@ -222,6 +236,25 @@ export type FoldableFn<T, L extends LS> = {
 }[L];
 
 /**
+ * IndexedFoldable
+ * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#foldable
+ */
+
+export type IndexedFoldable<T, L extends LS = 1, I = number> = {
+  reduce: IndexedFoldableFn<T, L, I>;
+};
+
+export type IndexedFoldableFn<T, L extends LS, I> = {
+  1: <A, B>(faba: (a: A, b: B, i: I) => A, a: A, tb: $<T, [B]>) => A;
+  2: <E, A, B>(faba: (a: A, b: B, i: I) => A, a: A, tb: $<T, [E, B]>) => A;
+  3: <R, E, A, B>(
+    faba: (a: A, b: B, i: I) => A,
+    a: A,
+    tb: $<T, [R, E, B]>,
+  ) => A;
+}[L];
+
+/**
  * Functor
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#functor
  */
@@ -259,6 +292,20 @@ export type Monad<T, L extends LS = 1> =
   & {
     join: MonadFn<T, L>;
   };
+
+/**
+ * MonadThrow
+ * https://github.com/gcanti/fp-ts/blob/master/src/MonadThrow.ts
+ */
+export type MonadThrowFn<T, L extends LS> = {
+  1: <E, A>(e: E) => $<T, [A]>;
+  2: <E, A>(e: E) => $<T, [E, A]>;
+  3: <R, E, A>(e: E) => $<T, [R, E, A]>;
+}[L];
+
+export type MonadThrow<T, L extends LS = 1> = Monad<T, L> & {
+  throwError: MonadThrowFn<T, L>;
+};
 
 /**
  * Monoid
@@ -361,6 +408,35 @@ export type Traversable<T, L extends LS = 1> =
   & Foldable<T, L>
   & {
     traverse: TraversableFn<T, L>;
+  };
+
+/**
+ * Traversable
+ * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#traversable
+ */
+export type IndexedTraversableFn<T, L extends LS, I> = {
+  1: <U, A, B>(
+    A: Applicative<U>,
+    faUb: (a: A, i: I) => $<U, [B]>,
+    Ta: $<T, [A]>,
+  ) => $<U, [$<T, [B]>]>;
+  2: <U, E, A, B>(
+    A: Applicative<U>,
+    faUb: (a: A, i: I) => $<U, [B]>,
+    Ta: $<T, [E, A]>,
+  ) => $<U, [$<T, [E, B]>]>;
+  3: <U, R, E, A, B>(
+    A: Applicative<U>,
+    faUb: (a: A, i: I) => $<U, [B]>,
+    Ta: $<T, [R, E, A]>,
+  ) => $<U, [$<T, [R, E, B]>]>;
+}[L];
+
+export type IndexedTraversable<T, L extends LS = 1, I = number> =
+  & Functor<T, L>
+  & IndexedFoldable<T, L, I>
+  & {
+    traverse: IndexedTraversableFn<T, L, I>;
   };
 
 /***************************************************************************************************
@@ -496,6 +572,22 @@ export type FoldableP<T, L extends LS = 1> = {
 };
 
 /**
+ * Pipeable IndexedFoldable
+ */
+export type IndexedFoldableFnP<T, L extends LS, I> = {
+  1: <A, B>(faba: (a: A, b: B, i: I) => A, a: A) => (tb: $<T, [B]>) => A;
+  2: <E, A, B>(faba: (a: A, b: B, i: I) => A, a: A) => (tb: $<T, [E, B]>) => A;
+  3: <R, E, A, B>(
+    faba: (a: A, b: B, i: I) => A,
+    a: A,
+  ) => (tb: $<T, [R, E, B]>) => A;
+}[L];
+
+export type IndexedFoldableP<T, L extends LS = 1, I = number> = {
+  reduce: IndexedFoldableFnP<T, L, I>;
+};
+
+/**
  * Pipeable Functor
  */
 export type FunctorFnP<T, L extends LS> = {
@@ -523,6 +615,20 @@ export type MonadP<T, L extends LS = 1> =
   & {
     join: MonadFnP<T, L>;
   };
+
+/**
+ * Pipeable MonadThrow
+ * https://github.com/gcanti/fp-ts/blob/master/src/MonadThrow.ts
+ */
+export type MonadThrowFnP<T, L extends LS> = {
+  1: <E, A>(e: E) => $<T, [A]>;
+  2: <E, A>(e: E) => $<T, [E, A]>;
+  3: <R, E, A>(e: E) => $<T, [R, E, A]>;
+}[L];
+
+export type MonadThrowP<T, L extends LS = 1> = MonadP<T, L> & {
+  throwError: MonadThrowFnP<T, L>;
+};
 
 /**
  * Pipeable Profunctor
@@ -564,4 +670,29 @@ export type TraversableP<T, L extends LS = 1> =
   & FoldableP<T, L>
   & {
     traverse: TraversableFnP<T, L>;
+  };
+
+/**
+ * Pipeable IndexedTraversable
+ */
+export type IndexedTraversableFnP<T, L extends LS, I> = {
+  1: <U, A, B>(
+    A: Applicative<U>,
+    faub: (a: A, i: I) => $<U, [B]>,
+  ) => (ta: $<T, [A]>) => $<U, [$<T, [B]>]>;
+  2: <U, E, A, B>(
+    A: Applicative<U>,
+    faub: (a: A, i: I) => $<U, [B]>,
+  ) => (ta: $<T, [E, A]>) => $<U, [$<T, [E, B]>]>;
+  3: <U, R, E, A, B>(
+    A: Applicative<U>,
+    faub: (a: A, i: I) => $<U, [B]>,
+  ) => (ta: $<T, [R, E, A]>) => $<U, [$<T, [R, E, B]>]>;
+}[L];
+
+export type IndexedTraversableP<T, L extends LS = 1, I = number> =
+  & FunctorP<T, L>
+  & IndexedFoldableP<T, L, I>
+  & {
+    traverse: IndexedTraversableFnP<T, L, I>;
   };
