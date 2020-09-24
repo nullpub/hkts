@@ -7,7 +7,7 @@ import * as D from "./derivations.ts";
  * @section Optimizations
  **************************************************************************************************/
 
-const _map = <A, B>(as: A[], fab: (a: A, i: number) => B): B[] => {
+const _map = <A, B>(as: ReadonlyArray<A>, fab: (a: A, i: number) => B): B[] => {
   const out: B[] = new Array(as.length);
   for (let i = 0; i < as.length; i++) {
     out[i] = fab(as[i], i);
@@ -16,7 +16,7 @@ const _map = <A, B>(as: A[], fab: (a: A, i: number) => B): B[] => {
 };
 
 const _reduce = <A, B>(
-  as: A[],
+  as: ReadonlyArray<A>,
   fbab: (b: B, a: A, i: number) => B,
   b: B,
 ): B => {
@@ -31,16 +31,16 @@ const _reduce = <A, B>(
  * @section Modules
  **************************************************************************************************/
 
-export const Monad = D.createMonad<Array<_>>({
+export const Monad = D.createMonad<ReadonlyArray<_>>({
   of: (a) => [a],
   chain: (fatb, ta) => _map(ta, fatb).flat(),
 });
 
-export const IndexedFoldable: TC.IndexedFoldable<Array<_>> = {
+export const IndexedFoldable: TC.IndexedFoldable<ReadonlyArray<_>> = {
   reduce: (faba, a, tb) => _reduce(tb, faba, a),
 };
 
-export const IndexedTraversable: TC.IndexedTraversable<Array<_>> = {
+export const IndexedTraversable: TC.IndexedTraversable<ReadonlyArray<_>> = {
   map: Monad.map,
   reduce: IndexedFoldable.reduce,
   traverse: (A, faub, ta) =>
@@ -59,9 +59,9 @@ export const IndexedTraversable: TC.IndexedTraversable<Array<_>> = {
     ),
 };
 
-export const Foldable: TC.Foldable<Array<_>> = IndexedFoldable;
+export const Foldable: TC.Foldable<ReadonlyArray<_>> = IndexedFoldable;
 
-export const Traversable: TC.Traversable<Array<_>> = IndexedTraversable;
+export const Traversable: TC.Traversable<ReadonlyArray<_>> = IndexedTraversable;
 
 /***************************************************************************************************
  * @section Pipeables

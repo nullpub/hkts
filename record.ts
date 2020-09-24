@@ -4,10 +4,16 @@ import type { _ } from "./hkts.ts";
 import * as D from "./derivations.ts";
 
 /***************************************************************************************************
+ * @section Types
+ **************************************************************************************************/
+
+export type Dictionary<T> = Readonly<Record<string, T>>;
+
+/***************************************************************************************************
  * @section Optimizations
  **************************************************************************************************/
 
-const _map = <A, B, R extends Record<string, A>>(
+const _map = <A, B, R extends Dictionary<A>>(
   fab: (a: A, i: string) => B,
   as: R,
 ): { [K in keyof R]: B } => {
@@ -19,7 +25,7 @@ const _map = <A, B, R extends Record<string, A>>(
   return out as { [K in keyof R]: B };
 };
 
-const _reduce = <A, B, R extends Record<string, A>>(
+const _reduce = <A, B, R extends Dictionary<A>>(
   faba: (b: B, a: A, i: string) => B,
   b: B,
   as: R,
@@ -32,7 +38,7 @@ const _reduce = <A, B, R extends Record<string, A>>(
   return out;
 };
 
-const _assign = <R extends Record<string, any>>(i: keyof R) =>
+const _assign = <R extends Dictionary<any>>(i: keyof R) =>
   (bs: Partial<R>) =>
     (b: R[typeof i]): Partial<R> => {
       bs[i] = b;
@@ -44,7 +50,7 @@ const _assign = <R extends Record<string, any>>(i: keyof R) =>
  **************************************************************************************************/
 
 export const IndexedFoldable: TC.IndexedFoldable<
-  { [key: string]: _ },
+  Dictionary<_>,
   1,
   string
 > = {
@@ -52,7 +58,7 @@ export const IndexedFoldable: TC.IndexedFoldable<
 };
 
 export const IndexedTraversable: TC.IndexedTraversable<
-  Record<string, _>,
+  Dictionary<_>,
   1,
   string
 > = {
@@ -71,10 +77,9 @@ export const IndexedTraversable: TC.IndexedTraversable<
     ),
 };
 
-export const Foldable: TC.Foldable<Record<string, _>> = IndexedFoldable;
+export const Foldable: TC.Foldable<Dictionary<_>> = IndexedFoldable;
 
-export const Traversable: TC.Traversable<Record<string, _>> =
-  IndexedTraversable;
+export const Traversable: TC.Traversable<Dictionary<_>> = IndexedTraversable;
 
 /***************************************************************************************************
  * @section Pipeables
