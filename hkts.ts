@@ -1,4 +1,4 @@
-import { Refinement } from "./fns.ts";
+import type { Refinement } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Hole Types
