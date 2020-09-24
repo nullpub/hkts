@@ -7,7 +7,10 @@ import * as D from "./derivations.ts";
  * @section Optimizations
  **************************************************************************************************/
 
-const _map = <A, B>(as: ReadonlyArray<A>, fab: (a: A, i: number) => B): B[] => {
+const _map = <A, B>(
+  as: ReadonlyArray<A>,
+  fab: (a: A, i: number) => B,
+): ReadonlyArray<B> => {
   const out: B[] = new Array(as.length);
   for (let i = 0; i < as.length; i++) {
     out[i] = fab(as[i], i);
