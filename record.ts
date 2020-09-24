@@ -18,9 +18,9 @@ const _map = <A, B, R extends Dictionary<A>>(
   as: R,
 ): { [K in keyof R]: B } => {
   const keys = Object.keys(as);
-  const out = {} as Record<string, B>;
+  const out: Record<string, B> = {};
   for (let i = 0; i < keys.length; i++) {
-    out[keys[i]] = fab(as[i], keys[i]);
+    out[keys[i]] = fab(as[keys[i]], keys[i]);
   }
   return out as { [K in keyof R]: B };
 };
