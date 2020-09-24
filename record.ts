@@ -7,9 +7,9 @@ import * as D from "./derivations.ts";
  * @section Optimizations
  **************************************************************************************************/
 
-const fastMap = <A, B, R extends Record<string, A>>(
-  as: R,
+const _map = <A, B, R extends Record<string, A>>(
   fab: (a: A, i: string) => B,
+  as: R,
 ): { [K in keyof R]: B } => {
   const keys = Object.keys(as);
   const out = {} as Record<string, B>;
@@ -19,10 +19,10 @@ const fastMap = <A, B, R extends Record<string, A>>(
   return out as { [K in keyof R]: B };
 };
 
-const fastReduce = <A, B, R extends Record<string, A>>(
-  as: R,
+const _reduce = <A, B, R extends Record<string, A>>(
   faba: (b: B, a: A, i: string) => B,
   b: B,
+  as: R,
 ): B => {
   const keys = Object.keys(as);
   let out = b;
@@ -32,31 +32,37 @@ const fastReduce = <A, B, R extends Record<string, A>>(
   return out;
 };
 
+const _assign = <R extends Record<string, any>>(i: keyof R) =>
+  (bs: Partial<R>) =>
+    (b: R[typeof i]): Partial<R> => {
+      bs[i] = b;
+      return bs;
+    };
+
 /***************************************************************************************************
  * @section Modules
  **************************************************************************************************/
 
-export const IndexedFoldable: TC.IndexedFoldable<Record<string, _>, 1, string> =
-  {
-    reduce: (faba, a, tb) => fastReduce(tb, faba, a),
-  };
+export const IndexedFoldable: TC.IndexedFoldable<
+  { [key: string]: _ },
+  1,
+  string
+> = {
+  reduce: _reduce,
+};
 
 export const IndexedTraversable: TC.IndexedTraversable<
   Record<string, _>,
   1,
   string
 > = {
-  map: (fab, ta) => fastMap(ta, fab),
+  map: _map,
   reduce: IndexedFoldable.reduce,
   traverse: (A, faub, ta) =>
     IndexedFoldable.reduce(
       (fbs, a, i) => {
         return A.ap(
-          A.map((bs: any) =>
-            (b: any) => {
-              bs[i] = b;
-              return bs;
-            }, fbs) as any,
+          A.map(_assign(i), fbs),
           faub(a, i),
         );
       },
@@ -65,15 +71,10 @@ export const IndexedTraversable: TC.IndexedTraversable<
     ),
 };
 
-export const Foldable: TC.Foldable<Record<string, _>> = {
-  reduce: (faba, a, tb) => IndexedFoldable.reduce(faba, a, tb),
-};
+export const Foldable: TC.Foldable<Record<string, _>> = IndexedFoldable;
 
-export const Traversable: TC.Traversable<Record<string, _>> = {
-  map: IndexedTraversable.map,
-  reduce: Foldable.reduce,
-  traverse: (A, faub, ta) => IndexedTraversable.traverse(A, faub, ta),
-};
+export const Traversable: TC.Traversable<Record<string, _>> =
+  IndexedTraversable;
 
 /***************************************************************************************************
  * @section Pipeables

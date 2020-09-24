@@ -37,7 +37,7 @@ export const Monad = D.createMonad<Array<_>>({
 });
 
 export const IndexedFoldable: TC.IndexedFoldable<Array<_>> = {
-  reduce: (faba, a, tb) => _reduce(tb, (a, b, i) => faba(a, b, i), a),
+  reduce: (faba, a, tb) => _reduce(tb, faba, a),
 };
 
 export const IndexedTraversable: TC.IndexedTraversable<Array<_>> = {
@@ -47,7 +47,11 @@ export const IndexedTraversable: TC.IndexedTraversable<Array<_>> = {
     IndexedFoldable.reduce(
       (fbs, a, i) =>
         A.ap(
-          A.map((bs: any) => (b: any) => [...bs, b], fbs) as any,
+          A.map((bs: any) =>
+            (b: any) => {
+              bs.push(b);
+              return bs;
+            }, fbs) as any,
           faub(a, i),
         ),
       A.of([]),
@@ -55,15 +59,9 @@ export const IndexedTraversable: TC.IndexedTraversable<Array<_>> = {
     ),
 };
 
-export const Foldable: TC.Foldable<Array<_>> = {
-  reduce: (faba, a, tb) => IndexedFoldable.reduce((a, b) => faba(a, b), a, tb),
-};
+export const Foldable: TC.Foldable<Array<_>> = IndexedFoldable;
 
-export const Traversable: TC.Traversable<Array<_>> = {
-  map: Monad.map,
-  reduce: Foldable.reduce,
-  traverse: (A, faub, ta) => IndexedTraversable.traverse(A, (a) => faub(a), ta),
-};
+export const Traversable: TC.Traversable<Array<_>> = IndexedTraversable;
 
 /***************************************************************************************************
  * @section Pipeables
