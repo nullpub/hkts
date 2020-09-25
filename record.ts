@@ -1,36 +1,30 @@
 import type * as TC from "./type_classes.ts";
-import type { _ } from "./hkts.ts";
+import type { $, _ } from "./hkts.ts";
 
 import * as D from "./derivations.ts";
-
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
-
-export type Dictionary<T> = Readonly<Record<string, T>>;
 
 /***************************************************************************************************
  * @section Optimizations
  **************************************************************************************************/
 
-const _map = <A, B, R extends Dictionary<A>>(
+const _map = <A, B, KS extends string>(
   fab: (a: A, i: string) => B,
-  as: R,
-): { [K in keyof R]: B } => {
-  const keys = Object.keys(as);
-  const out: Record<string, B> = {};
+  as: { [K in KS]: A },
+): { [K in KS]: B } => {
+  const keys = Object.keys(as) as KS[];
+  const out: Partial<{ [K in KS]: B }> = {};
   for (let i = 0; i < keys.length; i++) {
     out[keys[i]] = fab(as[keys[i]], keys[i]);
   }
-  return out as { [K in keyof R]: B };
+  return out as { [K in KS]: B };
 };
 
-const _reduce = <A, B, R extends Dictionary<A>>(
+const _reduce = <A, B, KS extends string>(
   faba: (b: B, a: A, i: string) => B,
   b: B,
-  as: R,
+  as: { [K in KS]: A },
 ): B => {
-  const keys = Object.keys(as);
+  const keys = Object.keys(as) as KS[];
   let out = b;
   for (let i = 0; i < keys.length; i++) {
     out = faba(out, as[keys[i]], keys[i]);
@@ -38,8 +32,8 @@ const _reduce = <A, B, R extends Dictionary<A>>(
   return out;
 };
 
-const _assign = <R extends Dictionary<any>>(i: keyof R) =>
-  (bs: Partial<R>) =>
+const _assign = <KS extends string>(i: KS) =>
+  <R extends { [K in KS]: any }>(bs: R) =>
     (b: R[typeof i]): Partial<R> => {
       bs[i] = b;
       return bs;
@@ -50,7 +44,7 @@ const _assign = <R extends Dictionary<any>>(i: keyof R) =>
  **************************************************************************************************/
 
 export const IndexedFoldable: TC.IndexedFoldable<
-  Dictionary<_>,
+  Readonly<Record<string, _>>,
   1,
   string
 > = {
@@ -58,7 +52,7 @@ export const IndexedFoldable: TC.IndexedFoldable<
 };
 
 export const IndexedTraversable: TC.IndexedTraversable<
-  Dictionary<_>,
+  Readonly<Record<string, _>>,
   1,
   string
 > = {
@@ -68,8 +62,8 @@ export const IndexedTraversable: TC.IndexedTraversable<
     IndexedFoldable.reduce(
       (fbs, a, i) => {
         return A.ap(
-          A.map(_assign(i), fbs),
-          faub(a, i),
+          A.map(_assign(i as any), fbs),
+          faub(a as any, i),
         );
       },
       A.of({}),
@@ -77,14 +71,28 @@ export const IndexedTraversable: TC.IndexedTraversable<
     ),
 };
 
-export const Foldable: TC.Foldable<Dictionary<_>> = IndexedFoldable;
+export const Foldable: TC.Foldable<Readonly<Record<string, _>>> =
+  IndexedFoldable;
 
-export const Traversable: TC.Traversable<Dictionary<_>> = IndexedTraversable;
+export const Traversable: TC.Traversable<Readonly<Record<string, _>>> =
+  IndexedTraversable;
+
+export const PipeableTraversable = D.createPipeableTraversable(
+  Traversable,
+);
 
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
 
-export const { map, reduce, traverse } = D.createPipeableTraversable(
-  Traversable,
-);
+export const map = PipeableTraversable.map as <A, B>(
+  fab: (a: A) => B,
+) => <K extends string>(r: Record<K, A>) => Record<K, B>;
+
+export const reduce = PipeableTraversable.reduce;
+
+export const traverse = PipeableTraversable.traverse as <U>(
+  A: TC.Applicative<U, 1>,
+) => <A, B>(
+  faub: (a: A) => $<U, [B]>,
+) => <K extends string>(ta: Record<K, A>) => $<U, [Record<K, A>]>;

@@ -70,7 +70,7 @@ export const createPipeableTraversable: CreatePipeableTraversable = <T>(
 ): TC.TraversableP<T> => ({
   map: (fab) => (ta) => T.map(fab, ta),
   reduce: (faba, a) => (tb) => T.reduce(faba, a, tb),
-  traverse: (A, faub) => (ta) => T.traverse(A, faub, ta),
+  traverse: (A) => (faub) => (ta) => T.traverse(A, faub, ta),
 });
 
 /**
@@ -95,7 +95,7 @@ export const createPipeableIndexedTraversable:
   ): TC.IndexedTraversableP<T> => ({
     map: (fab) => (ta) => T.map(fab, ta),
     reduce: (faba, a) => (tb) => T.reduce(faba, a, tb),
-    traverse: (A, faub) => (ta) => T.traverse(A, faub, ta),
+    traverse: (A) => (faub) => (ta) => T.traverse(A, faub, ta),
   });
 
 /**
@@ -106,7 +106,3 @@ export const createPipeableBifunctor = <T>({
 }: TC.Bifunctor<T>): TC.BifunctorP<T> => ({
   bimap: (fab, fcd) => (tac) => bimap(fab, fcd, tac),
 });
-
-/***************************************************************************************************
- * @section Composition Derivations
- **************************************************************************************************/

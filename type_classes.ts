@@ -651,18 +651,21 @@ export type SemigroupoidP<T> = {
  * Pipeable Traversable
  */
 export type TraversableFnP<T, L extends LS> = {
-  1: <U, A, B>(
+  1: <U>(
     A: Applicative<U>,
+  ) => <A, B>(
     faub: (a: A) => $<U, [B]>,
   ) => (ta: $<T, [A]>) => $<U, [$<T, [B]>]>;
-  2: <U, E, A, B>(
+  2: <U>(
     A: Applicative<U>,
+  ) => <A, B>(
     faub: (a: A) => $<U, [B]>,
-  ) => (ta: $<T, [E, A]>) => $<U, [$<T, [E, B]>]>;
-  3: <U, R, E, A, B>(
+  ) => <E>(ta: $<T, [E, A]>) => $<U, [$<T, [E, B]>]>;
+  3: <U>(
     A: Applicative<U>,
+  ) => <A, B>(
     faub: (a: A) => $<U, [B]>,
-  ) => (ta: $<T, [R, E, A]>) => $<U, [$<T, [R, E, B]>]>;
+  ) => <R, E>(ta: $<T, [R, E, A]>) => $<U, [$<T, [R, E, B]>]>;
 }[L];
 
 export type TraversableP<T, L extends LS = 1> =
@@ -676,18 +679,21 @@ export type TraversableP<T, L extends LS = 1> =
  * Pipeable IndexedTraversable
  */
 export type IndexedTraversableFnP<T, L extends LS, I> = {
-  1: <U, A, B>(
+  1: <U>(
     A: Applicative<U>,
+  ) => <A, B>(
     faub: (a: A, i: I) => $<U, [B]>,
   ) => (ta: $<T, [A]>) => $<U, [$<T, [B]>]>;
-  2: <U, E, A, B>(
+  2: <U>(
     A: Applicative<U>,
+  ) => <A, B>(
     faub: (a: A, i: I) => $<U, [B]>,
-  ) => (ta: $<T, [E, A]>) => $<U, [$<T, [E, B]>]>;
-  3: <U, R, E, A, B>(
+  ) => <E>(ta: $<T, [E, A]>) => $<U, [$<T, [E, B]>]>;
+  3: <U>(
     A: Applicative<U>,
+  ) => <A, B>(
     faub: (a: A, i: I) => $<U, [B]>,
-  ) => (ta: $<T, [R, E, A]>) => $<U, [$<T, [R, E, B]>]>;
+  ) => <R, E>(ta: $<T, [R, E, A]>) => $<U, [$<T, [R, E, B]>]>;
 }[L];
 
 export type IndexedTraversableP<T, L extends LS = 1, I = number> =
