@@ -1,15 +1,20 @@
-import { $, _ } from "./hkts.ts";
+import type { $, _ } from "./hkts.ts";
+import type { LS } from "./type_classes.ts";
 
-export type LS = 1 | 2 | 3;
+/***************************************************************************************************
+ * @section Types
+ **************************************************************************************************/
 
 export type Literal = string | number | boolean | null;
 
+/***************************************************************************************************
+ * @section Schemables
+ **************************************************************************************************/
+
 export type LiteralSchemable<S, L extends LS> = {
-  1: <A extends [Literal, ...Literal[]]>(...vs: A) => $<S, [A[number]]>;
-  2: <E, A extends [Literal, ...Literal[]]>(...vs: A) => $<S, [E, A[number]]>;
-  3: <R, E, A extends [Literal, ...Literal[]]>(
-    ...vs: A
-  ) => $<S, [R, E, A[number]]>;
+  1: <A extends [Literal, ...Literal[]]>(s: A) => $<S, [A[number]]>;
+  2: <E, A extends [Literal, ...Literal[]]>(s: A) => $<S, [E, A[number]]>;
+  3: <R, E, A extends [Literal, ...Literal[]]>(s: A) => $<S, [R, E, A[number]]>;
 }[L];
 
 export type StringSchemable<S, L extends LS> = {
@@ -85,25 +90,25 @@ export type TupleSchemable<S, L extends LS> = {
 }[L];
 
 export type IntersectSchemable<S, L extends LS> = {
-  1: <B>(b: $<S, [B]>) => <A>(a: $<S, [A]>) => $<S, [A & B]>;
-  2: <E, B>(b: $<S, [E, B]>) => <A>(a: $<S, [E, A]>) => $<S, [E, A & B]>;
-  3: <R, E, B>(
+  1: <A, B>(a: $<S, [A]>, b: $<S, [B]>) => $<S, [A & B]>;
+  2: <E, A, B>(a: $<S, [E, A]>, b: $<S, [E, B]>) => $<S, [E, A & B]>;
+  3: <R, E, A, B>(
+    a: $<S, [R, E, A]>,
     b: $<S, [R, E, B]>,
-  ) => <A>(a: $<S, [R, E, A]>) => $<S, [R, E, A & B]>;
+  ) => $<S, [R, E, A & B]>;
 }[L];
 
 export type SumSchemable<S, L extends LS> = {
-  1: <T extends string>(
+  1: <T extends string, A>(
     tag: T,
-  ) => <A>(members: { [K in keyof A]: $<S, [A[K]]> }) => $<S, [A[keyof A]]>;
-  2: <T extends string>(
+    members: { [K in keyof A]: $<S, [A[K]]> },
+  ) => $<S, [A[keyof A]]>;
+  2: <T extends string, E, A>(
     tag: T,
-  ) => <E, A>(
     members: { [K in keyof A]: $<S, [E, A[K]]> },
   ) => $<S, [E, A[keyof A]]>;
-  3: <T extends string>(
+  3: <T extends string, R, E, A>(
     tag: T,
-  ) => <R, E, A>(
     members: { [K in keyof A]: $<S, [R, E, A[K]]> },
   ) => $<S, [R, E, A[keyof A]]>;
 }[L];
@@ -113,6 +118,10 @@ export type LazySchemable<S, L extends LS> = {
   2: <E, A>(id: string, f: () => $<S, [E, A]>) => $<S, [E, A]>;
   3: <R, E, A>(id: string, f: () => $<S, [R, E, A]>) => $<S, [R, E, A]>;
 }[L];
+
+/***************************************************************************************************
+ * @section Module Definitions
+ **************************************************************************************************/
 
 export type Schemable<S, L extends LS = 1> = {
   readonly literal: LiteralSchemable<S, L>;
@@ -129,6 +138,16 @@ export type Schemable<S, L extends LS = 1> = {
   readonly sum: SumSchemable<S, L>;
   readonly lazy: LazySchemable<S, L>;
 };
+
+export type Schema<A, L extends LS = 1> = {
+  1: <S>(S: Schemable<S>) => $<S, [A]>;
+  2: <S, E>(S: Schemable<S>) => $<S, [E, A]>;
+  3: <S, R, E>(S: Schemable<S>) => $<S, [R, E, A]>;
+}[L];
+
+/***************************************************************************************************
+ * @section Utilities
+ **************************************************************************************************/
 
 export const memoize = <A, B>(f: (a: A) => B): (a: A) => B => {
   let cache = new Map();
@@ -155,8 +174,11 @@ export const intersect_ = <A, B>(a: A, b: B): A & B => {
   return b as any;
 };
 
-export interface Schema<A> {
-  <S>(S: Schemable<S>): $<S, [A]>;
-}
+type MakeSchema<L extends LS = 1> = {
+  1: <A>(S: Schema<A, L>) => Schema<A, L>;
+  2: <A>(S: Schema<A, L>) => Schema<A, L>;
+  3: <A>(S: Schema<A, L>) => Schema<A, L>;
+}[L];
 
-export const make = <A>(schema: Schema<A>): Schema<A> => memoize(schema);
+export const make: MakeSchema = <A>(schema: Schema<A>): Schema<A> =>
+  memoize(schema);

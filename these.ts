@@ -143,14 +143,14 @@ export const Functor: TC.Functor<These<_0, _1>, 2> = {
       : both(ta.left, fab(ta.right)),
 };
 
-export const Bifunctor: TC.Bifunctor<These<_0, _1>> = {
+export const Bifunctor = D.createBifunctor<These<_0, _1>>({
   bimap: (fab, fcd, tac) =>
     isLeft(tac)
       ? left(fab(tac.left))
       : isRight(tac)
       ? right(fcd(tac.right))
       : both(fab(tac.left), fcd(tac.right)),
-};
+});
 
 export const Foldable: TC.Foldable<These<_0, _1>, 2> = {
   reduce: (faba, a, tb) =>

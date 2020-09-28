@@ -7,7 +7,7 @@ import * as D from "./derivations.ts";
  * @section Optimizations
  **************************************************************************************************/
 
-const _map = <A, B>(
+export const _map = <A, B>(
   as: ReadonlyArray<A>,
   fab: (a: A, i: number) => B,
 ): ReadonlyArray<B> => {
@@ -18,7 +18,7 @@ const _map = <A, B>(
   return out;
 };
 
-const _reduce = <A, B>(
+export const _reduce = <A, B>(
   as: ReadonlyArray<A>,
   fbab: (b: B, a: A, i: number) => B,
   b: B,
@@ -29,6 +29,51 @@ const _reduce = <A, B>(
   }
   return out;
 };
+
+const _concat = <A>(
+  a: ReadonlyArray<A>,
+  b: ReadonlyArray<A>,
+): ReadonlyArray<A> => {
+  if (a.length === 0) {
+    return b;
+  }
+
+  if (b.length === 0) {
+    return a;
+  }
+
+  const result = Array(a.length + b.length);
+
+  for (let i = 0; i < a.length; i++) {
+    result[i] = a[i];
+  }
+
+  for (let i = 0; i < b.length; i++) {
+    result[i + a.length] = b[i];
+  }
+  return result;
+};
+
+/***************************************************************************************************
+ * @section Constructors
+ **************************************************************************************************/
+
+export const zero: ReadonlyArray<never> = [];
+
+export const empty = <A = never>(): ReadonlyArray<A> => zero;
+
+/***************************************************************************************************
+ * @section Module Getters
+ **************************************************************************************************/
+
+export const getShow = <A>({ show }: TC.Show<A>): TC.Show<readonly A[]> => ({
+  show: (ta) => `ReadonlyArray[${ta.map(show).join(", ")}]`,
+});
+
+export const getMonoid = <A = never>(): TC.Monoid<ReadonlyArray<A>> => ({
+  empty,
+  concat: _concat,
+});
 
 /***************************************************************************************************
  * @section Modules

@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { $, _0, _1, _2, _3, Fix } from "./hkts.ts";
+import type { $, _0, _1, _2, Fix } from "./hkts.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { isNotNil, Lazy, Predicate, Refinement } from "./fns.ts";
@@ -188,10 +188,6 @@ export const getRightMonad = <E>(
   chain: (fatb, ta) => isLeft(ta) ? ta : fatb(ta.right),
 });
 
-export const getRightBifunctor = <E>(): TC.Bifunctor<Either<Fix<E>, _0>> => ({
-  bimap: Bifunctor.bimap,
-});
-
 /***************************************************************************************************
  * @section Modules
  **************************************************************************************************/
@@ -200,10 +196,10 @@ export const Functor: TC.Functor<Either<_0, _1>, 2> = {
   map: (fab, ta) => isLeft(ta) ? ta : right(fab(ta.right)),
 };
 
-export const Bifunctor: TC.Bifunctor<Either<_0, _1>> = {
+export const Bifunctor = D.createBifunctor<Either<_0, _1>>({
   bimap: (fab, fcd, tac) =>
     isLeft(tac) ? left(fab(tac.left)) : right(fcd(tac.right)),
-};
+});
 
 export const Monad = D.createMonad<Either<_0, _1>, 2>({
   of: right,
@@ -285,7 +281,7 @@ export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
 
 export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
 
-export const { bimap } = D.createPipeableBifunctor(Bifunctor);
+export const { bimap, mapLeft } = D.createPipeableBifunctor(Bifunctor);
 
 /***************************************************************************************************
  * @section Sequence

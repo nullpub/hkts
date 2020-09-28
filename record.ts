@@ -7,7 +7,7 @@ import * as D from "./derivations.ts";
  * @section Optimizations
  **************************************************************************************************/
 
-const _map = <A, B, KS extends string>(
+export const _map = <A, B, KS extends string>(
   fab: (a: A, i: string) => B,
   as: { [K in KS]: A },
 ): { [K in KS]: B } => {
@@ -19,7 +19,7 @@ const _map = <A, B, KS extends string>(
   return out as { [K in KS]: B };
 };
 
-const _reduce = <A, B, KS extends string>(
+export const _reduce = <A, B, KS extends string>(
   faba: (b: B, a: A, i: string) => B,
   b: B,
   as: { [K in KS]: A },
@@ -32,7 +32,7 @@ const _reduce = <A, B, KS extends string>(
   return out;
 };
 
-const _assign = <KS extends string>(i: KS) =>
+export const _assign = <KS extends string>(i: KS) =>
   <R extends { [K in KS]: any }>(bs: R) =>
     (b: R[typeof i]): Partial<R> => {
       bs[i] = b;
@@ -91,8 +91,43 @@ export const map = PipeableTraversable.map as <A, B>(
 
 export const reduce = PipeableTraversable.reduce;
 
-export const traverse = PipeableTraversable.traverse as <U>(
-  A: TC.Applicative<U, 1>,
-) => <A, B>(
-  faub: (a: A) => $<U, [B]>,
-) => <K extends string>(ta: Record<K, A>) => $<U, [Record<K, A>]>;
+type TraverseFn<L extends TC.LS = 1> = {
+  1: <U>(
+    A: TC.Applicative<U, L>,
+  ) => <A, B>(
+    faub: (a: A) => $<U, [B]>,
+  ) => <K extends string>(ta: Record<K, A>) => $<U, [Record<K, A>]>;
+  2: <U>(
+    A: TC.Applicative<U, L>,
+  ) => <E, A, B>(
+    faub: (a: A) => $<U, [E, B]>,
+  ) => <K extends string>(ta: Record<K, A>) => $<U, [E, Record<K, A>]>;
+  3: <U>(
+    A: TC.Applicative<U, L>,
+  ) => <R, E, A, B>(
+    faub: (a: A) => $<U, [R, E, B]>,
+  ) => <K extends string>(ta: Record<K, A>) => $<U, [R, E, Record<K, A>]>;
+}[L];
+
+export const traverse: TraverseFn = PipeableTraversable.traverse as TraverseFn;
+
+type IndexedTraverseFn<I extends string = string, L extends TC.LS = 1> = {
+  1: <U>(
+    A: TC.Applicative<U, L>,
+  ) => <A, B>(
+    faub: (a: A, i: I) => $<U, [B]>,
+  ) => <K extends string>(ta: Record<K, A>) => $<U, [Record<K, A>]>;
+  2: <U>(
+    A: TC.Applicative<U, L>,
+  ) => <E, A, B>(
+    faub: (a: A, i: I) => $<U, [E, B]>,
+  ) => <K extends string>(ta: Record<K, A>) => $<U, [E, Record<K, A>]>;
+  3: <U>(
+    A: TC.Applicative<U, L>,
+  ) => <R, E, A, B>(
+    faub: (a: A, i: I) => $<U, [R, E, B]>,
+  ) => <K extends string>(ta: Record<K, A>) => $<U, [R, E, Record<K, A>]>;
+}[L];
+
+export const indexedTraverse: IndexedTraverseFn = PipeableTraversable
+  .traverse as IndexedTraverseFn;

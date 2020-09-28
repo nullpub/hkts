@@ -1,14 +1,26 @@
-import type { _, _0, _1 } from "./hkts.ts";
+import type { _ } from "./hkts.ts";
 
 import { pipe, Refinement } from "./fns.ts";
 import * as S from "./schemable.ts";
+
+/***************************************************************************************************
+ * @section Types
+ **************************************************************************************************/
 
 export interface Guard<I, A extends I> {
   is: Refinement<I, A>;
 }
 
-export const literal = <A extends readonly [S.Literal, ...Array<S.Literal>]>(
-  ...values: A
+export type InputOf<D> = D extends Guard<infer I, any> ? I : never;
+
+export type TypeOf<D> = D extends Guard<any, infer A> ? A : never;
+
+/***************************************************************************************************
+ * @section Guard Schemables
+ **************************************************************************************************/
+
+export const literal = <A extends readonly [S.Literal, ...S.Literal[]]>(
+  values: A,
 ): Guard<unknown, A[number]> => ({
   is: (u: unknown): u is A[number] => values.findIndex((a) => a === u) !== -1,
 });
@@ -111,10 +123,12 @@ export const tuple = <A extends ReadonlyArray<unknown>>(
     components.every((c, i) => c.is(u[i])),
 });
 
-export const intersect = <B>(right: Guard<unknown, B>) =>
-  <A>(left: Guard<unknown, A>): Guard<unknown, A & B> => ({
-    is: (u: unknown): u is A & B => left.is(u) && right.is(u),
-  });
+export const intersect = <A, B>(
+  left: Guard<unknown, A>,
+  right: Guard<unknown, B>,
+): Guard<unknown, A & B> => ({
+  is: (u: unknown): u is A & B => left.is(u) && right.is(u),
+});
 
 export const union = <A extends readonly [unknown, ...Array<unknown>]>(
   ...members: { [K in keyof A]: Guard<unknown, A[K]> }
@@ -147,22 +161,26 @@ export const id = <A>(): Guard<A, A> => ({
   is: (_): _ is A => true,
 });
 
-export const sum = <T extends string>(tag: T) =>
-  <A>(
-    members: { [K in keyof A]: Guard<unknown, A[K]> },
-  ): Guard<unknown, A[keyof A]> =>
-    pipe(
-      unknownRecord,
-      refine((r): r is any => {
-        const v = r[tag] as keyof A;
-        if (v in members) {
-          return members[v].is(r);
-        }
-        return false;
-      }),
-    );
+export const sum = <T extends string, A>(
+  tag: T,
+  members: { [K in keyof A]: Guard<unknown, A[K]> },
+): Guard<unknown, A[keyof A]> =>
+  pipe(
+    unknownRecord,
+    refine((r): r is any => {
+      const v = r[tag] as keyof A;
+      if (v in members) {
+        return members[v].is(r);
+      }
+      return false;
+    }),
+  );
 
-export const Schemable: S.Schemable<Guard<unknown, _0>> = {
+/***************************************************************************************************
+ * @section Guard Schemable
+ **************************************************************************************************/
+
+export const Schemable: S.Schemable<Guard<unknown, _>> = {
   literal,
   string: () => string,
   number: () => number,

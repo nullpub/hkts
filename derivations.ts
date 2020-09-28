@@ -1,6 +1,7 @@
 import type * as TC from "./type_classes.ts";
 
 import { identity } from "./fns.ts";
+import { map } from "./either.ts";
 
 /***************************************************************************************************
  * @section Module Derivations
@@ -30,6 +31,23 @@ export const createMonad: CreateMonad = <T>({
     ap: (tfab, ta) => chain((f) => map(f, ta), tfab),
   };
 };
+
+/**
+ * Derive Bifunctor module from bimap
+ */
+type CreateBifunctor = {
+  <T>(M: Pick<TC.Bifunctor<T>, "bimap">): TC.Bifunctor<T>;
+  <T, L extends 1>(M: Pick<TC.Bifunctor<T, L>, "bimap">): TC.Bifunctor<T, L>;
+  <T, L extends 2>(M: Pick<TC.Bifunctor<T, L>, "bimap">): TC.Bifunctor<T, L>;
+  <T, L extends 3>(M: Pick<TC.Bifunctor<T, L>, "bimap">): TC.Bifunctor<T, L>;
+};
+
+export const createBifunctor: CreateBifunctor = <T>({
+  bimap,
+}: Pick<TC.Bifunctor<T>, "bimap">): TC.Bifunctor<T> => ({
+  bimap,
+  mapLeft: (fef, tea) => bimap(fef, identity, tea),
+});
 
 /***************************************************************************************************
  * @section Pipeable Module Derivations
@@ -101,8 +119,22 @@ export const createPipeableIndexedTraversable:
 /**
  * Derive Pipeable Bifunctor from Bifunctor.
  */
-export const createPipeableBifunctor = <T>({
+type CreatePipeableBifunctor = {
+  <T, L extends 1>(
+    M: TC.Bifunctor<T, L>,
+  ): TC.BifunctorP<T, L>;
+  <T, L extends 2>(
+    M: TC.Bifunctor<T, L>,
+  ): TC.BifunctorP<T, L>;
+  <T, L extends 3>(
+    M: TC.Bifunctor<T, L>,
+  ): TC.BifunctorP<T, L>;
+};
+
+export const createPipeableBifunctor: CreatePipeableBifunctor = <T>({
   bimap,
+  mapLeft,
 }: TC.Bifunctor<T>): TC.BifunctorP<T> => ({
   bimap: (fab, fcd) => (tac) => bimap(fab, fcd, tac),
+  mapLeft: (fef) => (tac) => mapLeft(fef, tac),
 });
