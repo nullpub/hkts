@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.14](https://github.com/nullpub/hkts/compare/v0.0.13...v0.0.14) (2020-09-28)
+
+
+### Features
+
+* inncrease type accuracy of record traverse ([82482e3](https://github.com/nullpub/hkts/commit/82482e360a2129915c420d5693329c01decd4979))
+* make array and record readonly ([2a5db7a](https://github.com/nullpub/hkts/commit/2a5db7a70b6e778aac15c01bb119116dd7d70834))
+* much work towards io-ts ([50f033e](https://github.com/nullpub/hkts/commit/50f033e5d152b0f09919507638d8df206e492db3))
+* various monads and traversables ([10dc355](https://github.com/nullpub/hkts/commit/10dc355c29ae6480a17402719eed5c4f47290f05))
+
+
+### Bug Fixes
+
+* add type to import in hkts.ts to fix testing ([99fc094](https://github.com/nullpub/hkts/commit/99fc09485db25bcb1acd292dbf153df35e8114e1))
+* fix reference to dictionary value in _map ([cc44834](https://github.com/nullpub/hkts/commit/cc44834270cbaf635ccc7688449fce5e3688ef10))
+* minor optimizations for array and record ([6b262ff](https://github.com/nullpub/hkts/commit/6b262ff070a70911b265f9e1cbdb60cb0185af2e))
+* Pat likes consistent internal types.. ([cd5c348](https://github.com/nullpub/hkts/commit/cd5c3486a4b231ee17ea5556ff6074412260b605))
+
 ### [0.0.13](https://github.com/nullpub/hkts/compare/v0.0.12...v0.0.13) (2020-09-21)
 
 
