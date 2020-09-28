@@ -107,7 +107,7 @@ export const getSemigroup = <E, A>(
   },
 });
 
-export const getMonad = <E>(
+export const getRightMonad = <E>(
   SE: TC.Semigroup<E>,
 ): TC.Monad<These<Fix<E>, _0>> =>
   D.createMonad<These<Fix<E>, _0>>({

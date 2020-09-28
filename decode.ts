@@ -23,9 +23,9 @@ export type DecodeError = FS.FreeSemigroup<DE.DecodeError<string>>;
 
 export type Decoded<A> = E.Either<DecodeError, A>;
 
-export type InputOf<D> = D extends Decoder<infer I, any> ? I : never;
+export type InputOf<D> = D extends Decoder<infer I, infer _> ? I : never;
 
-export type TypeOf<D> = D extends Decoder<any, infer A> ? A : never;
+export type TypeOf<D> = D extends Decoder<infer _, infer A> ? A : never;
 
 /***************************************************************************************************
  * @section Modules

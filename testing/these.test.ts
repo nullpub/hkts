@@ -44,7 +44,7 @@ Deno.test({
 Deno.test({
   name: "These Module",
   fn(): void {
-    const Monad = T.getMonad({ concat: add });
+    const Monad = T.getRightMonad({ concat: add });
 
     // Test Laws
     assertMonad(Monad, "These");

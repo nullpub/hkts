@@ -46,8 +46,8 @@ export const fold = <A, B>(onSome: (a: A) => B, onNone: () => B) =>
     ta: Option<A>,
   ): B => (isNone(ta) ? onNone() : onSome(ta.value));
 
-export const getOrElse = <B>(onNone: () => B, ta: Option<B>): B =>
-  isNone(ta) ? onNone() : ta.value;
+export const getOrElse = <B>(onNone: () => B) =>
+  (ta: Option<B>): B => isNone(ta) ? onNone() : ta.value;
 
 export const toNullable = <A>(ma: Option<A>): A | null =>
   isNone(ma) ? null : ma.value;
