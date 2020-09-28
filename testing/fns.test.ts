@@ -1,6 +1,6 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import { compose, constant, curry2, flip, identity, pipe } from "../fns.ts";
+import { compose, constant, curry2, identity, pipe } from "../fns.ts";
 import * as O from "../option.ts";
 
 const a = {};
@@ -11,10 +11,6 @@ const addOneMap = curry2(O.Monad.map)(addOne);
 
 Deno.test("Fn identity", () => {
   assertEquals(identity(a), a);
-});
-
-Deno.test("Fn flip", () => {
-  assertEquals(flip(add)(1)(2), flip(add)(2)(1));
 });
 
 Deno.test("Fn compose", () => {
