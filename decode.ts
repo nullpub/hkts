@@ -1,6 +1,7 @@
 import type { _ } from "./hkts.ts";
 import type * as TC from "./type_classes.ts";
 
+import { createPipeableMonad } from "./derivations.ts";
 import { pipe, Refinement } from "./fns.ts";
 import * as S from "./schemable.ts";
 import * as G from "./guard.ts";
@@ -9,7 +10,6 @@ import * as R from "./record.ts";
 import * as T from "./tree.ts";
 import * as DE from "./decode_error.ts";
 import * as FS from "./free_semigroup.ts";
-import { createPipeableMonad } from "./derivations.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -50,7 +50,7 @@ const traverse = R.indexedTraverse(Applicative);
  **************************************************************************************************/
 
 const mapLeft = (fef: (e: DecodeError) => DecodeError) =>
-  <A>(ta: Decoded<A>): Decoded<A> => E.isLeft(ta) ? E.left(ta.left) : ta;
+  <A>(ta: Decoded<A>): Decoded<A> => E.isLeft(ta) ? E.left(fef(ta.left)) : ta;
 
 const bimap = <A, B>(fef: (e: DecodeError) => DecodeError, fab: (a: A) => B) =>
   (ta: Decoded<A>): Decoded<B> =>
@@ -176,10 +176,10 @@ export const stringify: <A>(e: E.Either<DecodeError, A>) => string = E.fold(
  **************************************************************************************************/
 
 export const literal = <A extends readonly [S.Literal, ...S.Literal[]]>(
-  values: A,
+  ...values: A
 ): Decoder<unknown, A[number]> => ({
   decode: (i) =>
-    G.literal(values).is(i) ? E.right(i) : E.left(
+    G.literal(...values).is(i) ? E.right(i) : E.left(
       error(i, values.map((value) => JSON.stringify(value)).join(" | ")),
     ),
 });

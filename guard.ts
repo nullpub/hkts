@@ -20,7 +20,7 @@ export type TypeOf<D> = D extends Guard<any, infer A> ? A : never;
  **************************************************************************************************/
 
 export const literal = <A extends readonly [S.Literal, ...S.Literal[]]>(
-  values: A,
+  ...values: A
 ): Guard<unknown, A[number]> => ({
   is: (u: unknown): u is A[number] => values.findIndex((a) => a === u) !== -1,
 });

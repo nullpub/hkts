@@ -12,9 +12,11 @@ export type Literal = string | number | boolean | null;
  **************************************************************************************************/
 
 export type LiteralSchemable<S, L extends LS> = {
-  1: <A extends [Literal, ...Literal[]]>(s: A) => $<S, [A[number]]>;
-  2: <E, A extends [Literal, ...Literal[]]>(s: A) => $<S, [E, A[number]]>;
-  3: <R, E, A extends [Literal, ...Literal[]]>(s: A) => $<S, [R, E, A[number]]>;
+  1: <A extends [Literal, ...Literal[]]>(...s: A) => $<S, [A[number]]>;
+  2: <E, A extends [Literal, ...Literal[]]>(...s: A) => $<S, [E, A[number]]>;
+  3: <R, E, A extends [Literal, ...Literal[]]>(
+    ...s: A
+  ) => $<S, [R, E, A[number]]>;
 }[L];
 
 export type StringSchemable<S, L extends LS> = {
