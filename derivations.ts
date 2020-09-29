@@ -1,7 +1,6 @@
 import type * as TC from "./type_classes.ts";
 
 import { identity } from "./fns.ts";
-import { map } from "./either.ts";
 
 /***************************************************************************************************
  * @section Module Derivations
