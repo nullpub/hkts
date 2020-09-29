@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.15](https://github.com/nullpub/hkts/compare/v0.0.14...v0.0.15) (2020-09-29)
+
+
+### Features
+
+* initial traversal optic and identity ([942bd1e](https://github.com/nullpub/hkts/commit/942bd1e97f0f0bba15560701588312a56f96290b))
+* more port of monocle-ts ([9d0892f](https://github.com/nullpub/hkts/commit/9d0892f70551277bc3a986dc76468064ad7a9c07))
+
+
+### Bug Fixes
+
+* remove flip test until I play with types more ([5847080](https://github.com/nullpub/hkts/commit/5847080d394e384d70db3b0d613f84548ce1cd4b))
+* seems like there is a deno bug with circ deps ([0969c3f](https://github.com/nullpub/hkts/commit/0969c3f77b910735245ab96fbe1e2e30eb6aa6c2))
+
 ### [0.0.14](https://github.com/nullpub/hkts/compare/v0.0.13...v0.0.14) (2020-09-28)
 
 
