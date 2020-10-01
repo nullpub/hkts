@@ -72,6 +72,11 @@ export const orElse = <E, A, M>(onLeft: (e: E) => Either<M, A>) =>
     ma: Either<E, A>,
   ): Either<M, A> => (isLeft(ma) ? onLeft(ma.left) : ma);
 
+export const stringifyJSON = <E>(
+  u: unknown,
+  onError: (reason: unknown) => E,
+): Either<E, string> => tryCatch(() => JSON.stringify(u), onError);
+
 /***************************************************************************************************
  * @section Guards
  **************************************************************************************************/
