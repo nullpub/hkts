@@ -6,7 +6,6 @@ import { pipe, Refinement } from "./fns.ts";
 import * as S from "./schemable.ts";
 import * as G from "./guard.ts";
 import * as E from "./either.ts";
-import * as R from "./record.ts";
 import * as T from "./tree.ts";
 import * as DE from "./decode_error.ts";
 import * as FS from "./free_semigroup.ts";
