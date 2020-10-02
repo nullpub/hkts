@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.17](https://github.com/nullpub/hkts/compare/v0.0.16...v0.0.17) (2020-10-02)
+
+
+### Features
+
+* implement state adt and fix decode bimap ([cc859a5](https://github.com/nullpub/hkts/commit/cc859a5b3d56ca32c99cf07361799eab0a463214))
+
 ### [0.0.16](https://github.com/nullpub/hkts/compare/v0.0.15...v0.0.16) (2020-10-01)
 
 
