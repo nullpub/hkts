@@ -41,9 +41,7 @@ const Applicative: TC.Applicative<Decoded<_>> = {
 
 const Alt: TC.Alt<Decoded<_>> = E.Alt;
 
-const { of, ap, map, join, chain } = createPipeableMonad(Monad);
-
-const traverse = R.indexedTraverse(Applicative);
+const { chain } = createPipeableMonad(Monad);
 
 /***************************************************************************************************
  * @section Module Pipeables
@@ -54,7 +52,7 @@ const mapLeft = (fef: (e: DecodeError) => DecodeError) =>
 
 const bimap = <A, B>(fef: (e: DecodeError) => DecodeError, fab: (a: A) => B) =>
   (ta: Decoded<A>): Decoded<B> =>
-    E.isLeft(ta) ? E.left(ta.left) : E.right(fab(ta.right));
+    E.isLeft(ta) ? E.left(fef(ta.left)) : E.right(fab(ta.right));
 
 /***************************************************************************************************
  * @section DecodeError Constructors
