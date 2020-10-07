@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.18](https://github.com/nullpub/hkts/compare/v0.0.17...v0.0.18) (2020-10-07)
+
+
+### Bug Fixes
+
+* refactor sequence ap constructors ([b05c9fb](https://github.com/nullpub/hkts/commit/b05c9fba50ca30edd775d3f190d4d0ea342dac20))
+
 ### [0.0.17](https://github.com/nullpub/hkts/compare/v0.0.16...v0.0.17) (2020-10-02)
 
 
