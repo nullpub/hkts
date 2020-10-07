@@ -59,15 +59,12 @@ type CreateSequenceTuple = {
 /**
  * Create a sequence over tuple function from Apply
  */
-export const createSequenceTuple: CreateSequenceTuple = <T>({
-  map,
-  ap,
-}: Apply<T>) =>
+export const createSequenceTuple: CreateSequenceTuple = <T>(A: Apply<T>) =>
   <R extends NonEmptyArray<$<T, [any]>>>(
     ...r: R
   ): SequenceTuple<T, R> => {
     const [head, ...tail] = r;
-    return _reduce(tail, ap, map(_getTupleConstructor(r.length), head));
+    return _reduce(tail, A.ap, A.map(_getTupleConstructor(r.length), head));
   };
 
 /***************************************************************************************************
@@ -91,16 +88,16 @@ type CreateSequenceStruct = {
     <R extends Record<string, $<T, [any, any, any]>>>(r: NonEmptyRecord<R>) => SequenceStruct<T, R, L>;
 };
 
-export const createSequenceStruct: CreateSequenceStruct = <T>({
-  ap,
-  map,
-}: Apply<T>) =>
+export const createSequenceStruct: CreateSequenceStruct = <T>(A: Apply<T>) =>
   <R extends Record<string, $<T, [any]>>>(
     r: NonEmptyRecord<R>,
   ): SequenceStruct<T, R> => {
     const keys = Object.keys(r);
     const [head, ...tail] = keys;
 
-    return _reduce(tail, (f, key) =>
-      ap(f, r[key]), map(_getRecordConstructor(keys), r[head]));
+    return _reduce(
+      tail,
+      (f, key) => A.ap(f, r[key]),
+      A.map(_getRecordConstructor(keys), r[head]),
+    );
   };
