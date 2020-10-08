@@ -88,6 +88,10 @@ export const Monad = D.createMonad<ReadonlyArray<_>>({
   chain: (fatb, ta) => _map(ta, (b) => fatb(b)).flat(1),
 });
 
+export const Filterable: TC.Filterable<ReadonlyArray<_>> = {
+  filter: (predicate, ta) => ta.filter(predicate),
+};
+
 export const Apply: TC.Apply<ReadonlyArray<_>> = {
   ap: Monad.ap,
   map: Functor.map,

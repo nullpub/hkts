@@ -29,20 +29,25 @@ export type DatumEither<E, A> = DA.Datum<E.Either<E, A>>;
  **************************************************************************************************/
 
 export const initial: Initial = DA.initial;
+
 export const pending: Pending = DA.pending;
+
 export const refresh = <E = never, A = never>(
   value: E.Either<E, A>,
 ): DatumEither<E, A> => DA.refresh(value);
+
 export const replete = <E = never, A = never>(
   value: E.Either<E, A>,
 ): DatumEither<E, A> => DA.replete(value);
 
 export const success = <E = never, A = never>(a: A): DatumEither<E, A> =>
   replete(E.right(a));
+
 export const failure = <E = never, A = never>(e: E): DatumEither<E, A> =>
   replete(E.left(e));
 
 export const constInitial = () => initial;
+
 export const constPending = () => pending;
 
 export const fromNullable = <E, A>(a: A): DatumEither<E, NonNullable<A>> =>
@@ -65,20 +70,25 @@ export const tryCatch = <E, A>(
 
 export const isInitial = <E, A>(m: DatumEither<E, A>): m is Initial =>
   m.tag === "Initial";
+
 export const isPending = <E, A>(m: DatumEither<E, A>): m is Pending =>
   m.tag === "Pending";
+
 export const isRefresh = <E, A>(m: DatumEither<E, A>): m is Refresh<E, A> =>
   m.tag === "Refresh";
+
 export const isReplete = <E, A>(m: DatumEither<E, A>): m is Replete<E, A> =>
   m.tag === "Replete";
 
 export const isNone = <E, A>(m: DatumEither<E, A>): m is None =>
   isInitial(m) || isPending(m);
+
 export const isSome = <E, A>(m: DatumEither<E, A>): m is Some<E, A> =>
   isRefresh(m) || isReplete(m);
 
 export const isSuccess = <E, A>(m: DatumEither<E, A>): m is Success<A> =>
   isSome(m) && E.isRight(m.value);
+
 export const isFailure = <E, A>(m: DatumEither<E, A>): m is Failure<E> =>
   isSome(m) && E.isLeft(m.value);
 
