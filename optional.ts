@@ -12,7 +12,7 @@ import {
   flow,
   identity,
 } from "./fns.ts";
-import { _0, _1 } from "./hkts.ts";
+import { _0, _1 } from "./types.ts";
 
 /***************************************************************************************************
  * @section Types

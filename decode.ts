@@ -1,4 +1,4 @@
-import type { _ } from "./hkts.ts";
+import type { _ } from "./types.ts";
 import type * as TC from "./type_classes.ts";
 
 import { createPipeableMonad } from "./derivations.ts";

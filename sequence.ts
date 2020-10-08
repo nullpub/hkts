@@ -1,4 +1,4 @@
-import type { $, _, _0, _1 } from "./hkts.ts";
+import type { $ } from "./types.ts";
 import type { Apply, LS } from "./type_classes.ts";
 
 import { _reduce } from "./array.ts";
@@ -55,18 +55,21 @@ type SequenceTuple<T, R extends NonEmptyArray<$<T, any[]>>, L extends LS = 1> = 
 // deno-fmt-ignore
 type CreateSequenceTuple = {
   <T, L extends 1>(A: Apply<T, L>):
-    <R extends NonEmptyArray<$<T, [any]>>>(...r: R) => SequenceTuple<T, R, L>;
+    <R extends NonEmptyArray<$<T, [unknown]>>>(...r: R) =>
+      SequenceTuple<T, R, L>;
   <T, L extends 2>(A: Apply<T, L>):
-    <R extends NonEmptyArray<$<T, [any, any]>>>(...r: R) => SequenceTuple<T, R, L>;
+    <R extends NonEmptyArray<$<T, [unknown, unknown]>>>(...r: R) =>
+      SequenceTuple<T, R, L>;
   <T, L extends 3>(A: Apply<T, L>):
-    <R extends NonEmptyArray<$<T, [any, any, any]>>>(...r: R) => SequenceTuple<T, R, L>;
+    <R extends NonEmptyArray<$<T, [unknown, unknown, unknown]>>>(...r: R) =>
+      SequenceTuple<T, R, L>;
 };
 
 /**
  * Create a sequence over tuple function from Apply
  */
 export const createSequenceTuple: CreateSequenceTuple = <T>(A: Apply<T>) =>
-  <R extends NonEmptyArray<$<T, [any]>>>(
+  <R extends NonEmptyArray<$<T, [unknown]>>>(
     ...r: R
   ): SequenceTuple<T, R> => {
     const [head, ...tail] = r;
@@ -96,15 +99,18 @@ type SequenceStruct<T, R extends Record<string, $<T, any[]>>, L extends LS = 1> 
 // deno-fmt-ignore
 type CreateSequenceStruct = {
   <T, L extends 1>(A: Apply<T, L>):
-    <R extends Record<string, $<T, [any]>>>(r: NonEmptyRecord<R>) => SequenceStruct<T, R, L>;
+    <R extends Record<string, $<T, [any]>>>(r: NonEmptyRecord<R>) =>
+      SequenceStruct<T, R, L>;
   <T, L extends 2>(A: Apply<T, L>):
-    <R extends Record<string, $<T, [any, any]>>>(r: NonEmptyRecord<R>) => SequenceStruct<T, R, L>;
+    <R extends Record<string, $<T, [any, any]>>>(r: NonEmptyRecord<R>) =>
+      SequenceStruct<T, R, L>;
   <T, L extends 3>(A: Apply<T, L>):
-    <R extends Record<string, $<T, [any, any, any]>>>(r: NonEmptyRecord<R>) => SequenceStruct<T, R, L>;
+    <R extends Record<string, $<T, [any, any, any]>>>(r: NonEmptyRecord<R>) =>
+      SequenceStruct<T, R, L>;
 };
 
 export const createSequenceStruct: CreateSequenceStruct = <T>(A: Apply<T>) =>
-  <R extends Record<string, $<T, [any]>>>(
+  <R extends Record<string, $<T, any[]>>>(
     r: NonEmptyRecord<R>,
   ): SequenceStruct<T, R> => {
     const keys = Object.keys(r);

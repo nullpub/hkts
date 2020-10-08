@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { _ } from "./hkts.ts";
+import type { _ } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { constant, pipe } from "./fns.ts";

@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { Fix, _0, _1 } from "./hkts.ts";
+import type { Fix, _0, _1 } from "./types.ts";
 
 import * as D from "./derivations.ts";
 import * as E from "./either.ts";

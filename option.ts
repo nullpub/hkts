@@ -1,8 +1,8 @@
 import type * as TC from "./type_classes.ts";
-import type { $, _ } from "./hkts.ts";
+import type { $, _, Lazy, Predicate } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-import { isNotNil, Lazy, Predicate } from "./fns.ts";
+import { isNotNil } from "./fns.ts";
 import * as D from "./derivations.ts";
 
 /***************************************************************************************************

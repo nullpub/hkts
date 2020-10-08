@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { _ } from "./hkts.ts";
+import type { _ } from "./types.ts";
 
 import { createMonad, createPipeableMonad } from "./derivations.ts";
 import { createSequenceTuple, createSequenceStruct } from "./sequence.ts";

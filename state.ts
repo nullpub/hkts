@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1 } from "./hkts.ts";
+import type { _0, _1 } from "./types.ts";
 
 import * as D from "./derivations.ts";
 import { flow } from "./fns.ts";

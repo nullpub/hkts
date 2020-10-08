@@ -1,4 +1,22 @@
-import type { Refinement } from "./fns.ts";
+/***************************************************************************************************
+ * @section Utility Types
+ **************************************************************************************************/
+
+export type Fn<AS extends unknown[], B> = (...as: AS) => B;
+
+export type Nil = undefined | null;
+
+export interface Lazy<A> {
+  (): A;
+}
+
+export interface Predicate<A> {
+  (a: A): boolean;
+}
+
+export interface Refinement<A, B extends A> {
+  (a: A): a is B;
+}
 
 /***************************************************************************************************
  * @section Hole Types

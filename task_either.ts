@@ -1,6 +1,6 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1, _2, _3 } from "./hkts.ts";
-import { Lazy, pipe } from "./fns.ts";
+import type { _0, _1, Lazy } from "./types.ts";
+import { pipe } from "./fns.ts";
 
 import * as E from "./either.ts";
 import * as T from "./task.ts";

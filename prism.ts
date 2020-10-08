@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1 } from "./hkts.ts";
+import type { _0, _1 } from "./types.ts";
 
 import * as L from "./lens.ts";
 import * as O from "./option.ts";

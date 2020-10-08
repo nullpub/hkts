@@ -1,6 +1,6 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import type { _ } from "../hkts.ts";
+import type { _ } from "../types.ts";
 
 import * as O from "../option.ts";
 import { createMonad } from "../derivations.ts";

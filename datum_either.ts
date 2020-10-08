@@ -1,7 +1,7 @@
 import type * as TC from "./type_classes.ts";
-import type { _, _0, _1 } from "./hkts.ts";
+import type { _, _0, _1, Lazy, Fn } from "./types.ts";
 
-import { Fn, identity, isNotNil, Lazy } from "./fns.ts";
+import { identity, isNotNil } from "./fns.ts";
 import * as DA from "./datum.ts";
 import * as E from "./either.ts";
 import * as D from "./derivations.ts";

@@ -1,5 +1,4 @@
-import type { Predicate } from "./fns.ts";
-import type { $ } from "./hkts.ts";
+import type { $, Predicate } from "./types.ts";
 
 /***************************************************************************************************
  * Type Classes

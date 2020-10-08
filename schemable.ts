@@ -1,4 +1,4 @@
-import type { $, _ } from "./hkts.ts";
+import type { $, _ } from "./types.ts";
 import type { LS } from "./type_classes.ts";
 
 /***************************************************************************************************
