@@ -52,21 +52,3 @@ export type $<T, S extends any[]> = T extends Fix<infer U> ? U
   : T extends object ? { [K in keyof T]: $<T[K], S> }
   : T extends undefined | null | boolean | string | number ? T
   : T;
-
-/**
- * Test substitutions
- */
-declare const indirect: unique symbol;
-
-type $$<T, S extends any[]> = (T extends Fix<infer U> ? { [indirect]: U }
-  : T extends _<infer N> ? { [indirect]: S[N] }
-  : // : T extends $$<$$<infer U, S>, S> ? { [indirect]: $$<U, S> } // Collapse fails
-  T extends any[] ? { [indirect]: { [K in keyof T]: $$<T[K], S> } }
-  : T extends Promise<infer I> ? { [indirect]: Promise<$$<I, S>> }
-  : T extends Refinement<infer A, infer B>
-    ? { [indirect]: Refinement<$$<A, S>, $$<B, S>> }
-  : T extends (...x: infer I) => infer O
-    ? { [indirect]: (...x: $$<I, S>) => $$<O, S> }
-  : T extends object ? { [indirect]: { [K in keyof T]: $$<T[K], S> } }
-  : T extends undefined | null | boolean | string | number ? { [indirect]: T }
-  : { [indirect]: T })[typeof indirect];

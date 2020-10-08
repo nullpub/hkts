@@ -37,13 +37,23 @@ const _getRecordConstructor = (
  **************************************************************************************************/
 
 type NonEmptyArray<T> = [T, ...T[]];
-type NonEmptyRecord<R> = keyof R extends never ? never : R;
+
+type Test<A, B, I extends number> = A extends $<B, [infer E, infer A]>
+  ? [E, A][I]
+  : never;
 
 // deno-fmt-ignore
 type SequenceTuple<T, R extends NonEmptyArray<$<T, any[]>>, L extends LS = 1> = {
-  1: $<T, [[...{ [K in keyof R]: R[K] extends $<T, [infer A]> ? A : never }]]>;
-  2: $<T, [[...{ [K in keyof R]: R[K] extends $<T, [infer e, infer A]> ? A : never }]]>;
-  3: $<T, [[...{ [K in keyof R]: R[K] extends $<T, [infer r, infer e, infer A]> ? A : never }]]>;
+  1: $<T, [{ [K in keyof R]: R[K] extends $<T, [infer A]> ? A : never }]>;
+  2: $<T, [
+    { [K in keyof R]: R[K] extends $<T, [infer E, infer A]> ? E : never }[number],
+    { [K in keyof R]: R[K] extends $<T, [infer E, infer A]> ? A : never },
+  ]>;
+  3: $<T, [
+    { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? R : never }[number],
+    { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? E : never }[number],
+    { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? A : never },
+  ]>;
 }[L];
 
 // deno-fmt-ignore
@@ -71,11 +81,20 @@ export const createSequenceTuple: CreateSequenceTuple = <T>(A: Apply<T>) =>
  * @section Sequence Struct
  **************************************************************************************************/
 
+type NonEmptyRecord<R> = keyof R extends never ? never : R;
+
 // deno-fmt-ignore
 type SequenceStruct<T, R extends Record<string, $<T, any[]>>, L extends LS = 1> = {
   1: $<T, [{ [K in keyof R]: R[K] extends $<T, [infer A]> ? A : never }]>;
-  2: $<T, [{ [K in keyof R]: R[K] extends $<T, [infer e, infer A]> ? A : never }]>;
-  3: $<T, [{ [K in keyof R]: R[K] extends $<T, [infer r, infer e, infer A]> ? A : never }]>;
+  2: $<T, [
+    { [K in keyof R]: R[K] extends $<T, [infer E, infer A]> ? E : never }[keyof R],
+    { [K in keyof R]: R[K] extends $<T, [infer E, infer A]> ? A : never },
+  ]>;
+  3: $<T, [
+    { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? R : never }[keyof R],
+    { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? E : never }[keyof R],
+    { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? A : never },
+  ]>;
 }[L];
 
 // deno-fmt-ignore

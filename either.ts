@@ -10,7 +10,9 @@ import * as D from "./derivations.ts";
  **************************************************************************************************/
 
 export type Left<L> = { tag: "Left"; left: L };
+
 export type Right<R> = { tag: "Right"; right: R };
+
 export type Either<L, R> = Left<L> | Right<R>;
 
 /***************************************************************************************************
@@ -21,6 +23,7 @@ export const left = <E = never, A = never>(left: E): Either<E, A> => ({
   tag: "Left",
   left,
 });
+
 export const right = <E = never, A = never>(right: A): Either<E, A> => ({
   tag: "Right",
   right,

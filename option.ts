@@ -214,7 +214,7 @@ export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
 export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
 
 /***************************************************************************************************
- * @section Utilities
+ * @section Sequence
  **************************************************************************************************/
 
 export const sequenceTuple = createSequenceTuple(Apply);
