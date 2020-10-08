@@ -36,9 +36,9 @@ Deno.test({
 
 Deno.test({
   name: "Option Modules",
-  fn(): void {
+  async fn() {
     // Test Laws
-    assertMonad(O.Monad, "Option");
+    await assertMonad(O.Monad, "Option");
 
     // Foldable
     const { reduce } = O.Foldable;

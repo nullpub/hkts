@@ -3,7 +3,7 @@ import * as DE from "../datum_either.ts";
 
 Deno.test({
   name: "DatumEither Modules",
-  fn(): void {
-    assertMonad(DE.Monad, "DatumEither");
+  async fn() {
+    await assertMonad(DE.Monad, "DatumEither");
   },
 });

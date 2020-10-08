@@ -38,10 +38,6 @@ const _getRecordConstructor = (
 
 type NonEmptyArray<T> = [T, ...T[]];
 
-type Test<A, B, I extends number> = A extends $<B, [infer E, infer A]>
-  ? [E, A][I]
-  : never;
-
 // deno-fmt-ignore
 type SequenceTuple<T, R extends NonEmptyArray<$<T, any[]>>, L extends LS = 1> = {
   1: $<T, [{ [K in keyof R]: R[K] extends $<T, [infer A]> ? A : never }]>;

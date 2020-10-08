@@ -43,11 +43,11 @@ Deno.test({
 
 Deno.test({
   name: "These Module",
-  fn(): void {
+  async fn() {
     const Monad = T.getRightMonad({ concat: add });
 
     // Test Laws
-    assertMonad(Monad, "These");
+    await assertMonad(Monad, "These");
 
     // Foldable
     const { reduce } = T.Foldable;

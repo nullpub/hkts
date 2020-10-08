@@ -4,8 +4,8 @@ import * as I from "../identity.ts";
 
 Deno.test({
   name: "Identity Modules",
-  fn(): void {
+  async fn() {
     // Test Laws
-    assertMonad(I.Monad, "Identity");
+    await assertMonad(I.Monad, "Identity");
   },
 });

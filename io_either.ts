@@ -49,11 +49,7 @@ export const orElse = <E, A, M>(onLeft: (e: E) => IOEither<M, A>) =>
  **************************************************************************************************/
 
 export const Functor: TC.Functor<IOEither<_0, _1>, 2> = {
-  map: (fab, ta) =>
-    pipe(
-      ta,
-      I.map(E.map(fab)),
-    ),
+  map: (fab, ta) => pipe(ta, I.map(E.map(fab))),
 };
 
 export const Bifunctor: TC.Bifunctor<IOEither<_0, _1>> = {
@@ -101,13 +97,17 @@ export const Extends: TC.Extend<IOEither<_0, _1>, 2> = {
 
 export const getRightMonad = <E>(
   S: TC.Semigroup<E>,
-): TC.Monad<IOEither<Fix<E>, _>, 1> => ({
-  of: right,
-  ap: (tfab, ta) => pipe(E.getRightMonad(S).ap(tfab(), ta()), constant),
-  map: Monad.map,
-  join: Monad.join,
-  chain: Monad.chain,
-});
+): TC.Monad<IOEither<Fix<E>, _>> => {
+  const { ap } = E.getRightMonad(S);
+
+  return ({
+    of: right,
+    ap: (tfab, ta) => pipe(ap(tfab(), ta()), constant),
+    map: Monad.map,
+    join: Monad.join,
+    chain: Monad.chain,
+  });
+};
 
 /***************************************************************************************************
  * @section Pipeables

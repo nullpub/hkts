@@ -37,9 +37,9 @@ Deno.test({
 
 Deno.test({
   name: "Either Modules",
-  fn(): void {
+  async fn() {
     // Test Laws
-    assertMonad(E.Monad, "Either");
+    await assertMonad(E.Monad, "Either");
 
     // Foldable
     const { reduce } = E.Foldable;

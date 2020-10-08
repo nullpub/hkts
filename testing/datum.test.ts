@@ -38,9 +38,9 @@ Deno.test({
 
 Deno.test({
   name: "Datum Modules",
-  fn(): void {
+  async fn() {
     // Test Laws
-    assertMonad(D.Monad, "Datum");
+    await assertMonad(D.Monad, "Datum");
 
     // Monad Join
     const { join } = D.Monad;

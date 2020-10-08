@@ -16,12 +16,12 @@ export type IO<A> = () => A;
  **************************************************************************************************/
 
 export const Functor: TC.Functor<IO<_>> = {
-  map: (fab, ta) => pipe(ta(), fab, constant),
+  map: (fab, ta) => () => fab(ta()),
 };
 
 export const Monad = D.createMonad<IO<_>>({
   of: constant,
-  chain: (fatb, ta) => pipe(ta(), fatb),
+  chain: (fatb, ta) => fatb(ta()),
 });
 
 export const Alt: TC.Alt<IO<_>> = {
@@ -48,7 +48,7 @@ export const Chain: TC.Chain<IO<_>> = {
 
 export const Extends: TC.Extend<IO<_>> = {
   map: Functor.map,
-  extend: (ftab, ta) => constant(ftab(ta)),
+  extend: (ftab, ta) => () => ftab(ta),
 };
 
 export const Foldable: TC.Foldable<IO<_>> = {

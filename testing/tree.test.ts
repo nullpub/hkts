@@ -4,8 +4,8 @@ import * as T from "../tree.ts";
 
 Deno.test({
   name: "Tree Modules",
-  fn(): void {
+  async fn() {
     // Test Laws
-    assertMonad(T.Monad, "Tree");
+    await assertMonad(T.Monad, "Tree");
   },
 });
