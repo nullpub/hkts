@@ -94,6 +94,7 @@ export const stringifyJSON = <E>(
  **************************************************************************************************/
 
 export const isLeft = <L, R>(m: Either<L, R>): m is Left<L> => m.tag === "Left";
+
 export const isRight = <L, R>(m: Either<L, R>): m is Right<R> =>
   m.tag === "Right";
 

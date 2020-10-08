@@ -50,6 +50,12 @@ type SequenceTuple<T, R extends NonEmptyArray<$<T, any[]>>, L extends LS = 1> = 
     { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? E : never }[number],
     { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? A : never },
   ]>;
+  4: $<T, [
+    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? S : never }[number],
+    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? R : never }[number],
+    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? E : never }[number],
+    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? A : never },
+  ]>;
 }[L];
 
 // deno-fmt-ignore
@@ -93,6 +99,12 @@ type SequenceStruct<T, R extends Record<string, $<T, any[]>>, L extends LS = 1> 
     { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? R : never }[keyof R],
     { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? E : never }[keyof R],
     { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? A : never },
+  ]>;
+  4: $<T, [
+    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? S : never }[keyof R],
+    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? R : never }[keyof R],
+    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? E : never }[keyof R],
+    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? A : never },
   ]>;
 }[L];
 

@@ -79,10 +79,19 @@ export const getMonoid = <A = never>(): TC.Monoid<ReadonlyArray<A>> => ({
  * @section Modules
  **************************************************************************************************/
 
+export const Functor: TC.Functor<ReadonlyArray<_>> = {
+  map: (fab, ta) => _map(ta, (a) => fab(a)),
+};
+
 export const Monad = D.createMonad<ReadonlyArray<_>>({
   of: (a) => [a],
-  chain: (fatb, ta) => _map(ta, fatb).flat(),
+  chain: (fatb, ta) => _map(ta, (b) => fatb(b)).flat(1),
 });
+
+export const Apply: TC.Apply<ReadonlyArray<_>> = {
+  ap: Monad.ap,
+  map: Functor.map,
+};
 
 export const IndexedFoldable: TC.IndexedFoldable<ReadonlyArray<_>> = {
   reduce: (faba, a, tb) => _reduce(tb, faba, a),

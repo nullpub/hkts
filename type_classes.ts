@@ -10,7 +10,7 @@ import type { $, Predicate } from "./types.ts";
 /**
  * Current supported typeclass lengths
  */
-export type LS = 1 | 2 | 3;
+export type LS = 1 | 2 | 3 | 4;
 
 /**
  * Compute the resultant typeclass length for typeclass composition
@@ -20,16 +20,25 @@ export type AddLength<A extends LS, B extends LS> = {
     1: 1;
     2: 2;
     3: 3;
+    4: 4;
   }[B];
   2: {
     1: 2;
     2: 3;
-    3: never;
+    3: 4;
+    4: never;
   }[B];
   3: {
     1: 3;
+    2: 4;
+    3: never;
+    4: never;
+  }[B];
+  4: {
+    1: 4;
     2: never;
     3: never;
+    4: never;
   }[B];
 }[A];
 
@@ -45,6 +54,10 @@ export type AltFn<T, L extends LS> = {
   1: <A>(ta: $<T, [A]>, tb: $<T, [A]>) => $<T, [A]>;
   2: <E, A>(ta: $<T, [E, A]>, tb: $<T, [E, A]>) => $<T, [E, A]>;
   3: <R, E, A>(ta: $<T, [R, E, A]>, tb: $<T, [R, E, A]>) => $<T, [R, E, A]>;
+  4: <S, R, E, A>(
+    ta: $<T, [S, R, E, A]>,
+    tb: $<T, [S, R, E, A]>,
+  ) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -65,6 +78,7 @@ export type ApplicativeFn<T, L extends LS> = {
   1: <A>(a: A) => $<T, [A]>;
   2: <E, A>(a: A) => $<T, [E, A]>;
   3: <R, E, A>(a: A) => $<T, [R, E, A]>;
+  4: <S, R, E, A>(a: A) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -82,6 +96,10 @@ export type ApplyFn<T, L extends LS> = {
     tfab: $<T, [R, E, (a: A) => B]>,
     ta: $<T, [R, E, A]>,
   ) => $<T, [R, E, B]>;
+  4: <S, R, E, A, B>(
+    tfab: $<T, [S, R, E, (a: A) => B]>,
+    ta: $<T, [S, R, E, A]>,
+  ) => $<T, [S, R, E, B]>;
 }[L];
 
 /**
@@ -105,6 +123,11 @@ export type BifunctorFn<T, L extends LS> = {
     fcd: (c: C) => D,
     tac: $<T, [R, A, C]>,
   ) => $<T, [R, B, D]>;
+  4: <S, R, A, B, C, D>(
+    fab: (a: A) => B,
+    fcd: (c: C) => D,
+    tac: $<T, [S, R, A, C]>,
+  ) => $<T, [S, R, B, D]>;
 }[L];
 
 export type BifunctorMapFn<T, L extends LS> = {
@@ -117,6 +140,10 @@ export type BifunctorMapFn<T, L extends LS> = {
     fef: (e: E) => F,
     tea: $<T, [R, E, A]>,
   ) => $<T, [R, F, A]>;
+  4: <S, R, E, F, A>(
+    fef: (e: E) => F,
+    tea: $<T, [S, R, E, A]>,
+  ) => $<T, [S, R, F, A]>;
 }[L];
 
 /**
@@ -142,6 +169,10 @@ export type ChainFn<T, L extends LS> = {
     fatb: (a: A) => $<T, [R, E, B]>,
     ta: $<T, [R, E, A]>,
   ) => $<T, [R, E, B]>;
+  4: <S, R, E, A, B>(
+    fatb: (a: A) => $<T, [S, R, E, B]>,
+    ta: $<T, [S, R, E, A]>,
+  ) => $<T, [S, R, E, B]>;
 }[L];
 
 /**
@@ -167,6 +198,10 @@ export type ChainRecFn<T, L extends LS> = {
     f: (next: (a: A) => C, done: (b: B) => C, a: A) => $<T, [R, E, C]>,
     a: A,
   ) => $<T, [R, E, B]>;
+  4: <S, R, E, A, B, C>(
+    f: (next: (a: A) => C, done: (b: B) => C, a: A) => $<T, [S, R, E, C]>,
+    a: A,
+  ) => $<T, [S, R, E, B]>;
 }[L];
 
 /**
@@ -181,6 +216,7 @@ export type ComonadFn<T, L extends LS> = {
   1: <A>(ta: $<T, [A]>) => A;
   2: <E, A>(ta: $<T, [E, A]>) => A;
   3: <R, E, A>(ta: $<T, [R, E, A]>) => A;
+  4: <S, R, E, A>(ta: $<T, [S, R, E, A]>) => A;
 }[L];
 
 /**
@@ -195,6 +231,10 @@ export type ContravariantFn<T, L extends LS> = {
   1: <A, B>(fab: (a: A) => B, tb: $<T, [B]>) => $<T, [A]>;
   2: <E, A, B>(fab: (a: A) => B, tb: $<T, [E, B]>) => $<T, [E, A]>;
   3: <R, E, A, B>(fab: (a: A) => B, tb: $<T, [R, E, B]>) => $<T, [R, E, A]>;
+  4: <S, R, E, A, B>(
+    fab: (a: A) => B,
+    tb: $<T, [S, R, E, B]>,
+  ) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -212,6 +252,10 @@ export type ExtendFn<T, L extends LS> = {
     ftab: (t: $<T, [R, E, A]>) => B,
     ta: $<T, [R, E, A]>,
   ) => $<T, [R, E, B]>;
+  4: <S, R, E, A, B>(
+    ftab: (t: $<T, [S, R, E, A]>) => B,
+    ta: $<T, [S, R, E, A]>,
+  ) => $<T, [S, R, E, B]>;
 }[L];
 
 /**
@@ -226,6 +270,10 @@ export type FilterableFn<T, L extends LS> = {
   1: <A>(predicate: Predicate<A>, ta: $<T, [A]>) => $<T, [A]>;
   2: <E, A>(predicate: Predicate<A>, ta: $<T, [E, A]>) => $<T, [E, A]>;
   3: <R, E, A>(predicate: Predicate<A>, ta: $<T, [R, E, A]>) => $<T, [R, E, A]>;
+  4: <S, R, E, A>(
+    predicate: Predicate<A>,
+    ta: $<T, [S, R, E, A]>,
+  ) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -241,6 +289,11 @@ export type FoldableFn<T, L extends LS> = {
   1: <A, B>(faba: (a: A, b: B) => A, a: A, tb: $<T, [B]>) => A;
   2: <E, A, B>(faba: (a: A, b: B) => A, a: A, tb: $<T, [E, B]>) => A;
   3: <R, E, A, B>(faba: (a: A, b: B) => A, a: A, tb: $<T, [R, E, B]>) => A;
+  4: <S, R, E, A, B>(
+    faba: (a: A, b: B) => A,
+    a: A,
+    tb: $<T, [S, R, E, B]>,
+  ) => A;
 }[L];
 
 /**
@@ -260,6 +313,11 @@ export type IndexedFoldableFn<T, L extends LS, I> = {
     a: A,
     tb: $<T, [R, E, B]>,
   ) => A;
+  4: <S, R, E, A, B>(
+    faba: (a: A, b: B, i: I) => A,
+    a: A,
+    tb: $<T, [S, R, E, B]>,
+  ) => A;
 }[L];
 
 /**
@@ -274,6 +332,10 @@ export type FunctorFn<T, L extends LS> = {
   1: <A, B>(fab: (a: A) => B, ta: $<T, [A]>) => $<T, [B]>;
   2: <E, A, B>(fab: (a: A) => B, ta: $<T, [E, A]>) => $<T, [E, B]>;
   3: <R, E, A, B>(fab: (a: A) => B, ta: $<T, [R, E, A]>) => $<T, [R, E, B]>;
+  4: <S, R, E, A, B>(
+    fab: (a: A) => B,
+    ta: $<T, [S, R, E, A]>,
+  ) => $<T, [S, R, E, B]>;
 }[L];
 
 /**
@@ -287,6 +349,9 @@ export type Group<T> = Monoid<T> & {
 /**
  * Monad
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#monad
+ * 
+ * Here we extend Monad with a join function. Other names for join
+ * are flatten or flat.
  */
 export type Monad<T, L extends LS = 1> =
   & Applicative<T, L>
@@ -299,6 +364,9 @@ export type MonadFn<T, L extends LS> = {
   1: <A>(tta: $<T, [$<T, [A]>]>) => $<T, [A]>;
   2: <E, A>(tta: $<T, [E, $<T, [E, A]>]>) => $<T, [E, A]>;
   3: <R, E, A>(tta: $<T, [R, E, $<T, [R, E, A]>]>) => $<T, [R, E, A]>;
+  4: <S, R, E, A>(
+    tta: $<T, [S, R, E, $<T, [S, R, E, A]>]>,
+  ) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -313,6 +381,7 @@ export type MonadThrowFn<T, L extends LS> = {
   1: <E, A>(e: E) => $<T, [A]>;
   2: <E, A>(e: E) => $<T, [E, A]>;
   3: <R, E, A>(e: E) => $<T, [R, E, A]>;
+  4: <S, R, E, A>(e: E) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -343,6 +412,7 @@ export type PlusFn<T, L extends LS> = {
   1: <A>() => $<T, [A]>;
   2: <E, A>() => $<T, [E, A]>;
   3: <R, E, A>() => $<T, [R, E, A]>;
+  4: <S, R, E, A>() => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -419,11 +489,19 @@ export type TraversableFn<T, L extends LS> = {
     faUb: (a: A) => $<U, [B]>,
     Ta: $<T, [R, E, A]>,
   ) => $<U, [$<T, [R, E, B]>]>;
+  4: <U, S, R, E, A, B>(
+    A: Applicative<U>,
+    faUb: (a: A) => $<U, [B]>,
+    Ta: $<T, [S, R, E, A]>,
+  ) => $<U, [$<T, [S, R, E, B]>]>;
 }[L];
 
 /**
  * Traversable
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#traversable
+ * 
+ * Based on the fp-ts indexed traversable. Mimics the traversable type but includes
+ * an index type that is passed to the traverse mapping function.
  */
 export type IndexedTraversable<T, L extends LS = 1, I = number> =
   & Functor<T, L>
@@ -448,6 +526,11 @@ export type IndexedTraversableFn<T, L extends LS, I> = {
     faUb: (a: A, i: I) => $<U, [B]>,
     Ta: $<T, [R, E, A]>,
   ) => $<U, [$<T, [R, E, B]>]>;
+  4: <U, S, R, E, A, B>(
+    A: Applicative<U>,
+    faUb: (a: A, i: I) => $<U, [B]>,
+    Ta: $<T, [S, R, E, A]>,
+  ) => $<U, [$<T, [S, R, E, B]>]>;
 }[L];
 
 /***************************************************************************************************
@@ -465,6 +548,9 @@ export type AltFnP<T, L extends LS> = {
   1: <A>(ta: $<T, [A]>) => (tb: $<T, [A]>) => $<T, [A]>;
   2: <E, A>(ta: $<T, [E, A]>) => (tb: $<T, [E, A]>) => $<T, [E, A]>;
   3: <R, E, A>(ta: $<T, [R, E, A]>) => (tb: $<T, [R, E, A]>) => $<T, [R, E, A]>;
+  4: <S, R, E, A>(
+    ta: $<T, [S, R, E, A]>,
+  ) => (tb: $<T, [S, R, E, A]>) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -478,6 +564,7 @@ export type ApplicativeFnP<T, L extends LS> = {
   1: <A>(a: A) => $<T, [A]>;
   2: <E, A>(a: A) => $<T, [E, A]>;
   3: <R, E, A>(a: A) => $<T, [R, E, A]>;
+  4: <S, R, E, A>(a: A) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -495,6 +582,9 @@ export type ApplyFnP<T, L extends LS> = {
   3: <R, E, A, B>(
     tfab: $<T, [R, E, (a: A) => B]>,
   ) => (ta: $<T, [R, E, A]>) => $<T, [R, E, B]>;
+  4: <S, R, E, A, B>(
+    tfab: $<T, [S, R, E, (a: A) => B]>,
+  ) => (ta: $<T, [S, R, E, A]>) => $<T, [S, R, E, B]>;
 }[L];
 
 /**
@@ -519,6 +609,12 @@ export type BifunctorFnP<T, L extends LS> = {
   ) => (
     tac: $<T, [R, A, C]>,
   ) => $<T, [R, B, D]>;
+  4: <S, R, A, B, C, D>(
+    fab: (a: A) => B,
+    fcd: (c: C) => D,
+  ) => (
+    tac: $<T, [S, R, A, C]>,
+  ) => $<T, [S, R, B, D]>;
 }[L];
 
 export type BifunctorMapFnP<T, L extends LS> = {
@@ -533,6 +629,11 @@ export type BifunctorMapFnP<T, L extends LS> = {
   ) => (
     tea: $<T, [R, E, A]>,
   ) => $<T, [R, F, A]>;
+  4: <S, R, E, F, A>(
+    fef: (e: E) => F,
+  ) => (
+    tea: $<T, [S, R, E, A]>,
+  ) => $<T, [S, R, F, A]>;
 }[L];
 
 /**
@@ -550,6 +651,9 @@ export type ChainFnP<T, L extends LS> = {
   3: <R, E, A, B>(
     fatb: (a: A) => $<T, [R, E, B]>,
   ) => (ta: $<T, [R, E, A]>) => $<T, [R, E, B]>;
+  4: <S, R, E, A, B>(
+    fatb: (a: A) => $<T, [S, R, E, B]>,
+  ) => (ta: $<T, [S, R, E, A]>) => $<T, [S, R, E, B]>;
 }[L];
 
 /**
@@ -563,6 +667,9 @@ export type ContravariantFnP<T, L extends LS> = {
   1: <A, B>(fab: (a: A) => B) => (tb: $<T, [B]>) => $<T, [A]>;
   2: <E, A, B>(fab: (a: A) => B) => (tb: $<T, [E, B]>) => $<T, [E, A]>;
   3: <R, E, A, B>(fab: (a: A) => B) => (tb: $<T, [R, E, B]>) => $<T, [R, E, A]>;
+  4: <S, R, E, A, B>(
+    fab: (a: A) => B,
+  ) => (tb: $<T, [S, R, E, B]>) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -580,6 +687,9 @@ export type ExtendFnP<T, L extends LS> = {
   3: <R, E, A, B>(
     ftab: (t: $<T, [R, E, A]>) => B,
   ) => (ta: $<T, [R, E, A]>) => $<T, [R, E, B]>;
+  4: <S, R, E, A, B>(
+    ftab: (t: $<T, [S, R, E, A]>) => B,
+  ) => (ta: $<T, [S, R, E, A]>) => $<T, [S, R, E, B]>;
 }[L];
 
 /**
@@ -595,6 +705,9 @@ export type FilterableFnP<T, L extends LS> = {
   3: <R, E, A>(
     predicate: Predicate<A>,
   ) => (ta: $<T, [R, E, A]>) => $<T, [R, E, A]>;
+  4: <S, R, E, A>(
+    predicate: Predicate<A>,
+  ) => (ta: $<T, [S, R, E, A]>) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -608,6 +721,10 @@ export type FoldableFnP<T, L extends LS> = {
   1: <A, B>(faba: (a: A, b: B) => A, a: A) => (tb: $<T, [B]>) => A;
   2: <E, A, B>(faba: (a: A, b: B) => A, a: A) => (tb: $<T, [E, B]>) => A;
   3: <R, E, A, B>(faba: (a: A, b: B) => A, a: A) => (tb: $<T, [R, E, B]>) => A;
+  4: <S, R, E, A, B>(
+    faba: (a: A, b: B) => A,
+    a: A,
+  ) => (tb: $<T, [S, R, E, B]>) => A;
 }[L];
 
 /**
@@ -624,6 +741,10 @@ export type IndexedFoldableFnP<T, L extends LS, I> = {
     faba: (a: A, b: B, i: I) => A,
     a: A,
   ) => (tb: $<T, [R, E, B]>) => A;
+  4: <S, R, E, A, B>(
+    faba: (a: A, b: B, i: I) => A,
+    a: A,
+  ) => (tb: $<T, [S, R, E, B]>) => A;
 }[L];
 
 /**
@@ -637,6 +758,9 @@ export type FunctorFnP<T, L extends LS> = {
   1: <A, B>(fab: (a: A) => B) => (ta: $<T, [A]>) => $<T, [B]>;
   2: <E, A, B>(fab: (a: A) => B) => (ta: $<T, [E, A]>) => $<T, [E, B]>;
   3: <R, E, A, B>(fab: (a: A) => B) => (ta: $<T, [R, E, A]>) => $<T, [R, E, B]>;
+  4: <S, R, E, A, B>(
+    fab: (a: A) => B,
+  ) => (ta: $<T, [S, R, E, A]>) => $<T, [S, R, E, B]>;
 }[L];
 
 /**
@@ -653,6 +777,9 @@ export type MonadFnP<T, L extends LS> = {
   1: <A>(tta: $<T, [$<T, [A]>]>) => $<T, [A]>;
   2: <E, A>(tta: $<T, [E, $<T, [E, A]>]>) => $<T, [E, A]>;
   3: <R, E, A>(tta: $<T, [R, E, $<T, [R, E, A]>]>) => $<T, [R, E, A]>;
+  4: <S, R, E, A>(
+    tta: $<T, [S, R, E, $<T, [S, R, E, A]>]>,
+  ) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -667,6 +794,7 @@ export type MonadThrowFnP<T, L extends LS> = {
   1: <E, A>(e: E) => $<T, [A]>;
   2: <E, A>(e: E) => $<T, [E, A]>;
   3: <R, E, A>(e: E) => $<T, [R, E, A]>;
+  4: <S, R, E, A>(e: E) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
@@ -714,6 +842,11 @@ export type TraversableFnP<T, L extends LS> = {
   ) => <A, B>(
     faub: (a: A) => $<U, [B]>,
   ) => <R, E>(ta: $<T, [R, E, A]>) => $<U, [$<T, [R, E, B]>]>;
+  4: <U>(
+    A: Applicative<U>,
+  ) => <A, B>(
+    faub: (a: A) => $<U, [B]>,
+  ) => <S, R, E>(ta: $<T, [S, R, E, A]>) => $<U, [$<T, [S, R, E, B]>]>;
 }[L];
 
 /**
@@ -742,4 +875,9 @@ export type IndexedTraversableFnP<T, L extends LS, I> = {
   ) => <A, B>(
     faub: (a: A, i: I) => $<U, [B]>,
   ) => <R, E>(ta: $<T, [R, E, A]>) => $<U, [$<T, [R, E, B]>]>;
+  4: <U>(
+    A: Applicative<U>,
+  ) => <A, B>(
+    faub: (a: A, i: I) => $<U, [B]>,
+  ) => <S, R, E>(ta: $<T, [S, R, E, A]>) => $<U, [$<T, [S, R, E, B]>]>;
 }[L];

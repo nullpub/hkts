@@ -14,6 +14,7 @@ type CreateMonad = {
   <T, L extends 1>(M: Pick<TC.Monad<T, L>, "of" | "chain">): TC.Monad<T, L>;
   <T, L extends 2>(M: Pick<TC.Monad<T, L>, "of" | "chain">): TC.Monad<T, L>;
   <T, L extends 3>(M: Pick<TC.Monad<T, L>, "of" | "chain">): TC.Monad<T, L>;
+  <T, L extends 4>(M: Pick<TC.Monad<T, L>, "of" | "chain">): TC.Monad<T, L>;
 };
 
 export const createMonad: CreateMonad = <T>({
@@ -39,6 +40,7 @@ type CreateBifunctor = {
   <T, L extends 1>(M: Pick<TC.Bifunctor<T, L>, "bimap">): TC.Bifunctor<T, L>;
   <T, L extends 2>(M: Pick<TC.Bifunctor<T, L>, "bimap">): TC.Bifunctor<T, L>;
   <T, L extends 3>(M: Pick<TC.Bifunctor<T, L>, "bimap">): TC.Bifunctor<T, L>;
+  <T, L extends 4>(M: Pick<TC.Bifunctor<T, L>, "bimap">): TC.Bifunctor<T, L>;
 };
 
 export const createBifunctor: CreateBifunctor = <T>({
@@ -60,6 +62,7 @@ type CreatePipeableMonad = {
   <T, L extends 1>(M: TC.Monad<T>): TC.MonadP<T, L>;
   <T, L extends 2>(M: TC.Monad<T, L>): TC.MonadP<T, L>;
   <T, L extends 3>(M: TC.Monad<T, L>): TC.MonadP<T, L>;
+  <T, L extends 4>(M: TC.Monad<T, L>): TC.MonadP<T, L>;
 };
 
 export const createPipeableMonad: CreatePipeableMonad = <T>(
@@ -80,6 +83,7 @@ type CreatePipeableTraversable = {
   <T, L extends 1>(M: TC.Traversable<T, L>): TC.TraversableP<T, L>;
   <T, L extends 2>(M: TC.Traversable<T, L>): TC.TraversableP<T, L>;
   <T, L extends 3>(M: TC.Traversable<T, L>): TC.TraversableP<T, L>;
+  <T, L extends 4>(M: TC.Traversable<T, L>): TC.TraversableP<T, L>;
 };
 
 export const createPipeableTraversable: CreatePipeableTraversable = <T>(
@@ -104,6 +108,9 @@ type CreatePipeableIndexedTraversable = {
   <T, L extends 3, I>(
     M: TC.IndexedTraversable<T, L, I>,
   ): TC.IndexedTraversableP<T, L, I>;
+  <T, L extends 4, I>(
+    M: TC.IndexedTraversable<T, L, I>,
+  ): TC.IndexedTraversableP<T, L, I>;
 };
 
 export const createPipeableIndexedTraversable:
@@ -126,6 +133,9 @@ type CreatePipeableBifunctor = {
     M: TC.Bifunctor<T, L>,
   ): TC.BifunctorP<T, L>;
   <T, L extends 3>(
+    M: TC.Bifunctor<T, L>,
+  ): TC.BifunctorP<T, L>;
+  <T, L extends 4>(
     M: TC.Bifunctor<T, L>,
   ): TC.BifunctorP<T, L>;
 };
