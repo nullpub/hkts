@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.19](https://github.com/nullpub/hkts/compare/v0.0.18...v0.0.19) (2020-10-09)
+
+
+### Features
+
+* abstract assertMonad and refactor io ([8e9f4e1](https://github.com/nullpub/hkts/commit/8e9f4e142d2d368448ee9100ae814eefeae3c80e))
+* added many law tests and format datum_either ([dfd55c5](https://github.com/nullpub/hkts/commit/dfd55c58011c6a21096eee114769fec01399cd04))
+* extended type constructer lengths to 4 ([3e997c9](https://github.com/nullpub/hkts/commit/3e997c907840cc4e8d21e793fa0bb7d27b738307))
+* implement io and io_either adts ([5e23dad](https://github.com/nullpub/hkts/commit/5e23dad651722dd151913f0660a54136bb2dcacf))
+
+
+### Bug Fixes
+
+* colocate utility types and hkts ([1a9f8c2](https://github.com/nullpub/hkts/commit/1a9f8c2cb16048ad03ad98de3455d843848d40ff))
+
 ### [0.0.18](https://github.com/nullpub/hkts/compare/v0.0.17...v0.0.18) (2020-10-07)
 
 
