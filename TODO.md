@@ -2,7 +2,6 @@
 
 - port io-ts (likely will need additional adts for this)
 - port monocle-ts (likely will need additional adts for this)
-- clean sequenceT and sequenceS implementations
 - implement tests for other algebraic modules
 - revisit getEitherM and getOptionM types
 - port hyper-ts to Deno
