@@ -107,6 +107,11 @@ type TraverseFn<L extends TC.LS = 1> = {
   ) => <R, E, A, B>(
     faub: (a: A) => $<U, [R, E, B]>,
   ) => <K extends string>(ta: Record<K, A>) => $<U, [R, E, Record<K, A>]>;
+  4: <U>(
+    A: TC.Applicative<U, L>,
+  ) => <S, R, E, A, B>(
+    faub: (a: A) => $<U, [S, R, E, B]>,
+  ) => <K extends string>(ta: Record<K, A>) => $<U, [S, R, E, Record<K, A>]>;
 }[L];
 
 export const traverse: TraverseFn = PipeableTraversable.traverse as TraverseFn;
@@ -127,6 +132,11 @@ type IndexedTraverseFn<I extends string = string, L extends TC.LS = 1> = {
   ) => <R, E, A, B>(
     faub: (a: A, i: I) => $<U, [R, E, B]>,
   ) => <K extends string>(ta: Record<K, A>) => $<U, [R, E, Record<K, A>]>;
+  4: <U>(
+    A: TC.Applicative<U, L>,
+  ) => <S, R, E, A, B>(
+    faub: (a: A, i: I) => $<U, [S, R, E, B]>,
+  ) => <K extends string>(ta: Record<K, A>) => $<U, [S, R, E, Record<K, A>]>;
 }[L];
 
 export const indexedTraverse: IndexedTraverseFn = PipeableTraversable

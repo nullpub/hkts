@@ -1,10 +1,10 @@
 import type * as TC from "./type_classes.ts";
-import type { $, _0, _1 } from "./types.ts";
+import type { $, _0, _1, Refinement, Predicate } from "./types.ts";
 
 import * as I from "./identity.ts";
 import * as P from "./prism.ts";
 import * as L from "./lens.ts";
-import { Refinement, Predicate, pipe } from "./fns.ts";
+import { pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types

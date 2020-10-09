@@ -1,11 +1,11 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1 } from "./types.ts";
+import type { _0, _1, Refinement, Predicate } from "./types.ts";
+import type { Traversal } from "./traversal.ts";
 
 import * as L from "./lens.ts";
 import * as O from "./option.ts";
 import { Optional, compose as composeO } from "./optional.ts";
-import { Traversal } from "./traversal.ts";
-import { identity, Refinement, Predicate, flow, pipe } from "./fns.ts";
+import { identity, flow, pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types

@@ -1,8 +1,8 @@
-import type { _ } from "./types.ts";
+import type { _, Refinement } from "./types.ts";
 import type * as TC from "./type_classes.ts";
 
 import { createPipeableMonad } from "./derivations.ts";
-import { pipe, Refinement } from "./fns.ts";
+import { pipe } from "./fns.ts";
 import * as S from "./schemable.ts";
 import * as G from "./guard.ts";
 import * as E from "./either.ts";

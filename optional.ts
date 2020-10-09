@@ -1,18 +1,10 @@
 import type * as TC from "./type_classes.ts";
-import type { Either } from "./either.ts";
+import type { _0, _1, Refinement, Predicate } from "./types.ts";
+import type { Traversal } from "./traversal.ts";
 
 import * as O from "./option.ts";
 import * as L from "./lens.ts";
-import { Traversal } from "./traversal.ts";
-import {
-  constant,
-  Refinement,
-  Predicate,
-  pipe,
-  flow,
-  identity,
-} from "./fns.ts";
-import { _0, _1 } from "./types.ts";
+import { constant, pipe, flow, identity } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types

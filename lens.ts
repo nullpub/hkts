@@ -1,18 +1,11 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1 } from "./types.ts";
+import type { _0, _1, Predicate, Refinement } from "./types.ts";
+import type { Optional } from "./optional.ts";
+import type { Prism } from "./prism.ts";
+import type { Traversal } from "./traversal.ts";
 
 import * as O from "./option.ts";
-import type { Optional } from "./optional.ts";
-import { Prism } from "./prism.ts";
-import { Traversal } from "./traversal.ts";
-import {
-  constant,
-  flow,
-  identity,
-  pipe,
-  Predicate,
-  Refinement,
-} from "./fns.ts";
+import { constant, flow, identity, pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Models

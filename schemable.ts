@@ -11,140 +11,173 @@ export type Literal = string | number | boolean | null;
  * @section Schemables
  **************************************************************************************************/
 
-export type LiteralSchemable<S, L extends LS> = {
-  1: <A extends [Literal, ...Literal[]]>(...s: A) => $<S, [A[number]]>;
-  2: <E, A extends [Literal, ...Literal[]]>(...s: A) => $<S, [E, A[number]]>;
+export type LiteralSchemable<T, L extends LS> = {
+  1: <A extends [Literal, ...Literal[]]>(...s: A) => $<T, [A[number]]>;
+  2: <E, A extends [Literal, ...Literal[]]>(...s: A) => $<T, [E, A[number]]>;
   3: <R, E, A extends [Literal, ...Literal[]]>(
     ...s: A
-  ) => $<S, [R, E, A[number]]>;
+  ) => $<T, [R, E, A[number]]>;
+  4: <S, R, E, A extends [Literal, ...Literal[]]>(
+    ...s: A
+  ) => $<T, [S, R, E, A[number]]>;
 }[L];
 
-export type StringSchemable<S, L extends LS> = {
-  1: () => $<S, [string]>;
-  2: <E>() => $<S, [E, string]>;
-  3: <R, E>() => $<S, [R, E, string]>;
+export type StringSchemable<T, L extends LS> = {
+  1: () => $<T, [string]>;
+  2: <E>() => $<T, [E, string]>;
+  3: <R, E>() => $<T, [R, E, string]>;
+  4: <S, R, E>() => $<T, [S, R, E, string]>;
 }[L];
 
-export type NumberSchemable<S, L extends LS> = {
-  1: () => $<S, [number]>;
-  2: <E>() => $<S, [E, number]>;
-  3: <R, E>() => $<S, [R, E, number]>;
+export type NumberSchemable<T, L extends LS> = {
+  1: () => $<T, [number]>;
+  2: <E>() => $<T, [E, number]>;
+  3: <R, E>() => $<T, [R, E, number]>;
+  4: <S, R, E>() => $<T, [S, R, E, number]>;
 }[L];
 
-export type BooleanSchemable<S, L extends LS> = {
-  1: () => $<S, [boolean]>;
-  2: <E>() => $<S, [E, boolean]>;
-  3: <R, E>() => $<S, [R, E, boolean]>;
+export type BooleanSchemable<T, L extends LS> = {
+  1: () => $<T, [boolean]>;
+  2: <E>() => $<T, [E, boolean]>;
+  3: <R, E>() => $<T, [R, E, boolean]>;
+  4: <S, R, E>() => $<T, [S, R, E, boolean]>;
 }[L];
 
-export type NullableSchemable<S, L extends LS> = {
-  1: <A>(or: $<S, [A]>) => $<S, [null | A]>;
-  2: <E, A>(or: $<S, [E, A]>) => $<S, [E, null | A]>;
-  3: <R, E, A>(or: $<S, [R, E, A]>) => $<S, [R, E, null | A]>;
+export type NullableSchemable<T, L extends LS> = {
+  1: <A>(or: $<T, [A]>) => $<T, [null | A]>;
+  2: <E, A>(or: $<T, [E, A]>) => $<T, [E, null | A]>;
+  3: <R, E, A>(or: $<T, [R, E, A]>) => $<T, [R, E, null | A]>;
+  4: <S, R, E, A>(or: $<T, [S, R, E, A]>) => $<T, [S, R, E, null | A]>;
 }[L];
 
-export type TypeSchemable<S, L extends LS> = {
+export type TypeSchemable<T, L extends LS> = {
   1: <A>(
-    properties: { [K in keyof A]: $<S, [A[K]]> },
-  ) => $<S, [{ [K in keyof A]: A[K] }]>;
+    properties: { [K in keyof A]: $<T, [A[K]]> },
+  ) => $<T, [{ [K in keyof A]: A[K] }]>;
   2: <E, A>(
-    properties: { [K in keyof A]: $<S, [E, A[K]]> },
-  ) => $<S, [E, { [K in keyof A]: A[K] }]>;
+    properties: { [K in keyof A]: $<T, [E, A[K]]> },
+  ) => $<T, [E, { [K in keyof A]: A[K] }]>;
   3: <R, E, A>(
-    properties: { [K in keyof A]: $<S, [R, E, A[K]]> },
-  ) => $<S, [R, E, { [K in keyof A]: A[K] }]>;
+    properties: { [K in keyof A]: $<T, [R, E, A[K]]> },
+  ) => $<T, [R, E, { [K in keyof A]: A[K] }]>;
+  4: <S, R, E, A>(
+    properties: { [K in keyof A]: $<T, [S, R, E, A[K]]> },
+  ) => $<T, [S, R, E, { [K in keyof A]: A[K] }]>;
 }[L];
 
-export type PartialSchemable<S, L extends LS> = {
+export type PartialSchemable<T, L extends LS> = {
   1: <A>(
-    properties: { [K in keyof A]: $<S, [A[K]]> },
-  ) => $<S, [Partial<{ [K in keyof A]: A[K] }>]>;
+    properties: { [K in keyof A]: $<T, [A[K]]> },
+  ) => $<T, [Partial<{ [K in keyof A]: A[K] }>]>;
   2: <E, A>(
-    properties: { [K in keyof A]: $<S, [E, A[K]]> },
-  ) => $<S, [E, Partial<{ [K in keyof A]: A[K] }>]>;
+    properties: { [K in keyof A]: $<T, [E, A[K]]> },
+  ) => $<T, [E, Partial<{ [K in keyof A]: A[K] }>]>;
   3: <R, E, A>(
-    properties: { [K in keyof A]: $<S, [R, E, A[K]]> },
-  ) => $<S, [R, E, Partial<{ [K in keyof A]: A[K] }>]>;
+    properties: { [K in keyof A]: $<T, [R, E, A[K]]> },
+  ) => $<T, [R, E, Partial<{ [K in keyof A]: A[K] }>]>;
+  4: <S, R, E, A>(
+    properties: { [K in keyof A]: $<T, [S, R, E, A[K]]> },
+  ) => $<T, [S, R, E, Partial<{ [K in keyof A]: A[K] }>]>;
 }[L];
 
-export type RecordSchemable<S, L extends LS> = {
-  1: <A>(codomain: $<S, [A]>) => $<S, [Record<string, A>]>;
-  2: <E, A>(codomain: $<S, [E, A]>) => $<S, [E, Record<string, A>]>;
-  3: <R, E, A>(codomain: $<S, [R, E, A]>) => $<S, [R, E, Record<string, A>]>;
+export type RecordSchemable<T, L extends LS> = {
+  1: <A>(codomain: $<T, [A]>) => $<T, [Record<string, A>]>;
+  2: <E, A>(codomain: $<T, [E, A]>) => $<T, [E, Record<string, A>]>;
+  3: <R, E, A>(codomain: $<T, [R, E, A]>) => $<T, [R, E, Record<string, A>]>;
+  4: <S, R, E, A>(
+    codomain: $<T, [S, R, E, A]>,
+  ) => $<T, [S, R, E, Record<string, A>]>;
 }[L];
 
-export type ArraySchemable<S, L extends LS> = {
-  1: <A>(item: $<S, [A]>) => $<S, [Array<A>]>;
-  2: <E, A>(item: $<S, [E, A]>) => $<S, [E, Array<A>]>;
-  3: <R, E, A>(item: $<S, [R, E, A]>) => $<S, [R, E, Array<A>]>;
+export type ArraySchemable<T, L extends LS> = {
+  1: <A>(item: $<T, [A]>) => $<T, [Array<A>]>;
+  2: <E, A>(item: $<T, [E, A]>) => $<T, [E, Array<A>]>;
+  3: <R, E, A>(item: $<T, [R, E, A]>) => $<T, [R, E, Array<A>]>;
+  4: <S, R, E, A>(item: $<T, [S, R, E, A]>) => $<T, [S, R, E, Array<A>]>;
 }[L];
 
-export type TupleSchemable<S, L extends LS> = {
+export type TupleSchemable<T, L extends LS> = {
   1: <A extends ReadonlyArray<unknown>>(
-    ...components: { [K in keyof A]: $<S, [A[K]]> }
-  ) => $<S, [A]>;
+    ...components: { [K in keyof A]: $<T, [A[K]]> }
+  ) => $<T, [A]>;
   2: <E, A extends ReadonlyArray<unknown>>(
-    ...components: { [K in keyof A]: $<S, [E, A[K]]> }
-  ) => $<S, [E, A]>;
+    ...components: { [K in keyof A]: $<T, [E, A[K]]> }
+  ) => $<T, [E, A]>;
   3: <R, E, A extends ReadonlyArray<unknown>>(
-    ...components: { [K in keyof A]: $<S, [R, E, A[K]]> }
-  ) => $<S, [R, E, A]>;
+    ...components: { [K in keyof A]: $<T, [R, E, A[K]]> }
+  ) => $<T, [R, E, A]>;
+  4: <S, R, E, A extends ReadonlyArray<unknown>>(
+    ...components: { [K in keyof A]: $<T, [S, R, E, A[K]]> }
+  ) => $<T, [S, R, E, A]>;
 }[L];
 
-export type IntersectSchemable<S, L extends LS> = {
-  1: <A, B>(a: $<S, [A]>, b: $<S, [B]>) => $<S, [A & B]>;
-  2: <E, A, B>(a: $<S, [E, A]>, b: $<S, [E, B]>) => $<S, [E, A & B]>;
+export type IntersectSchemable<T, L extends LS> = {
+  1: <A, B>(a: $<T, [A]>, b: $<T, [B]>) => $<T, [A & B]>;
+  2: <E, A, B>(a: $<T, [E, A]>, b: $<T, [E, B]>) => $<T, [E, A & B]>;
   3: <R, E, A, B>(
-    a: $<S, [R, E, A]>,
-    b: $<S, [R, E, B]>,
-  ) => $<S, [R, E, A & B]>;
+    a: $<T, [R, E, A]>,
+    b: $<T, [R, E, B]>,
+  ) => $<T, [R, E, A & B]>;
+  4: <S, R, E, A, B>(
+    a: $<T, [S, R, E, A]>,
+    b: $<T, [S, R, E, B]>,
+  ) => $<T, [S, R, E, A & B]>;
 }[L];
 
-export type SumSchemable<S, L extends LS> = {
-  1: <T extends string, A>(
-    tag: T,
-    members: { [K in keyof A]: $<S, [A[K]]> },
-  ) => $<S, [A[keyof A]]>;
-  2: <T extends string, E, A>(
-    tag: T,
-    members: { [K in keyof A]: $<S, [E, A[K]]> },
-  ) => $<S, [E, A[keyof A]]>;
-  3: <T extends string, R, E, A>(
-    tag: T,
-    members: { [K in keyof A]: $<S, [R, E, A[K]]> },
-  ) => $<S, [R, E, A[keyof A]]>;
+export type SumSchemable<T, L extends LS> = {
+  1: <U extends string, A>(
+    tag: U,
+    members: { [K in keyof A]: $<T, [A[K]]> },
+  ) => $<T, [A[keyof A]]>;
+  2: <U extends string, E, A>(
+    tag: U,
+    members: { [K in keyof A]: $<T, [E, A[K]]> },
+  ) => $<T, [E, A[keyof A]]>;
+  3: <U extends string, R, E, A>(
+    tag: U,
+    members: { [K in keyof A]: $<T, [R, E, A[K]]> },
+  ) => $<T, [R, E, A[keyof A]]>;
+  4: <U extends string, S, R, E, A>(
+    tag: U,
+    members: { [K in keyof A]: $<T, [S, R, E, A[K]]> },
+  ) => $<T, [S, R, E, A[keyof A]]>;
 }[L];
 
-export type LazySchemable<S, L extends LS> = {
-  1: <A>(id: string, f: () => $<S, [A]>) => $<S, [A]>;
-  2: <E, A>(id: string, f: () => $<S, [E, A]>) => $<S, [E, A]>;
-  3: <R, E, A>(id: string, f: () => $<S, [R, E, A]>) => $<S, [R, E, A]>;
+export type LazySchemable<T, L extends LS> = {
+  1: <A>(id: string, f: () => $<T, [A]>) => $<T, [A]>;
+  2: <E, A>(id: string, f: () => $<T, [E, A]>) => $<T, [E, A]>;
+  3: <R, E, A>(id: string, f: () => $<T, [R, E, A]>) => $<T, [R, E, A]>;
+  4: <S, R, E, A>(
+    id: string,
+    f: () => $<T, [S, R, E, A]>,
+  ) => $<T, [S, R, E, A]>;
 }[L];
 
 /***************************************************************************************************
  * @section Module Definitions
  **************************************************************************************************/
 
-export type Schemable<S, L extends LS = 1> = {
-  readonly literal: LiteralSchemable<S, L>;
-  readonly string: StringSchemable<S, L>;
-  readonly number: NumberSchemable<S, L>;
-  readonly boolean: BooleanSchemable<S, L>;
-  readonly nullable: NullableSchemable<S, L>;
-  readonly type: TypeSchemable<S, L>;
-  readonly partial: PartialSchemable<S, L>;
-  readonly record: RecordSchemable<S, L>;
-  readonly array: ArraySchemable<S, L>;
-  readonly tuple: TupleSchemable<S, L>;
-  readonly intersect: IntersectSchemable<S, L>;
-  readonly sum: SumSchemable<S, L>;
-  readonly lazy: LazySchemable<S, L>;
+export type Schemable<T, L extends LS = 1> = {
+  readonly literal: LiteralSchemable<T, L>;
+  readonly string: StringSchemable<T, L>;
+  readonly number: NumberSchemable<T, L>;
+  readonly boolean: BooleanSchemable<T, L>;
+  readonly nullable: NullableSchemable<T, L>;
+  readonly type: TypeSchemable<T, L>;
+  readonly partial: PartialSchemable<T, L>;
+  readonly record: RecordSchemable<T, L>;
+  readonly array: ArraySchemable<T, L>;
+  readonly tuple: TupleSchemable<T, L>;
+  readonly intersect: IntersectSchemable<T, L>;
+  readonly sum: SumSchemable<T, L>;
+  readonly lazy: LazySchemable<T, L>;
 };
 
 export type Schema<A, L extends LS = 1> = {
-  1: <S>(S: Schemable<S>) => $<S, [A]>;
-  2: <S, E>(S: Schemable<S>) => $<S, [E, A]>;
-  3: <S, R, E>(S: Schemable<S>) => $<S, [R, E, A]>;
+  1: <T>(S: Schemable<T>) => $<T, [A]>;
+  2: <T, E>(S: Schemable<T>) => $<T, [E, A]>;
+  3: <T, R, E>(S: Schemable<T>) => $<T, [R, E, A]>;
+  4: <T, S, R, E>(S: Schemable<T>) => $<T, [S, R, E, A]>;
 }[L];
 
 /***************************************************************************************************
@@ -180,6 +213,7 @@ type MakeSchema<L extends LS = 1> = {
   1: <A>(S: Schema<A, L>) => Schema<A, L>;
   2: <A>(S: Schema<A, L>) => Schema<A, L>;
   3: <A>(S: Schema<A, L>) => Schema<A, L>;
+  4: <A>(S: Schema<A, L>) => Schema<A, L>;
 }[L];
 
 export const make: MakeSchema = <A>(schema: Schema<A>): Schema<A> =>

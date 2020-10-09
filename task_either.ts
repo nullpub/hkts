@@ -1,7 +1,7 @@
 import type * as TC from "./type_classes.ts";
 import type { _0, _1, Lazy } from "./types.ts";
-import { pipe } from "./fns.ts";
 
+import { pipe } from "./fns.ts";
 import * as E from "./either.ts";
 import * as T from "./task.ts";
 import * as S from "./sequence.ts";

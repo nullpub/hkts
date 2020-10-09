@@ -1,6 +1,6 @@
-import type { _ } from "./types.ts";
+import type { _, Refinement } from "./types.ts";
 
-import { pipe, Refinement } from "./fns.ts";
+import { pipe } from "./fns.ts";
 import * as S from "./schemable.ts";
 
 /***************************************************************************************************

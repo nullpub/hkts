@@ -69,6 +69,9 @@ type CreateSequenceTuple = {
   <T, L extends 3>(A: Apply<T, L>):
     <R extends NonEmptyArray<$<T, [unknown, unknown, unknown]>>>(...r: R) =>
       SequenceTuple<T, R, L>;
+  <T, L extends 4>(A: Apply<T, L>):
+    <R extends NonEmptyArray<$<T, [unknown, unknown, unknown, unknown]>>>(...r: R) =>
+      SequenceTuple<T, R, L>;
 };
 
 /**
@@ -118,6 +121,9 @@ type CreateSequenceStruct = {
       SequenceStruct<T, R, L>;
   <T, L extends 3>(A: Apply<T, L>):
     <R extends Record<string, $<T, [any, any, any]>>>(r: NonEmptyRecord<R>) =>
+      SequenceStruct<T, R, L>;
+  <T, L extends 4>(A: Apply<T, L>):
+    <R extends Record<string, $<T, [any, any, any, any]>>>(r: NonEmptyRecord<R>) =>
       SequenceStruct<T, R, L>;
 };
 
