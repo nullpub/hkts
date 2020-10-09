@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.20](https://github.com/nullpub/hkts/compare/v0.0.19...v0.0.20) (2020-10-09)
+
+
+### Features
+
+* implement 4 len constructors for everything ([5b9b38a](https://github.com/nullpub/hkts/commit/5b9b38a0b22df2bedf8d2927fd52cae9c4712bad))
+
 ### [0.0.19](https://github.com/nullpub/hkts/compare/v0.0.18...v0.0.19) (2020-10-09)
 
 
