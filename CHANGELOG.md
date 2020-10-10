@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.21](https://github.com/nullpub/hkts/compare/v0.0.20...v0.0.21) (2020-10-10)
+
+
+### Features
+
+* test refactor and sequence fix ([a2209c3](https://github.com/nullpub/hkts/commit/a2209c32a5ab0f5fd76c3a32730df1d207f0cefb))
+
 ### [0.0.20](https://github.com/nullpub/hkts/compare/v0.0.19...v0.0.20) (2020-10-09)
 
 
