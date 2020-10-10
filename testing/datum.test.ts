@@ -36,29 +36,27 @@ Deno.test({
   },
 });
 
+const toString = (n: number): string => n.toString();
+const toLength = (s: string): number => s.length;
+const fromNumber = (n: number) => n % 2 === 0 ? D.of(n.toString()) : D.initial;
+const fromString = (s: string) => s.length === 0 ? D.initial : D.of(s.length);
+
 Deno.test({
   name: "Datum Modules",
   async fn() {
-    // Test Laws
-    await assertMonad(D.Monad, "Datum");
-
-    // Monad Join
-    const { join } = D.Monad;
-
-    assertEquals(join(D.replete(D.replete(1))), D.replete(1));
-    assertEquals(join(D.replete(D.initial)), D.initial);
-    assertEquals(join(D.initial), D.initial);
-
-    // Foldable
-    const { reduce } = D.Foldable;
-    assertEquals(reduce(add, 0, D.replete(1)), 1);
-    assertEquals(reduce(add, 0, D.initial), 0);
-
-    // Traversable
-    const { traverse } = D.Traversable;
-    assertEquals(
-      traverse(D.Applicative, (_) => D.replete(1), D.initial),
-      D.replete(D.initial),
+    await assertMonad(
+      D.Monad,
+      "Datum",
+      {
+        a: 1,
+        ta: D.of(1),
+        fab: toString,
+        fbc: toLength,
+        tfab: D.of(toString),
+        tfbc: D.of(toLength),
+        fatb: fromNumber,
+        fbtc: fromString,
+      },
     );
   },
 });

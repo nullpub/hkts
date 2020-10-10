@@ -35,7 +35,7 @@ export const Apply: TC.Apply<Identity<_>> = {
  * @section Pipeables
  **************************************************************************************************/
 
-export const { ap, map, join, chain } = createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = createPipeableMonad(Monad);
 
 /***************************************************************************************************
  * @section Sequence

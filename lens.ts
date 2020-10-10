@@ -176,5 +176,5 @@ export const key = (key: string) =>
 
 export const Category: TC.Category<Lens<_0, _1>> = {
   compose: (ij, jk) => compose(jk)(ij),
-  id: id as <I, J>() => Lens<I, J>,
+  id,
 };

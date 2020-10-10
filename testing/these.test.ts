@@ -46,8 +46,22 @@ Deno.test({
   async fn() {
     const Monad = T.getRightMonad({ concat: add });
 
+    const toString = (n: number): string => n.toString();
+    const toLength = (s: string): number => s.length;
+    const fromNumber = (n: number) => Monad.of(n.toString());
+    const fromString = (s: string) => Monad.of(s.length);
+
     // Test Laws
-    await assertMonad(Monad, "These");
+    await assertMonad(Monad, "These", {
+      a: 1,
+      ta: Monad.of(1),
+      fab: toString,
+      fbc: toLength,
+      tfab: Monad.of(toString),
+      tfbc: Monad.of(toLength),
+      fatb: fromNumber,
+      fbtc: fromString,
+    });
 
     // Foldable
     const { reduce } = T.Foldable;

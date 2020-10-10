@@ -34,22 +34,27 @@ Deno.test({
   },
 });
 
+const toString = (n: number): string => n.toString();
+const toLength = (s: string): number => s.length;
+const fromNumber = (n: number) => n % 2 === 0 ? O.of(n.toString()) : O.none;
+const fromString = (s: string) => s.length === 0 ? O.none : O.of(s.length);
+
 Deno.test({
   name: "Option Modules",
   async fn() {
-    // Test Laws
-    await assertMonad(O.Monad, "Option");
-
-    // Foldable
-    const { reduce } = O.Foldable;
-    assertEquals(reduce(add, 0, O.some(1)), 1);
-    assertEquals(reduce(add, 0, O.none), 0);
-
-    // Traversable
-    const { traverse } = O.Traversable;
-    assertEquals(
-      traverse(O.Applicative, (a) => O.some(1), O.none),
-      O.some(O.none),
+    await assertMonad(
+      O.Monad,
+      "Option",
+      {
+        a: 1,
+        ta: O.of(1),
+        fab: toString,
+        fbc: toLength,
+        tfab: O.of(toString),
+        tfbc: O.of(toLength),
+        fatb: fromNumber,
+        fbtc: fromString,
+      },
     );
   },
 });

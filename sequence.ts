@@ -1,36 +1,21 @@
 import type { $ } from "./types.ts";
 import type { Apply, LS } from "./type_classes.ts";
 
-import { _reduce } from "./array.ts";
-
 /***************************************************************************************************
  * @section Ap Function Constructors
  **************************************************************************************************/
 
-const _getTupleConstructor = (len: number): (a: unknown) => any => {
-  const out = new Array(len);
-  let i = 0;
+const loopTuple = <T>(len: number, init: T[] = []): T[] | ((t: T) => any) =>
+  len === 0 ? init : (t: T) => loopTuple(len - 1, [...init, t]);
 
-  return function loop(value: any) {
-    out[i] = value;
-    i++;
-    return i < len ? loop : out;
-  };
-};
-
-const _getRecordConstructor = (
+const loopRecord = (
   keys: ReadonlyArray<string>,
-): (a: unknown) => any => {
-  const out: Record<string, any> = {};
-  const len = keys.length;
-  let i = 0;
-
-  return function loop(value: any) {
-    out[keys[i]] = value;
-    i++;
-    return i < len ? loop : out;
-  };
-};
+  i: number = 0,
+  init: Record<string, any> = {},
+): Record<string, any> | ((a: unknown) => any) =>
+  i === keys.length
+    ? init
+    : (a: unknown) => loopRecord(keys, i + 1, { ...init, [keys[i]]: a });
 
 /***************************************************************************************************
  * @section Sequence Tuple
@@ -82,7 +67,10 @@ export const createSequenceTuple: CreateSequenceTuple = <T>(A: Apply<T>) =>
     ...r: R
   ): SequenceTuple<T, R> => {
     const [head, ...tail] = r;
-    return _reduce(tail, A.ap, A.map(_getTupleConstructor(r.length), head));
+    return tail.reduce(
+      A.ap as any,
+      A.map(loopTuple(r.length) as any, head),
+    ) as any;
   };
 
 /***************************************************************************************************
@@ -134,9 +122,8 @@ export const createSequenceStruct: CreateSequenceStruct = <T>(A: Apply<T>) =>
     const keys = Object.keys(r);
     const [head, ...tail] = keys;
 
-    return _reduce(
-      tail,
-      (f, key) => A.ap(f, r[key]),
-      A.map(_getRecordConstructor(keys), r[head]),
+    return tail.reduce(
+      (f: any, key) => A.ap(f, r[key]),
+      A.map(loopRecord(keys) as any, r[head]),
     );
   };

@@ -2,6 +2,7 @@ import type * as TC from "./type_classes.ts";
 import type { _ } from "./types.ts";
 
 import * as D from "./derivations.ts";
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
  * @section Optimizations
@@ -83,10 +84,14 @@ export const Functor: TC.Functor<ReadonlyArray<_>> = {
   map: (fab, ta) => _map(ta, (a) => fab(a)),
 };
 
-export const Monad = D.createMonad<ReadonlyArray<_>>({
+export const Monad: TC.Monad<ReadonlyArray<_>> = {
   of: (a) => [a],
-  chain: (fatb, ta) => _map(ta, (b) => fatb(b)).flat(1),
-});
+  ap: (tfab, ta) => Monad.chain((f) => Monad.map(f, ta), tfab),
+  map: (fab, ta) => _map(ta, (a) => fab(a)),
+  join: (tta) => tta.flat(1),
+  chain: (fatb, ta) =>
+    _reduce(ta, (bs: readonly any[], a) => _concat(bs, fatb(a)), []),
+};
 
 export const Filterable: TC.Filterable<ReadonlyArray<_>> = {
   filter: (predicate, ta) => ta.filter(predicate),
@@ -131,3 +136,11 @@ export const Traversable: TC.Traversable<ReadonlyArray<_>> = IndexedTraversable;
 export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
 
 export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
+
+/***************************************************************************************************
+ * @section Sequence
+ **************************************************************************************************/
+
+export const sequenceTuple = createSequenceTuple(Apply);
+
+export const sequenceStruct = createSequenceStruct(Apply);

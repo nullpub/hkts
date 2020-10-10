@@ -1,13 +1,12 @@
 import type * as TC from "./type_classes.ts";
 import type { _0, _1 } from "./types.ts";
+import type { Lens } from "./lens.ts";
+import type { Optional } from "./optional.ts";
+import type { Prism } from "./prism.ts";
+import type { Traversal } from "./traversal.ts";
 
 import * as O from "./option.ts";
 import { constant, flow, identity } from "./fns.ts";
-
-import { Lens } from "./lens.ts";
-import { Optional } from "./optional.ts";
-import { Prism } from "./prism.ts";
-import { Traversal } from "./traversal.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -85,5 +84,5 @@ export const modify = <A>(f: (a: A) => A) =>
 
 export const Category: TC.Category<Iso<_0, _1>> = {
   compose: (ij, jk) => compose(jk)(ij),
-  id: id as <I, J>() => Iso<I, J>,
+  id,
 };

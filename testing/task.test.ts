@@ -10,9 +10,27 @@ Deno.test({
   },
 });
 
+const toString = (n: number): string => n.toString();
+const toLength = (s: string): number => s.length;
+const fromNumber = (n: number) => T.of(n.toString());
+const fromString = (s: string) => T.of(s.length);
+
 Deno.test({
-  name: "Task Instances",
-  async fn(): Promise<void> {
-    await assertMonad(T.Monad, "Task", (ta) => ta());
+  name: "Task Modules",
+  async fn() {
+    await assertMonad(
+      T.Monad,
+      "Task",
+      {
+        a: 1,
+        ta: T.of(1),
+        fab: toString,
+        fbc: toLength,
+        tfab: T.of(toString),
+        tfbc: T.of(toLength),
+        fatb: fromNumber,
+        fbtc: fromString,
+      },
+    );
   },
 });

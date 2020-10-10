@@ -150,9 +150,28 @@ export type BifunctorMapFn<T, L extends LS> = {
  * Category
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#category
  */
-export type Category<T> = Semigroupoid<T> & {
-  readonly id: <I, J>() => $<T, [I, J]>;
+export type Category<T, L extends LS = 1> = Semigroupoid<T, L> & {
+  readonly id: CategoryFn<T, L>;
 };
+
+export type CategoryFn<T, L extends LS> = {
+  1: {
+    <A>(): $<T, [A, A]>;
+    <A, B>(): $<T, [A, B]>;
+  };
+  2: {
+    <E, A>(): $<T, [E, A, A]>;
+    <E, A, B>(): $<T, [E, A, B]>;
+  };
+  3: {
+    <R, E, A>(): $<T, [R, E, A, A]>;
+    <R, E, A, B>(): $<T, [R, E, A, B]>;
+  };
+  4: {
+    <S, R, E, A>(): $<T, [S, R, E, A, A]>;
+    <S, R, E, A, B>(): $<T, [S, R, E, A, B]>;
+  };
+}[L];
 
 /**
  * Chain
@@ -419,13 +438,28 @@ export type PlusFn<T, L extends LS> = {
  * Profunctor
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#profunctor
  */
-export type Profunctor<T> = {
-  readonly promap: <A, B, C, D>(
+export type Profunctor<T, L extends LS = 2> = {
+  readonly promap: ProfunctorFn<T, L>;
+};
+
+export type ProfunctorFn<T, L extends LS> = {
+  1: never;
+  2: <A, B, C, D>(
     fab: (x: A) => B,
     fcd: (x: C) => D,
     tbc: $<T, [B, C]>,
   ) => $<T, [A, D]>;
-};
+  3: <R, A, B, C, D>(
+    fab: (x: A) => B,
+    fcd: (x: C) => D,
+    tbc: $<T, [R, B, C]>,
+  ) => $<T, [R, A, D]>;
+  4: <S, R, A, B, C, D>(
+    fab: (x: A) => B,
+    fcd: (x: C) => D,
+    tbc: $<T, [S, R, B, C]>,
+  ) => $<T, [S, R, A, D]>;
+}[L];
 
 /**
  * Semigroup
@@ -439,12 +473,28 @@ export type Semigroup<T> = {
  * Semigroupoid
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#semigroupoid
  */
-export type Semigroupoid<T> = {
-  readonly compose: <I, J, K>(
-    tij: $<T, [I, J]>,
-    tjk: $<T, [J, K]>,
-  ) => $<T, [I, K]>;
+export type Semigroupoid<T, L extends LS = 1> = {
+  readonly compose: SemigroupoidFn<T, L>;
 };
+
+export type SemigroupoidFn<T, L extends LS> = {
+  1: <A, B, C>(
+    tij: $<T, [A, B]>,
+    tjk: $<T, [B, C]>,
+  ) => $<T, [A, C]>;
+  2: <E, A, B, C>(
+    tij: $<T, [E, A, B]>,
+    tjk: $<T, [E, B, C]>,
+  ) => $<T, [E, A, C]>;
+  3: <R, E, A, B, C>(
+    tij: $<T, [R, E, A, B]>,
+    tjk: $<T, [R, E, B, C]>,
+  ) => $<T, [R, E, A, C]>;
+  4: <S, R, E, A, B, C>(
+    tij: $<T, [S, R, E, A, B]>,
+    tjk: $<T, [S, R, E, B, C]>,
+  ) => $<T, [S, R, E, A, C]>;
+}[L];
 
 /**
  * Setoid

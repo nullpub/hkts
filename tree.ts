@@ -1,6 +1,7 @@
 import type * as TC from "./type_classes.ts";
-import type { $, _ } from "./types.ts";
+import type { _ } from "./types.ts";
 
+import { createSequenceTuple, createSequenceStruct } from "./sequence.ts";
 import * as A from "./array.ts";
 import * as D from "./derivations.ts";
 
@@ -64,6 +65,11 @@ export const Monad = D.createMonad<Tree<_>>({
   chain: (fatb, ta) => chain(fatb)(ta),
 });
 
+export const Apply: TC.Apply<Tree<_>> = {
+  ap: Monad.ap,
+  map: Monad.map,
+};
+
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
@@ -90,3 +96,11 @@ export const fold = <A, B>(f: (a: A, bs: Array<B>) => B) =>
   };
 
 export const { of, ap, map, join } = D.createPipeableMonad(Monad);
+
+/***************************************************************************************************
+ * @section Sequence
+ **************************************************************************************************/
+
+export const sequenceTuple = createSequenceTuple(Apply);
+
+export const sequenceStruct = createSequenceStruct(Apply);

@@ -35,22 +35,29 @@ Deno.test({
   },
 });
 
+const toString = (n: number): string => n.toString();
+const toLength = (s: string): number => s.length;
+const fromNumber = (n: number) =>
+  n % 2 === 0 ? E.of(n.toString()) : E.left("Number Mod 2");
+const fromString = (s: string) =>
+  s.length === 0 ? E.left("Empty string") : E.of(s.length);
+
 Deno.test({
   name: "Either Modules",
   async fn() {
-    // Test Laws
-    await assertMonad(E.Monad, "Either");
-
-    // Foldable
-    const { reduce } = E.Foldable;
-    assertEquals(reduce(add, 0, E.right(1)), 1);
-    assertEquals(reduce(add, 0, E.left(1)), 0);
-
-    // Traversable
-    const { traverse } = E.Traversable;
-    assertEquals(
-      traverse(O.Applicative, (a) => O.some(1), E.left(1)),
-      O.some(E.left(1)),
+    await assertMonad(
+      E.Monad,
+      "Either",
+      {
+        a: 1,
+        ta: E.of(1),
+        fab: toString,
+        fbc: toLength,
+        tfab: E.of(toString),
+        tfbc: E.of(toLength),
+        fatb: fromNumber,
+        fbtc: fromString,
+      },
     );
   },
 });
