@@ -4,6 +4,7 @@ import type {
   _0,
   _1,
   _2,
+  _3,
   Fix,
   Lazy,
   Predicate,
@@ -271,9 +272,12 @@ export const Traversable: TC.Traversable<Either<_0, _1>, 2> = {
  * @section Transformers
  **************************************************************************************************/
 
+// deno-fmt-ignore
 type GetEitherMonad = {
   <T, L extends 1>(M: TC.Monad<T, L>): TC.Monad<$<T, [Either<_0, _1>]>, 2>;
   <T, L extends 2>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, Either<_1, _2>]>, 3>;
+  <T, L extends 3>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, _1, Either<_2, _3>]>, 4>;
+  <T, L extends 4>(M: any): unknown;
 };
 
 /**

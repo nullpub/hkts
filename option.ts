@@ -1,8 +1,8 @@
 import type * as TC from "./type_classes.ts";
-import type { $, _, Lazy, Predicate } from "./types.ts";
+import type { $, _, _0, _1, _2, _3, Lazy, Predicate } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-import { isNotNil } from "./fns.ts";
+import { constant, isNotNil } from "./fns.ts";
 import * as D from "./derivations.ts";
 
 /***************************************************************************************************
@@ -184,10 +184,12 @@ export const Traversable: TC.Traversable<Option<_>> = {
  * @section Transformers
  **************************************************************************************************/
 
+// deno-fmt-ignore
 type GetOptionMonad = {
-  <T, L extends 1>(M: TC.Monad<T, L>): TC.Monad<$<T, [Option<_>]>, L>;
-  <T, L extends 2>(M: TC.Monad<T, L>): TC.Monad<$<T, [Option<_>]>, L>;
-  <T, L extends 3>(M: TC.Monad<T, L>): TC.Monad<$<T, [Option<_>]>, L>;
+  <T, L extends 1>(M: TC.Monad<T, L>): TC.Monad<$<T, [Option<_0>]>, L>;
+  <T, L extends 2>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, Option<_1>]>, L>;
+  <T, L extends 3>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, _1, Option<_2>]>, L>;
+  <T, L extends 4>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, _1, _2, Option<_3>]>, L>;
 };
 
 /**
@@ -198,12 +200,12 @@ type GetOptionMonad = {
 export const getOptionM: GetOptionMonad = <T>(M: TC.Monad<T>) =>
   D.createMonad<$<T, [Option<_>]>>({
     of: (a) => M.of(some(a)) as any,
-    chain: <A, B>(fatb: any, ta: any) =>
+    chain: (fatb, ta) =>
       M.chain(
-        (e: Option<A>) => (isNone(e) ? M.of(none) : fatb(e.value)),
-        ta,
+        (a: any) => isNone(a) ? M.of(a) : fatb(a) as any,
+        ta as any,
       ) as any,
-  }) as any;
+  });
 
 /***************************************************************************************************
  * @section Pipeables
