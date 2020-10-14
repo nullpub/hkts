@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.22](https://github.com/nullpub/hkts/compare/v0.0.21...v0.0.22) (2020-10-14)
+
+
+### Features
+
+* started adding documentation and examples ([c90a933](https://github.com/nullpub/hkts/commit/c90a933294ffa46b6b378fda3ffb225a8aa271b8))
+
+
+### Bug Fixes
+
+* resolve task_either tryCatch lazily ([240566d](https://github.com/nullpub/hkts/commit/240566dc33d6f1b42ac9e64f15896aef6317f7d9)), closes [#2](https://github.com/nullpub/hkts/issues/2)
+* updated getMonad types to be more accurate ([896f5d2](https://github.com/nullpub/hkts/commit/896f5d296c4d068d5984a43c8bfa4214992ca568))
+
 ### [0.0.21](https://github.com/nullpub/hkts/compare/v0.0.20...v0.0.21) (2020-10-10)
 
 
