@@ -114,12 +114,3 @@ export const { bimap, mapLeft } = D.createPipeableBifunctor(Bifunctor);
 export const sequenceTuple = S.createSequenceTuple(Apply);
 
 export const sequenceStruct = S.createSequenceStruct(Apply);
-
-const a = (): string => {
-  console.log("a was run.");
-  throw new Error("Oh No!");
-};
-
-const b = tryCatch(a, (e) => `Caught an error, ${e}`);
-console.log("This should happen first..");
-b().then((r) => console.log(r));
