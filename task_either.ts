@@ -26,13 +26,14 @@ export const right = <E = never, A = never>(right: A): TaskEither<E, A> =>
 export const tryCatch = <E, A>(
   f: Lazy<A>,
   onError: (e: unknown) => E,
-): TaskEither<E, A> => {
-  try {
-    return right(f());
-  } catch (e) {
-    return left(onError(e));
-  }
-};
+): TaskEither<E, A> =>
+  () => {
+    try {
+      return Promise.resolve(E.right(f()));
+    } catch (e) {
+      return Promise.resolve(E.left(onError(e)));
+    }
+  };
 
 export const fromFailableTask = <E, A>(onError: (e: unknown) => E) =>
   (ta: T.Task<A>): TaskEither<E, A> =>
@@ -113,3 +114,12 @@ export const { bimap, mapLeft } = D.createPipeableBifunctor(Bifunctor);
 export const sequenceTuple = S.createSequenceTuple(Apply);
 
 export const sequenceStruct = S.createSequenceStruct(Apply);
+
+const a = (): string => {
+  console.log("a was run.");
+  throw new Error("Oh No!");
+};
+
+const b = tryCatch(a, (e) => `Caught an error, ${e}`);
+console.log("This should happen first..");
+b().then((r) => console.log(r));
