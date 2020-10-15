@@ -425,7 +425,7 @@ export const lazy = <I, A>(
   });
 };
 
-export const compose = <I, A extends I, B extends A>(
+export const compose = <I, A, B>(
   ia: Decoder<I, A>,
   ab: Decoder<A, B>,
 ): Decoder<I, B> => ({
