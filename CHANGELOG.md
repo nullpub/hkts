@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.24](https://github.com/nullpub/hkts/compare/v0.0.23...v0.0.24) (2020-10-15)
+
+
+### Features
+
+* sequenceable initial implementation ([f20375b](https://github.com/nullpub/hkts/commit/f20375baa535cf1beed4fbed75716bfbc42a0765))
+
 ### [0.0.23](https://github.com/nullpub/hkts/compare/v0.0.22...v0.0.23) (2020-10-14)
 
 
