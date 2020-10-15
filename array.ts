@@ -134,7 +134,7 @@ export const Foldable: TC.Foldable<ReadonlyArray<_>> = IndexedFoldable;
 export const Traversable: TC.Traversable<ReadonlyArray<_>> = IndexedTraversable;
 
 export const Sequenceable: TC.Sequenceable<ReadonlyArray<_>> = {
-  sequence: <U, A>(A: TC.Applicative<U>, ta: ReadonlyArray<$<U, [A]>>) =>
+  sequence: <U, A>(A: TC.Applicative<U>, ta: readonly $<U, [A]>[]) =>
     _reduce(ta, (fas, fa) =>
       A.ap(
         A.map((as) => (a: A) => [...as, a], fas),
@@ -149,6 +149,8 @@ export const Sequenceable: TC.Sequenceable<ReadonlyArray<_>> = {
 export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
 
 export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
+
+export const { sequence } = D.createPipeableSequenceable(Sequenceable);
 
 /***************************************************************************************************
  * @section Sequence

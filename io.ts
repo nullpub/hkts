@@ -62,7 +62,7 @@ export const Traversable: TC.Traversable<IO<_>> = {
     F: TC.Applicative<U>,
     faub: (a: A) => $<U, [B]>,
     ta: IO<A>,
-  ) => F.map(constant, faub(ta())),
+  ) => F.map((ta) => () => faub(ta()), F.of(ta)),
 };
 
 /***************************************************************************************************
@@ -70,7 +70,7 @@ export const Traversable: TC.Traversable<IO<_>> = {
  **************************************************************************************************/
 
 export const getSemigroup = <A>(S: TC.Semigroup<A>): TC.Semigroup<IO<A>> => ({
-  concat: (x, y) => pipe(S.concat(x(), y()), constant),
+  concat: (x, y) => () => S.concat(x(), y()),
 });
 
 export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<IO<A>> => ({

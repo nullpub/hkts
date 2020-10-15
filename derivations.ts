@@ -98,6 +98,24 @@ export const createPipeableTraversable: CreatePipeableTraversable = <T>(
 });
 
 /**
+ * Derive Pipeable Sequenceable from Sequenceable.
+ */
+type CreatePipeableSequenceable = {
+  <T>(M: TC.Sequenceable<T>): TC.SequenceableP<T>;
+  <T, L extends 1>(M: TC.Sequenceable<T, L>): TC.SequenceableP<T, L>;
+  <T, L extends 2>(M: TC.Sequenceable<T, L>): TC.SequenceableP<T, L>;
+  <T, L extends 3>(M: TC.Sequenceable<T, L>): TC.SequenceableP<T, L>;
+  <T, L extends 4>(M: TC.Sequenceable<T, L>): TC.SequenceableP<T, L>;
+};
+
+export const createPipeableSequenceable: CreatePipeableSequenceable = <T>(
+  S: TC.Sequenceable<T>,
+): TC.SequenceableP<T> => ({
+  sequence: <U>(A: TC.Applicative<U>) =>
+    <A>(ta: $<T, [$<U, [A]>]>) => S.sequence(A, ta),
+});
+
+/**
  * Derive Pipeable IndexedTraversable from IndexedTraversable.
  */
 type CreatePipeableIndexedTraversable = {
