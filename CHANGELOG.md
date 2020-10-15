@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.26](https://github.com/nullpub/hkts/compare/v0.0.25...v0.0.26) (2020-10-15)
+
+
+### Features
+
+* pipeable sequence and other fixes ([dc9e7d9](https://github.com/nullpub/hkts/commit/dc9e7d976bc052a384dfb599ae1eb065c863925c))
+* remove Sequenceable ([18c60ea](https://github.com/nullpub/hkts/commit/18c60eabbdcb37e9c40ced92a2267c6dfa6d0ecf))
+
 ### [0.0.25](https://github.com/nullpub/hkts/compare/v0.0.24...v0.0.25) (2020-10-15)
 
 
