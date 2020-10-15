@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.25](https://github.com/nullpub/hkts/compare/v0.0.24...v0.0.25) (2020-10-15)
+
+
+### Bug Fixes
+
+* loosen decoder compose types ([5a2839f](https://github.com/nullpub/hkts/commit/5a2839fa2fb8d37599975c4bb7631eaadeece1b3))
+
 ### [0.0.24](https://github.com/nullpub/hkts/compare/v0.0.23...v0.0.24) (2020-10-15)
 
 
