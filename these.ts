@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { Fix, _0, _1 } from "./types.ts";
+import type { $, _0, _1, Fix } from "./types.ts";
 
 import * as D from "./derivations.ts";
 import * as E from "./either.ts";
@@ -160,7 +160,11 @@ export const Foldable: TC.Foldable<These<_0, _1>, 2> = {
 export const Traversable: TC.Traversable<These<_0, _1>, 2> = {
   reduce: Foldable.reduce,
   map: Functor.map,
-  traverse: (F, faub, ta) =>
+  traverse: <U, A, B, E>(
+    F: TC.Applicative<U>,
+    faub: (a: A) => $<U, [B]>,
+    ta: These<E, A>,
+  ) =>
     isLeft(ta)
       ? F.of(ta)
       : isRight(ta)

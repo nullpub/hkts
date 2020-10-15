@@ -264,8 +264,11 @@ export const Foldable: TC.Foldable<Either<_0, _1>, 2> = {
 export const Traversable: TC.Traversable<Either<_0, _1>, 2> = {
   map: Functor.map,
   reduce: Foldable.reduce,
-  traverse: (F, faub, ta) =>
-    isLeft(ta) ? F.of(left(ta.left)) : F.map(right, faub(ta.right)),
+  traverse: <U, A, B, E>(
+    F: TC.Applicative<U>,
+    faub: (a: A) => $<U, [B]>,
+    ta: Either<E, A>,
+  ) => isLeft(ta) ? F.of(left(ta.left)) : F.map(right, faub(ta.right)),
 };
 
 /***************************************************************************************************

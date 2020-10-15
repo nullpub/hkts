@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1, Lazy } from "./types.ts";
+import type { _0, _1, Fix, Lazy } from "./types.ts";
 
 import { pipe } from "./fns.ts";
 import * as E from "./either.ts";
@@ -91,12 +91,24 @@ export const Chain: TC.Chain<TaskEither<_0, _1>, 2> = {
   chain: Monad.chain,
 };
 
-/**
- * @note Not sure if tfab is constructable in javascript..
- */
-export const Extends: TC.Extend<TaskEither<_0, _1>, 2> = {
-  map: Functor.map,
-  extend: (tfab, ta) => right(tfab(ta)),
+/***************************************************************************************************
+ * @section Module Getters
+ **************************************************************************************************/
+
+export const getRightMonad = <E>(
+  S: TC.Semigroup<E>,
+): TC.Monad<TaskEither<Fix<E>, _0>> => {
+  const M = E.getRightMonad(S);
+
+  return ({
+    of: right,
+    ap: (tfab, ta) => async () => M.ap(await tfab(), await ta()),
+    map: (fab, ta) => async () => M.map(fab, await ta()),
+    join: (tta) =>
+      async () => tta().then((ta) => E.isLeft(ta) ? ta : ta.right()),
+    chain: (fatb, ta) =>
+      async () => ta().then((a) => E.isLeft(a) ? a : fatb(a.right)()),
+  });
 };
 
 /***************************************************************************************************

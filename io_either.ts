@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { Lazy, Fix, _, _0, _1 } from "./types.ts";
+import type { _, _0, _1, Fix, Lazy } from "./types.ts";
 import { constant, pipe } from "./fns.ts";
 
 import * as E from "./either.ts";
@@ -89,6 +89,14 @@ export const Chain: TC.Chain<IOEither<_0, _1>, 2> = {
 export const Extends: TC.Extend<IOEither<_0, _1>, 2> = {
   map: Functor.map,
   extend: (tfab, ta) => right(tfab(ta)),
+};
+
+export const Foldable: TC.Foldable<IOEither<_0, _1>, 2> = {
+  reduce: (faba, a, tb) =>
+    pipe(
+      tb(),
+      E.fold(() => a, (b) => faba(a, b)),
+    ),
 };
 
 /***************************************************************************************************

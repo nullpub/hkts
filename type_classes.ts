@@ -16,31 +16,11 @@ export type LS = 1 | 2 | 3 | 4;
  * Compute the resultant typeclass length for typeclass composition
  */
 export type AddLength<A extends LS, B extends LS> = {
-  1: {
-    1: 1;
-    2: 2;
-    3: 3;
-    4: 4;
-  }[B];
-  2: {
-    1: 2;
-    2: 3;
-    3: 4;
-    4: never;
-  }[B];
-  3: {
-    1: 3;
-    2: 4;
-    3: never;
-    4: never;
-  }[B];
-  4: {
-    1: 4;
-    2: never;
-    3: never;
-    4: never;
-  }[B];
-}[A];
+  1: { 1: 1; 2: 2; 3: 3; 4: 4 };
+  2: { 1: 2; 2: 3; 3: 4; 4: never };
+  3: { 1: 3; 2: 4; 3: never; 4: never };
+  4: { 1: 4; 2: never; 3: never; 4: never };
+}[A][B];
 
 /**
  * Alt
@@ -520,34 +500,77 @@ export type Traversable<T, L extends LS = 1> =
   & Functor<T, L>
   & Foldable<T, L>
   & {
-    readonly traverse: TraversableFn<T, L>;
+    readonly traverse: TraverseFn<T, L>;
   };
 
-export type TraversableFn<T, L extends LS> = {
-  1: <U, A, B>(
-    A: Applicative<U>,
-    faUb: (a: A) => $<U, [B]>,
-    Ta: $<T, [A]>,
-  ) => $<U, [$<T, [B]>]>;
-  2: <U, E, A, B>(
-    A: Applicative<U>,
-    faUb: (a: A) => $<U, [B]>,
-    Ta: $<T, [E, A]>,
-  ) => $<U, [$<T, [E, B]>]>;
-  3: <U, R, E, A, B>(
-    A: Applicative<U>,
-    faUb: (a: A) => $<U, [B]>,
-    Ta: $<T, [R, E, A]>,
-  ) => $<U, [$<T, [R, E, B]>]>;
-  4: <U, S, R, E, A, B>(
-    A: Applicative<U>,
-    faUb: (a: A) => $<U, [B]>,
-    Ta: $<T, [S, R, E, A]>,
-  ) => $<U, [$<T, [S, R, E, B]>]>;
+// deno-fmt-ignore
+export type TraverseFn<T, L extends LS> = {
+  1: {
+    <U, A, B>(A: Applicative<U, 1>, faUb: (a: A) => $<U, [B]>, Ta: $<T, [A]>): $<U, [$<T, [B]>]>
+    <U, A, B, J>(A: Applicative<U, 2>, faUb: (a: A) => $<U, [J, B]>, Ta: $<T, [A]>): $<U, [J, $<T, [B]>]>
+    <U, A, B, J, K>(A: Applicative<U, 3>, faUb: (a: A) => $<U, [J, K, B]>, Ta: $<T, [A]>): $<U, [J, K, $<T, [B]>]>
+    <U, A, B, J, K, L>(A: Applicative<U, 4>, faUb: (a: A) => $<U, [J, K, L, B]>, Ta: $<T, [A]>): $<U, [J, K, L, $<T, [B]>]>
+  };
+  2: {
+    <U, A, B, E>(A: Applicative<U, 1>, faUb: (a: A) => $<U, [B]>, Ta: $<T, [E, A]>): $<U, [$<T, [E, B]>]>
+    <U, A, B, E, J>(A: Applicative<U, 2>, faUb: (a: A) => $<U, [J, B]>, Ta: $<T, [E, A]>): $<U, [J, $<T, [E, B]>]>
+    <U, A, B, E, J, K>(A: Applicative<U, 3>, faUb: (a: A) => $<U, [J, K, B]>, Ta: $<T, [E, A]>): $<U, [J, K, $<T, [E, B]>]>
+    <U, A, B, E, J, K, L>(A: Applicative<U, 4>, faUb: (a: A) => $<U, [J, K, L, B]>, Ta: $<T, [E, A]>): $<U, [J, K, L, $<T, [E, B]>]>
+  };
+  3: {
+    <U, A, B, R, E>(A: Applicative<U, 1>, faUb: (a: A) => $<U, [B]>, Ta: $<T, [R, E, A]>): $<U, [$<T, [R, E, B]>]>
+    <U, A, B, R, E, J>(A: Applicative<U, 2>, faUb: (a: A) => $<U, [J, B]>, Ta: $<T, [R, E, A]>): $<U, [J, $<T, [R, E, B]>]>
+    <U, A, B, R, E, J, K>(A: Applicative<U, 3>, faUb: (a: A) => $<U, [J, K, B]>, Ta: $<T, [R, E, A]>): $<U, [J, K, $<T, [R, E, B]>]>
+    <U, A, B, R, E, J, K, L>(A: Applicative<U, 4>, faUb: (a: A) => $<U, [J, K, L, B]>, Ta: $<T, [R, E, A]>): $<U, [J, K, L, $<T, [R, E, B]>]>
+  };
+  4: {
+    <U, A, B, S, R, E>(A: Applicative<U, 1>, faUb: (a: A) => $<U, [B]>, Ta: $<T, [S, R, E, A]>): $<U, [$<T, [S, R, E, B]>]>
+    <U, A, B, S, R, E, J>(A: Applicative<U, 2>, faUb: (a: A) => $<U, [J, B]>, Ta: $<T, [S, R, E, A]>): $<U, [J, $<T, [S, R, E, B]>]>
+    <U, A, B, S, R, E, J, K>(A: Applicative<U, 3>, faUb: (a: A) => $<U, [J, K, B]>, Ta: $<T, [S, R, E, A]>): $<U, [J, K, $<T, [S, R, E, B]>]>
+    <U, A, B, S, R, E, J, K, L>(A: Applicative<U, 4>, faUb: (a: A) => $<U, [J, K, L, B]>, Ta: $<T, [S, R, E, A]>): $<U, [J, K, L, $<T, [S, R, E, B]>]>
+  };
 }[L];
 
 /**
- * Traversable
+ * Sequenceable
+ * Takes an Applicative for another ADT and reverses the types
+ * 
+ * @experiemental
+ */
+export type Sequenceable<T, L extends LS = 1> = {
+  readonly sequence: SequenceableFn<T, L>;
+};
+
+// deno-fmt-ignore
+export type SequenceableFn<T, L extends LS> = {
+  1: {
+    <U, A>(A: Applicative<U, 1>, Ta: $<T, [$<U, [A]>]>): $<U, [$<T, [A]>]>
+    <U, E, A>(A: Applicative<U, 2>, Ta: $<T, [$<U, [E, A]>]>): $<U, [E, $<T, [A]>]>
+    <U, R, E, A>(A: Applicative<U, 3>, Ta: $<T, [$<U, [R, E, A]>]>): $<U, [R, E, $<T, [A]>]>
+    <U, S, R, E, A>(A: Applicative<U, 4>, Ta: $<T, [$<U, [S, R, E, A]>]>): $<U, [S, R, E, $<T, [A]>]>
+  };
+  2: {
+    <U, TE, A>(A: Applicative<U, 1>, Ta: $<T, [TE, $<U, [A]>]>): $<U, [$<T, [TE, A]>]>
+    <U, UE, TE, A>(A: Applicative<U, 2>, Ta: $<T, [TE, $<U, [UE, A]>]>): $<U, [$<T, [TE, A]>]>
+    <U, UR, UE, TE, A>(A: Applicative<U, 3>, Ta: $<T, [TE, $<U, [UR, UE, A]>]>): $<U, [UR, UE, $<T, [TE, A]>]>
+    <U, US, UR, UE, TE, A>(A: Applicative<U, 4>, Ta: $<T, [TE, $<U, [US, UR, UE, A]>]>): $<U, [US, UR, UE, $<T, [TE, A]>]>
+  };
+  3: {
+    <U, TR, TE, A>(A: Applicative<U, 1>, Ta: $<T, [TR, TE, $<U, [A]>]>): $<U, [$<T, [TR, TE, A]>]>
+    <U, UE, TR, TE, A>(A: Applicative<U, 2>, Ta: $<T, [TR, TE, $<U, [UE, A]>]>): $<U, [$<T, [TR, TE, A]>]>
+    <U, UR, UE, TR, TE, A>(A: Applicative<U, 3>, Ta: $<T, [TR, TE, $<U, [UR, UE, A]>]>): $<U, [UR, UE, $<T, [TR, TE, A]>]>
+    <U, US, UR, UE, TR, TE, A>(A: Applicative<U, 4>, Ta: $<T, [TR, TE, $<U, [US, UR, UE, A]>]>): $<U, [US, UR, UE, $<T, [TR, TE, A]>]>
+  };
+  4: {
+    <U, TS, TR, TE, A>(A: Applicative<U, 1>, Ta: $<T, [TS, TR, TE, $<U, [A]>]>): $<U, [$<T, [TS, TR, TE, A]>]>
+    <U, UE, TS, TR, TE, A>(A: Applicative<U, 2>, Ta: $<T, [TS, TR, TE, $<U, [UE, A]>]>): $<U, [$<T, [TS, TR, TE, A]>]>
+    <U, UR, UE, TS, TR, TE, A>(A: Applicative<U, 3>, Ta: $<T, [TS, TR, TE, $<U, [UR, UE, A]>]>): $<U, [UR, UE, $<T, [TS, TR, TE, A]>]>
+    <U, US, UR, UE, TS, TR, TE, A>(A: Applicative<U, 4>, Ta: $<T, [TS, TR, TE, $<U, [US, UR, UE, A]>]>): $<U, [US, UR, UE, $<T, [TS, TR, TE, A]>]>
+  };
+}[L];
+
+/**
+ * Indexed Traversable
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#traversable
  * 
  * Based on the fp-ts indexed traversable. Mimics the traversable type but includes
@@ -560,27 +583,32 @@ export type IndexedTraversable<T, L extends LS = 1, I = number> =
     readonly traverse: IndexedTraversableFn<T, L, I>;
   };
 
+// deno-fmt-ignore
 export type IndexedTraversableFn<T, L extends LS, I> = {
-  1: <U, A, B>(
-    A: Applicative<U>,
-    faUb: (a: A, i: I) => $<U, [B]>,
-    Ta: $<T, [A]>,
-  ) => $<U, [$<T, [B]>]>;
-  2: <U, E, A, B>(
-    A: Applicative<U>,
-    faUb: (a: A, i: I) => $<U, [B]>,
-    Ta: $<T, [E, A]>,
-  ) => $<U, [$<T, [E, B]>]>;
-  3: <U, R, E, A, B>(
-    A: Applicative<U>,
-    faUb: (a: A, i: I) => $<U, [B]>,
-    Ta: $<T, [R, E, A]>,
-  ) => $<U, [$<T, [R, E, B]>]>;
-  4: <U, S, R, E, A, B>(
-    A: Applicative<U>,
-    faUb: (a: A, i: I) => $<U, [B]>,
-    Ta: $<T, [S, R, E, A]>,
-  ) => $<U, [$<T, [S, R, E, B]>]>;
+  1: {
+    <U, A, B>(A: Applicative<U, 1>, faUb: (a: A, i: I) => $<U, [B]>, Ta: $<T, [A]>): $<U, [$<T, [B]>]>
+    <U, A, B, J>(A: Applicative<U, 2>, faUb: (a: A, i: I) => $<U, [J, B]>, Ta: $<T, [A]>): $<U, [J, $<T, [B]>]>
+    <U, A, B, J, K>(A: Applicative<U, 3>, faUb: (a: A, i: I) => $<U, [J, K, B]>, Ta: $<T, [A]>): $<U, [J, K, $<T, [B]>]>
+    <U, A, B, J, K, L>(A: Applicative<U, 4>, faUb: (a: A, i: I) => $<U, [J, K, L, B]>, Ta: $<T, [A]>): $<U, [J, K, L, $<T, [B]>]>
+  };
+  2: {
+    <U, A, B, E>(A: Applicative<U, 1>, faUb: (a: A, i: I) => $<U, [B]>, Ta: $<T, [E, A]>): $<U, [$<T, [E, B]>]>
+    <U, A, B, E, J>(A: Applicative<U, 2>, faUb: (a: A, i: I) => $<U, [J, B]>, Ta: $<T, [E, A]>): $<U, [J, $<T, [E, B]>]>
+    <U, A, B, E, J, K>(A: Applicative<U, 3>, faUb: (a: A, i: I) => $<U, [J, K, B]>, Ta: $<T, [E, A]>): $<U, [J, K, $<T, [E, B]>]>
+    <U, A, B, E, J, K, L>(A: Applicative<U, 4>, faUb: (a: A, i: I) => $<U, [J, K, L, B]>, Ta: $<T, [E, A]>): $<U, [J, K, L, $<T, [E, B]>]>
+  };
+  3: {
+    <U, A, B, R, E>(A: Applicative<U, 1>, faUb: (a: A, i: I) => $<U, [B]>, Ta: $<T, [R, E, A]>): $<U, [$<T, [R, E, B]>]>
+    <U, A, B, R, E, J>(A: Applicative<U, 2>, faUb: (a: A, i: I) => $<U, [J, B]>, Ta: $<T, [R, E, A]>): $<U, [J, $<T, [R, E, B]>]>
+    <U, A, B, R, E, J, K>(A: Applicative<U, 3>, faUb: (a: A, i: I) => $<U, [J, K, B]>, Ta: $<T, [R, E, A]>): $<U, [J, K, $<T, [R, E, B]>]>
+    <U, A, B, R, E, J, K, L>(A: Applicative<U, 4>, faUb: (a: A, i: I) => $<U, [J, K, L, B]>, Ta: $<T, [R, E, A]>): $<U, [J, K, L, $<T, [R, E, B]>]>
+  };
+  4: {
+    <U, A, B, S, R, E>(A: Applicative<U, 1>, faUb: (a: A, i: I) => $<U, [B]>, Ta: $<T, [S, R, E, A]>): $<U, [$<T, [S, R, E, B]>]>
+    <U, A, B, S, R, E, J>(A: Applicative<U, 2>, faUb: (a: A, i: I) => $<U, [J, B]>, Ta: $<T, [S, R, E, A]>): $<U, [J, $<T, [S, R, E, B]>]>
+    <U, A, B, S, R, E, J, K>(A: Applicative<U, 3>, faUb: (a: A, i: I) => $<U, [J, K, B]>, Ta: $<T, [S, R, E, A]>): $<U, [J, K, $<T, [S, R, E, B]>]>
+    <U, A, B, S, R, E, J, K, L>(A: Applicative<U, 4>, faUb: (a: A, i: I) => $<U, [J, K, L, B]>, Ta: $<T, [S, R, E, A]>): $<U, [J, K, L, $<T, [S, R, E, B]>]>
+  };
 }[L];
 
 /***************************************************************************************************
@@ -876,27 +904,67 @@ export type TraversableP<T, L extends LS = 1> =
     readonly traverse: TraversableFnP<T, L>;
   };
 
+// deno-fmt-ignore
 export type TraversableFnP<T, L extends LS> = {
-  1: <U>(
-    A: Applicative<U>,
-  ) => <A, B>(
-    faub: (a: A) => $<U, [B]>,
-  ) => (ta: $<T, [A]>) => $<U, [$<T, [B]>]>;
-  2: <U>(
-    A: Applicative<U>,
-  ) => <A, B>(
-    faub: (a: A) => $<U, [B]>,
-  ) => <E>(ta: $<T, [E, A]>) => $<U, [$<T, [E, B]>]>;
-  3: <U>(
-    A: Applicative<U>,
-  ) => <A, B>(
-    faub: (a: A) => $<U, [B]>,
-  ) => <R, E>(ta: $<T, [R, E, A]>) => $<U, [$<T, [R, E, B]>]>;
-  4: <U>(
-    A: Applicative<U>,
-  ) => <A, B>(
-    faub: (a: A) => $<U, [B]>,
-  ) => <S, R, E>(ta: $<T, [S, R, E, A]>) => $<U, [$<T, [S, R, E, B]>]>;
+  1: {
+    <U>(A: Applicative<U, 1>): <A, B>(faUb: (a: A) => $<U, [B]>) => (Ta: $<T, [A]>) => $<U, [$<T, [B]>]>
+    <U>(A: Applicative<U, 2>): <A, B, J>(faUb: (a: A) => $<U, [J, B]>) => (Ta: $<T, [A]>) => $<U, [J, $<T, [B]>]>
+    <U>(A: Applicative<U, 3>): <A, B, J, K>(faUb: (a: A) => $<U, [J, K, B]>) => (Ta: $<T, [A]>) => $<U, [J, K, $<T, [B]>]>
+    <U>(A: Applicative<U, 4>): <A, B, J, K, L>(faUb: (a: A) => $<U, [J, K, L, B]>) => (Ta: $<T, [A]>) => $<U, [J, K, L, $<T, [B]>]>
+  };
+  2: {
+    <U>(A: Applicative<U, 1>): <A, B, E>(faUb: (a: A) => $<U, [B]>) => (Ta: $<T, [E, A]>) => $<U, [$<T, [E, B]>]>
+    <U>(A: Applicative<U, 2>): <A, B, E, J>(faUb: (a: A) => $<U, [J, B]>) => (Ta: $<T, [E, A]>) => $<U, [J, $<T, [E, B]>]>
+    <U>(A: Applicative<U, 3>): <A, B, E, J, K>(faUb: (a: A) => $<U, [J, K, B]>) => (Ta: $<T, [E, A]>) => $<U, [J, K, $<T, [E, B]>]>
+    <U>(A: Applicative<U, 4>): <A, B, E, J, K, L>(faUb: (a: A) => $<U, [J, K, L, B]>) => (Ta: $<T, [E, A]>) => $<U, [J, K, L, $<T, [E, B]>]>
+  };
+  3: {
+    <U>(A: Applicative<U, 1>): <A, B, R, E>(faUb: (a: A) => $<U, [B]>) => (Ta: $<T, [R, E, A]>) => $<U, [$<T, [R, E, B]>]>
+    <U>(A: Applicative<U, 2>): <A, B, R, E, J>(faUb: (a: A) => $<U, [J, B]>) => (Ta: $<T, [R, E, A]>) => $<U, [J, $<T, [R, E, B]>]>
+    <U>(A: Applicative<U, 3>): <A, B, R, E, J, K>(faUb: (a: A) => $<U, [J, K, B]>) => (Ta: $<T, [R, E, A]>) => $<U, [J, K, $<T, [R, E, B]>]>
+    <U>(A: Applicative<U, 4>): <A, B, R, E, J, K, L>(faUb: (a: A) => $<U, [J, K, L, B]>) => (Ta: $<T, [R, E, A]>) => $<U, [J, K, L, $<T, [R, E, B]>]>
+  };
+  4: {
+    <U>(A: Applicative<U, 1>): <A, B, S, R, E>(faUb: (a: A) => $<U, [B]>) => (Ta: $<T, [S, R, E, A]>) => $<U, [$<T, [S, R, E, B]>]>
+    <U>(A: Applicative<U, 2>): <A, B, S, R, E, J>(faUb: (a: A) => $<U, [J, B]>) => (Ta: $<T, [S, R, E, A]>) => $<U, [J, $<T, [S, R, E, B]>]>
+    <U>(A: Applicative<U, 3>): <A, B, S, R, E, J, K>(faUb: (a: A) => $<U, [J, K, B]>) => (Ta: $<T, [S, R, E, A]>) => $<U, [J, K, $<T, [S, R, E, B]>]>
+    <U>(A: Applicative<U, 4>): <A, B, S, R, E, J, K, L>(faUb: (a: A) => $<U, [J, K, L, B]>) => (Ta: $<T, [S, R, E, A]>) => $<U, [J, K, L, $<T, [S, R, E, B]>]>
+  };
+}[L];
+
+/**
+ * Pipeable Sequenceable
+ */
+export type SequenceableP<T, L extends LS = 1> = {
+  readonly sequence: SequenceableFnP<T, L>;
+};
+
+// deno-fmt-ignore
+export type SequenceableFnP<T, L extends LS> = {
+  1: {
+    <U>(A: Applicative<U, 1>): <A>(Ta: $<T, [$<U, [A]>]>) => $<U, [$<T, [A]>]>
+    <U>(A: Applicative<U, 2>): <E, A>(Ta: $<T, [$<U, [E, A]>]>) => $<U, [E, $<T, [A]>]>
+    <U>(A: Applicative<U, 3>): <R, E, A>(Ta: $<T, [$<U, [R, E, A]>]>) => $<U, [R, E, $<T, [A]>]>
+    <U>(A: Applicative<U, 4>): <S, R, E, A>(Ta: $<T, [$<U, [S, R, E, A]>]>) => $<U, [S, R, E, $<T, [A]>]>
+  };
+  2: {
+    <U>(A: Applicative<U, 1>): <TE, A>(Ta: $<T, [TE, $<U, [A]>]>) => $<U, [$<T, [TE, A]>]>
+    <U>(A: Applicative<U, 2>): <UE, TE, A>(Ta: $<T, [TE, $<U, [UE, A]>]>) => $<U, [$<T, [TE, A]>]>
+    <U>(A: Applicative<U, 3>): <UR, UE, TE, A>(Ta: $<T, [TE, $<U, [UR, UE, A]>]>) => $<U, [UR, UE, $<T, [TE, A]>]>
+    <U>(A: Applicative<U, 4>): <US, UR, UE, TE, A>(Ta: $<T, [TE, $<U, [US, UR, UE, A]>]>) => $<U, [US, UR, UE, $<T, [TE, A]>]>
+  };
+  3: {
+    <U>(A: Applicative<U, 1>): <TR, TE, A>(Ta: $<T, [TR, TE, $<U, [A]>]>) => $<U, [$<T, [TR, TE, A]>]>
+    <U>(A: Applicative<U, 2>): <UE, TR, TE, A>(Ta: $<T, [TR, TE, $<U, [UE, A]>]>) => $<U, [$<T, [TR, TE, A]>]>
+    <U>(A: Applicative<U, 3>): <UR, UE, TR, TE, A>(Ta: $<T, [TR, TE, $<U, [UR, UE, A]>]>) => $<U, [UR, UE, $<T, [TR, TE, A]>]>
+    <U>(A: Applicative<U, 4>): <US, UR, UE, TR, TE, A>(Ta: $<T, [TR, TE, $<U, [US, UR, UE, A]>]>) => $<U, [US, UR, UE, $<T, [TR, TE, A]>]>
+  };
+  4: {
+    <U>(A: Applicative<U, 1>): <TS, TR, TE, A>(Ta: $<T, [TS, TR, TE, $<U, [A]>]>) => $<U, [$<T, [TS, TR, TE, A]>]>
+    <U>(A: Applicative<U, 2>): <UE, TS, TR, TE, A>(Ta: $<T, [TS, TR, TE, $<U, [UE, A]>]>) => $<U, [$<T, [TS, TR, TE, A]>]>
+    <U>(A: Applicative<U, 3>): <UR, UE, TS, TR, TE, A>(Ta: $<T, [TS, TR, TE, $<U, [UR, UE, A]>]>) => $<U, [UR, UE, $<T, [TS, TR, TE, A]>]>
+    <U>(A: Applicative<U, 4>): <US, UR, UE, TS, TR, TE, A>(Ta: $<T, [TS, TR, TE, $<U, [US, UR, UE, A]>]>) => $<U, [US, UR, UE, $<T, [TS, TR, TE, A]>]>
+  };
 }[L];
 
 /**
@@ -909,25 +977,30 @@ export type IndexedTraversableP<T, L extends LS = 1, I = number> =
     readonly traverse: IndexedTraversableFnP<T, L, I>;
   };
 
+// deno-fmt-ignore
 export type IndexedTraversableFnP<T, L extends LS, I> = {
-  1: <U>(
-    A: Applicative<U>,
-  ) => <A, B>(
-    faub: (a: A, i: I) => $<U, [B]>,
-  ) => (ta: $<T, [A]>) => $<U, [$<T, [B]>]>;
-  2: <U>(
-    A: Applicative<U>,
-  ) => <A, B>(
-    faub: (a: A, i: I) => $<U, [B]>,
-  ) => <E>(ta: $<T, [E, A]>) => $<U, [$<T, [E, B]>]>;
-  3: <U>(
-    A: Applicative<U>,
-  ) => <A, B>(
-    faub: (a: A, i: I) => $<U, [B]>,
-  ) => <R, E>(ta: $<T, [R, E, A]>) => $<U, [$<T, [R, E, B]>]>;
-  4: <U>(
-    A: Applicative<U>,
-  ) => <A, B>(
-    faub: (a: A, i: I) => $<U, [B]>,
-  ) => <S, R, E>(ta: $<T, [S, R, E, A]>) => $<U, [$<T, [S, R, E, B]>]>;
+  1: {
+    <U>(A: Applicative<U, 1>): <A, B>(faUb: (a: A, i: I) => $<U, [B]>) => (Ta: $<T, [A]>) => $<U, [$<T, [B]>]>
+    <U>(A: Applicative<U, 2>): <A, B, J>(faUb: (a: A, i: I) => $<U, [J, B]>) => (Ta: $<T, [A]>) => $<U, [J, $<T, [B]>]>
+    <U>(A: Applicative<U, 3>): <A, B, J, K>(faUb: (a: A, i: I) => $<U, [J, K, B]>) => (Ta: $<T, [A]>) => $<U, [J, K, $<T, [B]>]>
+    <U>(A: Applicative<U, 4>): <A, B, J, K, L>(faUb: (a: A, i: I) => $<U, [J, K, L, B]>) => (Ta: $<T, [A]>) => $<U, [J, K, L, $<T, [B]>]>
+  };
+  2: {
+    <U>(A: Applicative<U, 1>): <A, B, E>(faUb: (a: A, i: I) => $<U, [B]>) => (Ta: $<T, [E, A]>) => $<U, [$<T, [E, B]>]>
+    <U>(A: Applicative<U, 2>): <A, B, E, J>(faUb: (a: A, i: I) => $<U, [J, B]>) => (Ta: $<T, [E, A]>) => $<U, [J, $<T, [E, B]>]>
+    <U>(A: Applicative<U, 3>): <A, B, E, J, K>(faUb: (a: A, i: I) => $<U, [J, K, B]>) => (Ta: $<T, [E, A]>) => $<U, [J, K, $<T, [E, B]>]>
+    <U>(A: Applicative<U, 4>): <A, B, E, J, K, L>(faUb: (a: A, i: I) => $<U, [J, K, L, B]>) => (Ta: $<T, [E, A]>) => $<U, [J, K, L, $<T, [E, B]>]>
+  };
+  3: {
+    <U>(A: Applicative<U, 1>): <A, B, R, E>(faUb: (a: A, i: I) => $<U, [B]>) => (Ta: $<T, [R, E, A]>) => $<U, [$<T, [R, E, B]>]>
+    <U>(A: Applicative<U, 2>): <A, B, R, E, J>(faUb: (a: A, i: I) => $<U, [J, B]>) => (Ta: $<T, [R, E, A]>) => $<U, [J, $<T, [R, E, B]>]>
+    <U>(A: Applicative<U, 3>): <A, B, R, E, J, K>(faUb: (a: A, i: I) => $<U, [J, K, B]>) => (Ta: $<T, [R, E, A]>) => $<U, [J, K, $<T, [R, E, B]>]>
+    <U>(A: Applicative<U, 4>): <A, B, R, E, J, K, L>(faUb: (a: A, i: I) => $<U, [J, K, L, B]>) => (Ta: $<T, [R, E, A]>) => $<U, [J, K, L, $<T, [R, E, B]>]>
+  };
+  4: {
+    <U>(A: Applicative<U, 1>): <A, B, S, R, E>(faUb: (a: A, i: I) => $<U, [B]>) => (Ta: $<T, [S, R, E, A]>) => $<U, [$<T, [S, R, E, B]>]>
+    <U>(A: Applicative<U, 2>): <A, B, S, R, E, J>(faUb: (a: A, i: I) => $<U, [J, B]>) => (Ta: $<T, [S, R, E, A]>) => $<U, [J, $<T, [S, R, E, B]>]>
+    <U>(A: Applicative<U, 3>): <A, B, S, R, E, J, K>(faUb: (a: A, i: I) => $<U, [J, K, B]>) => (Ta: $<T, [S, R, E, A]>) => $<U, [J, K, $<T, [S, R, E, B]>]>
+    <U>(A: Applicative<U, 4>): <A, B, S, R, E, J, K, L>(faUb: (a: A, i: I) => $<U, [J, K, L, B]>) => (Ta: $<T, [S, R, E, A]>) => $<U, [J, K, L, $<T, [S, R, E, B]>]>
+  };
 }[L];

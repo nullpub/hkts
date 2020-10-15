@@ -1,24 +1,14 @@
 import type * as TC from "./type_classes.ts";
-import type { _ } from "./types.ts";
+import type { _, Lazy } from "./types.ts";
 
 import { createMonad, createPipeableMonad } from "./derivations.ts";
-import { createSequenceTuple, createSequenceStruct } from "./sequence.ts";
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
  * @section Types
  **************************************************************************************************/
 
 export type Task<A> = () => Promise<A>;
-
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
-
-export const of = <A>(a: A): Task<A> => () => Promise.resolve(a);
-
-/***************************************************************************************************
- * @section Destructors
- **************************************************************************************************/
 
 /***************************************************************************************************
  * @section Combinators
@@ -33,21 +23,29 @@ export const delay = (ms: number) =>
         }, ms);
       });
 
-/***************************************************************************************************
- * @section Guards
- **************************************************************************************************/
+export const fromThunk = <A>(fa: Lazy<A>): Task<A> =>
+  () => Promise.resolve(fa());
+
+export const tryCatch = <A>(fa: Lazy<A>, onError: (e: unknown) => A): Task<A> =>
+  () => {
+    try {
+      return Promise.resolve(fa());
+    } catch (e) {
+      return Promise.resolve(onError(e));
+    }
+  };
 
 /***************************************************************************************************
  * @section Modules
  **************************************************************************************************/
 
 export const Monad = createMonad<Task<_>>({
-  of,
+  of: (a) => () => Promise.resolve(a),
   chain: (fatb, ta) => () => ta().then((a) => fatb(a)()),
 });
 
 export const Applicative: TC.Applicative<Task<_>> = {
-  of,
+  of: Monad.of,
   ap: Monad.ap,
   map: Monad.map,
 };
@@ -61,7 +59,7 @@ export const Apply: TC.Apply<Task<_>> = {
  * @section Pipeables
  **************************************************************************************************/
 
-export const { ap, map, join, chain } = createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = createPipeableMonad(Monad);
 
 /***************************************************************************************************
  * @section Sequence

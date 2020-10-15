@@ -1,7 +1,7 @@
 import type * as TC from "./type_classes.ts";
-import type { _, Lazy } from "./types.ts";
+import type { $, _, Lazy } from "./types.ts";
 
-import { createSequenceTuple, createSequenceStruct } from "./sequence.ts";
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { identity, isNotNil } from "./fns.ts";
 import * as D from "./derivations.ts";
 
@@ -168,8 +168,11 @@ export const Foldable: TC.Foldable<Datum<_>> = {
 export const Traversable: TC.Traversable<Datum<_>> = {
   map: Functor.map,
   reduce: Foldable.reduce,
-  traverse: (F, faub, ta) =>
-    isNone(ta) ? F.of(initial) : F.map(replete, faub(ta.value)),
+  traverse: <U, A, B>(
+    F: TC.Applicative<U>,
+    faub: (a: A) => $<U, [B]>,
+    ta: Datum<A>,
+  ) => isNone(ta) ? F.of(initial) : F.map(replete, faub(ta.value)),
 };
 
 /***************************************************************************************************

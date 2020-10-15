@@ -58,12 +58,16 @@ export const IndexedTraversable: TC.IndexedTraversable<
 > = {
   map: _map,
   reduce: IndexedFoldable.reduce,
-  traverse: (A, faub, ta) =>
+  traverse: <U, A, B>(
+    A: TC.Applicative<U>,
+    faub: (a: A, i: string) => $<U, [B]>,
+    ta: Record<string, A>,
+  ) =>
     IndexedFoldable.reduce(
       (fbs, a, i) => {
         return A.ap(
-          A.map(_assign(i as any), fbs),
-          faub(a as any, i),
+          A.map(_assign(i), fbs),
+          faub(a, i),
         );
       },
       A.of({}),

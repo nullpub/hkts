@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { _ } from "./types.ts";
+import type { $, _ } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { constant, pipe } from "./fns.ts";
@@ -58,7 +58,11 @@ export const Foldable: TC.Foldable<IO<_>> = {
 export const Traversable: TC.Traversable<IO<_>> = {
   map: Functor.map,
   reduce: Foldable.reduce,
-  traverse: (F, faub, ta) => F.map(constant, faub(ta())),
+  traverse: <U, A, B>(
+    F: TC.Applicative<U>,
+    faub: (a: A) => $<U, [B]>,
+    ta: IO<A>,
+  ) => F.map(constant, faub(ta())),
 };
 
 /***************************************************************************************************

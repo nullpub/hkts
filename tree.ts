@@ -1,9 +1,10 @@
 import type * as TC from "./type_classes.ts";
 import type { _ } from "./types.ts";
 
-import { createSequenceTuple, createSequenceStruct } from "./sequence.ts";
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import * as A from "./array.ts";
 import * as D from "./derivations.ts";
+import { identity } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Optimizations
@@ -60,9 +61,25 @@ export const getShow = <A>(S: TC.Show<A>): TC.Show<Tree<A>> => {
  * @section Modules
  **************************************************************************************************/
 
-export const Monad = D.createMonad<Tree<_>>({
+export const Functor: TC.Functor<Tree<_>> = {
+  map: (fab, ta) => ({
+    value: fab(ta.value),
+    forest: ta.forest.map((t) => Functor.map(fab, t)),
+  }),
+};
+
+export const Monad: TC.Monad<Tree<_>> = ({
   of: make,
-  chain: (fatb, ta) => chain(fatb)(ta),
+  ap: (tfab, ta) => Monad.chain((f) => Monad.map(f, ta), tfab),
+  map: Functor.map,
+  join: (tta) => Monad.chain(identity, tta),
+  chain: (fatb, ta) => {
+    const { value, forest } = fatb(ta.value);
+    return {
+      value,
+      forest: _concat(forest, ta.forest.map((t) => Monad.chain(fatb, t))),
+    };
+  },
 });
 
 export const Apply: TC.Apply<Tree<_>> = {
@@ -74,14 +91,7 @@ export const Apply: TC.Apply<Tree<_>> = {
  * @section Pipeables
  **************************************************************************************************/
 
-export const chain = <A, B>(f: (a: A) => Tree<B>) =>
-  (ma: Tree<A>): Tree<B> => {
-    const { value, forest } = f(ma.value);
-    return {
-      value,
-      forest: _concat(forest, ma.forest.map(chain(f))),
-    };
-  };
+export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
 
 export const drawForest = (forest: Forest<string>): string =>
   _draw("\n", forest);
@@ -94,8 +104,6 @@ export const fold = <A, B>(f: (a: A, bs: Array<B>) => B) =>
     const go = (tree: Tree<A>): B => f(tree.value, tree.forest.map(go));
     return go(tree);
   };
-
-export const { of, ap, map, join } = D.createPipeableMonad(Monad);
 
 /***************************************************************************************************
  * @section Sequence

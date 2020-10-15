@@ -1,4 +1,5 @@
 import type * as TC from "./type_classes.ts";
+import type { $ } from "./types.ts";
 
 import { identity } from "./fns.ts";
 
@@ -91,7 +92,9 @@ export const createPipeableTraversable: CreatePipeableTraversable = <T>(
 ): TC.TraversableP<T> => ({
   map: (fab) => (ta) => T.map(fab, ta),
   reduce: (faba, a) => (tb) => T.reduce(faba, a, tb),
-  traverse: (A) => (faub) => (ta) => T.traverse(A, faub, ta),
+  traverse: <U>(A: TC.Applicative<U>) =>
+    <A, B>(faub: (a: A) => $<U, [B]>) =>
+      (ta: $<T, [A]>) => T.traverse(A, faub, ta),
 });
 
 /**
@@ -119,7 +122,9 @@ export const createPipeableIndexedTraversable:
   ): TC.IndexedTraversableP<T> => ({
     map: (fab) => (ta) => T.map(fab, ta),
     reduce: (faba, a) => (tb) => T.reduce(faba, a, tb),
-    traverse: (A) => (faub) => (ta) => T.traverse(A, faub, ta),
+    traverse: <U>(A: TC.Applicative<U>) =>
+      <A, B>(faub: (a: A, i: number) => $<U, [B]>) =>
+        (ta: $<T, [A]>) => T.traverse(A, faub, ta),
   });
 
 /**

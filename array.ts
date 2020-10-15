@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { _ } from "./types.ts";
+import type { $, _ } from "./types.ts";
 
 import * as D from "./derivations.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
@@ -109,18 +109,22 @@ export const IndexedFoldable: TC.IndexedFoldable<ReadonlyArray<_>> = {
 export const IndexedTraversable: TC.IndexedTraversable<ReadonlyArray<_>> = {
   map: Monad.map,
   reduce: IndexedFoldable.reduce,
-  traverse: (A, faub, ta) =>
+  traverse: <U, A, B>(
+    A: TC.Applicative<U>,
+    faub: (a: A, i: number) => $<U, [B]>,
+    ta: ReadonlyArray<A>,
+  ) =>
     IndexedFoldable.reduce(
       (fbs, a, i) =>
         A.ap(
-          A.map((bs: any) =>
-            (b: any) => {
+          A.map((bs) =>
+            (b: B) => {
               bs.push(b);
               return bs;
-            }, fbs) as any,
+            }, fbs),
           faub(a, i),
         ),
-      A.of([]),
+      A.of([] as B[]),
       ta,
     ),
 };
@@ -128,6 +132,15 @@ export const IndexedTraversable: TC.IndexedTraversable<ReadonlyArray<_>> = {
 export const Foldable: TC.Foldable<ReadonlyArray<_>> = IndexedFoldable;
 
 export const Traversable: TC.Traversable<ReadonlyArray<_>> = IndexedTraversable;
+
+export const Sequenceable: TC.Sequenceable<ReadonlyArray<_>> = {
+  sequence: <U, A>(A: TC.Applicative<U>, ta: ReadonlyArray<$<U, [A]>>) =>
+    _reduce(ta, (fas, fa) =>
+      A.ap(
+        A.map((as) => (a: A) => [...as, a], fas),
+        fa,
+      ), A.of([] as A[])),
+};
 
 /***************************************************************************************************
  * @section Pipeables

@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { _, _0, _1, Lazy, Fn } from "./types.ts";
+import type { $, _, _0, _1, Fn, Lazy } from "./types.ts";
 
 import { identity, isNotNil } from "./fns.ts";
 import * as DA from "./datum.ts";
@@ -203,8 +203,11 @@ export const Foldable: TC.Foldable<DatumEither<_0, _1>, 2> = {
 export const Traversable: TC.Traversable<DatumEither<_0, _1>, 2> = {
   map: Monad.map,
   reduce: Foldable.reduce,
-  traverse: (F, faub, ta) =>
-    isSuccess(ta) ? F.map(success, faub(ta.value.right)) : F.of(initial),
+  traverse: <U, A, B>(
+    F: TC.Applicative<U>,
+    faub: (a: A) => $<U, [B]>,
+    ta: DatumEither<unknown, A>,
+  ) => isSuccess(ta) ? F.map(success, faub(ta.value.right)) : F.of(initial),
 };
 
 /***************************************************************************************************
