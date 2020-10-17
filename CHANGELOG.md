@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.27](https://github.com/nullpub/hkts/compare/v0.0.26...v0.0.27) (2020-10-17)
+
+
+### Features
+
+* widen pipeable chain ([ba799e5](https://github.com/nullpub/hkts/commit/ba799e5477398a2bed34ce59e6dbbec10deeefda))
+
 ### [0.0.26](https://github.com/nullpub/hkts/compare/v0.0.25...v0.0.26) (2020-10-15)
 
 
