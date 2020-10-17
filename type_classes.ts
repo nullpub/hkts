@@ -602,9 +602,9 @@ export type ApplicativeP<T, L extends LS = 1> = ApplyP<T, L> & {
 
 export type ApplicativeFnP<T, L extends LS> = {
   1: <A>(a: A) => $<T, [A]>;
-  2: <E, A>(a: A) => $<T, [E, A]>;
-  3: <R, E, A>(a: A) => $<T, [R, E, A]>;
-  4: <S, R, E, A>(a: A) => $<T, [S, R, E, A]>;
+  2: <E = never, A = never>(a: A) => $<T, [E, A]>;
+  3: <R = never, E = never, A = never>(a: A) => $<T, [R, E, A]>;
+  4: <S = never, R = never, E = never, A = never>(a: A) => $<T, [S, R, E, A]>;
 }[L];
 
 /**
