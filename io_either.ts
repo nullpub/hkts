@@ -57,7 +57,7 @@ export const Bifunctor: TC.Bifunctor<IOEither<_0, _1>> = {
   mapLeft: (fef, tea) => pipe(tea, I.map(E.mapLeft(fef))),
 };
 
-export const Monad = E.getEitherM(I.Monad);
+export const Monad = E.composeMonad(I.Monad);
 
 export const MonadThrow: TC.MonadThrow<IOEither<_0, _1>, 2> = {
   ...Monad,

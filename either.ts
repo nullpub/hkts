@@ -276,7 +276,7 @@ export const Traversable: TC.Traversable<Either<_0, _1>, 2> = {
  **************************************************************************************************/
 
 // deno-fmt-ignore
-type GetEitherMonad = {
+type ComposeEitherMonad = {
   <T, L extends 1>(M: TC.Monad<T, L>): TC.Monad<$<T, [Either<_0, _1>]>, 2>;
   <T, L extends 2>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, Either<_1, _2>]>, 3>;
   <T, L extends 3>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, _1, Either<_2, _3>]>, 4>;
@@ -288,7 +288,7 @@ type GetEitherMonad = {
  * a bit better so we wouldn't have to do unsafe coercion.
  * @experimental
  */
-export const getEitherM: GetEitherMonad = <T>(M: TC.Monad<T>) =>
+export const composeMonad: ComposeEitherMonad = <T>(M: TC.Monad<T>) =>
   D.createMonad<$<T, [Either<_0, _1>]>, 2>({
     of: (a) => M.of(right(a)) as any,
     chain: (fatb: any, ta: any) =>

@@ -1,14 +1,16 @@
 import type { _, Refinement } from "./types.ts";
 import type * as TC from "./type_classes.ts";
 
-import { createPipeableMonad } from "./derivations.ts";
-import { pipe } from "./fns.ts";
 import * as S from "./schemable.ts";
 import * as G from "./guard.ts";
 import * as E from "./either.ts";
 import * as T from "./tree.ts";
+import * as A from "./array.ts";
+import * as R from "./record.ts";
 import * as DE from "./decode_error.ts";
 import * as FS from "./free_semigroup.ts";
+import { createPipeableMonad } from "./derivations.ts";
+import { pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -75,7 +77,7 @@ export const fromRefinement = <I, A extends I>(
   refinement: Refinement<I, A>,
   expected: string,
 ): Decoder<I, A> => ({
-  decode: (i) => refinement(i) ? E.right(i) : E.left(error(i, expected)),
+  decode: (i) => refinement(i) ? success(i) : failure(i, expected),
 });
 
 export const fromGuard = <I, A extends I>(
@@ -87,44 +89,9 @@ export const fromGuard = <I, A extends I>(
  * @section Utilities
  **************************************************************************************************/
 
-const traverseRecordWithIndex = <A, B>(
-  f: (a: A, k: string) => Decoded<B>,
-  r: Record<string, A>,
-): Decoded<Record<string, B>> => {
-  const ks = Object.keys(r);
-  if (ks.length === 0) {
-    return Monad.of({});
-  }
-  let fr: Decoded<Record<string, B>> = Monad.of({});
-  for (const key of ks) {
-    fr = Monad.ap(
-      Monad.map((r) =>
-        (b: B) => {
-          r[key] = b;
-          return r;
-        }, fr),
-      f(r[key], key),
-    );
-  }
-  return fr;
-};
+const traverseRecordWithIndex = R.indexedTraverse(Applicative);
 
-const traverseArrayWithIndex = <A, B>(
-  fab: (a: A, i: number) => Decoded<B>,
-  as: A[],
-): Decoded<B[]> =>
-  as.reduce(
-    (mbs, a, i) =>
-      Monad.ap(
-        Monad.map((bs) =>
-          (b: B) => {
-            bs.push(b);
-            return bs;
-          }, mbs),
-        fab(a, i),
-      ),
-    Monad.of<Array<B>>([]),
-  );
+const traverseArrayWithIndex = A.indexedTraverse(Applicative);
 
 const compactRecord = <A>(
   r: Record<string, E.Either<void, A>>,
@@ -246,13 +213,15 @@ export const type = <P extends Record<string, Decoder<any, any>>>(
     pipe(
       unknownRecord.decode(i),
       chain((r) =>
-        traverseRecordWithIndex(
-          ({ decode }, key) =>
-            pipe(
-              decode(r[key]),
-              mapLeft((e) => FS.of(DE.key(key, DE.required, e))),
-            ),
+        pipe(
           properties,
+          traverseRecordWithIndex(
+            ({ decode }, key) =>
+              pipe(
+                decode(r[key]),
+                mapLeft((e) => FS.of(DE.key(key, DE.required, e))),
+              ),
+          ),
         ) as any
       ),
     ),
@@ -271,21 +240,23 @@ export const partial = <P extends Record<string, Decoder<any, any>>>(
         chain((r) =>
           Monad.map(
             compactRecord as any,
-            traverseRecordWithIndex(
-              ({ decode }, key) => {
-                const ikey = r[key];
-                if (ikey === undefined) {
-                  return key in r ? undefinedProperty : skipProperty;
-                }
-                return pipe(
-                  decode(ikey),
-                  bimap(
-                    (e) => FS.of(DE.key(key, DE.optional, e)),
-                    (a) => E.right(a),
-                  ),
-                );
-              },
+            pipe(
               properties,
+              traverseRecordWithIndex(
+                ({ decode }, key) => {
+                  const ikey = r[key];
+                  if (ikey === undefined) {
+                    return key in r ? undefinedProperty : skipProperty;
+                  }
+                  return pipe(
+                    decode(ikey),
+                    bimap(
+                      (e) => FS.of(DE.key(key, DE.optional, e)),
+                      (a) => E.right(a),
+                    ),
+                  );
+                },
+              ),
             ),
           )
         ),
@@ -293,20 +264,21 @@ export const partial = <P extends Record<string, Decoder<any, any>>>(
   });
 };
 
-export const array = <A>(item: Decoder<unknown, A>): Decoder<unknown, A[]> => ({
+export const array = <A>(
+  item: Decoder<unknown, A>,
+): Decoder<unknown, A[]> => ({
   decode: (i) =>
     pipe(
       unknownArray.decode(i),
-      chain((as) =>
+      chain(
         traverseArrayWithIndex(
           (a, i) =>
             pipe(
               item.decode(a),
               mapLeft((e) => FS.of(DE.index(i, DE.optional, e))),
             ),
-          as,
-        )
-      ),
+        ),
+      ) as any,
     ),
 });
 
@@ -316,15 +288,14 @@ export const record = <A>(
   decode: (i) =>
     pipe(
       unknownRecord.decode(i),
-      chain((r) =>
+      chain(
         traverseRecordWithIndex(
-          (i, key) =>
+          (value, key) =>
             pipe(
-              codomain.decode(i),
+              codomain.decode(value),
               mapLeft((e) => FS.of(DE.key(key, DE.required, e))),
             ),
-          r,
-        )
+        ) as any,
       ),
     ),
 });
@@ -336,14 +307,16 @@ export const tuple = <A extends ReadonlyArray<unknown>>(
     pipe(
       unknownArray.decode(i),
       chain((as) =>
-        traverseArrayWithIndex(
-          ({ decode }, i) =>
-            pipe(
-              decode(as[i]),
-              mapLeft((e) => FS.of(DE.index(i, DE.required, e))),
-            ),
-          (components as unknown) as Decoder<any, any>[],
-        ) as any
+        pipe(
+          components,
+          traverseArrayWithIndex(
+            ({ decode }: Decoder<unknown, A[keyof A]>, i) =>
+              pipe(
+                decode(as[i]),
+                mapLeft((e) => FS.of(DE.index(i, DE.required, e))),
+              ),
+          ) as any,
+        )
       ),
     ),
 });

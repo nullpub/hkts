@@ -141,6 +141,18 @@ export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
 
 export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
 
+export const {
+  traverse: indexedTraverse,
+  reduce: indexedReduce,
+  map: indexedMap,
+}: TC.IndexedTraversableP<ReadonlyArray<_>> = {
+  map: (fab) => (ta) => _map(ta, fab),
+  reduce: (faba, a) => (tb) => _reduce(tb, faba, a),
+  traverse: <U>(A: TC.Applicative<U>) =>
+    <A, B>(faUb: (a: A, i: number) => $<U, [B]>) =>
+      (ta: readonly A[]) => IndexedTraversable.traverse(A, faUb, ta),
+};
+
 /***************************************************************************************************
  * @section Sequence
  **************************************************************************************************/

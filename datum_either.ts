@@ -171,7 +171,7 @@ export const getSemigroup = <E, A>(
  * @section Modules
  **************************************************************************************************/
 
-export const Monad = E.getEitherM(DA.Monad);
+export const Monad = E.composeMonad(DA.Monad);
 
 export const Functor: TC.Functor<DatumEither<_0, _1>, 2> = {
   map: Monad.map,

@@ -300,7 +300,7 @@ export const Traversable: TC.Traversable<Option<_>> = {
  **************************************************************************************************/
 
 // deno-fmt-ignore
-type GetOptionMonad = {
+type ComposeOptionMonad = {
   <T, L extends 1>(M: TC.Monad<T, L>): TC.Monad<$<T, [Option<_0>]>, L>;
   <T, L extends 2>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, Option<_1>]>, L>;
   <T, L extends 3>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, _1, Option<_2>]>, L>;
@@ -312,7 +312,7 @@ type GetOptionMonad = {
  * a bit better so we wouldn't have to do unsafe coercion.
  * @experimental
  */
-export const getOptionM: GetOptionMonad = <T>(M: TC.Monad<T>) =>
+export const composeMonad: ComposeOptionMonad = <T>(M: TC.Monad<T>) =>
   D.createMonad<$<T, [Option<_>]>>({
     of: (a) => M.of(some(a)) as any,
     chain: (fatb, ta) =>

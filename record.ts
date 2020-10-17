@@ -95,53 +95,31 @@ export const map = PipeableTraversable.map as <A, B>(
 
 export const reduce = PipeableTraversable.reduce;
 
+// deno-fmt-ignore
 type TraverseFn<L extends TC.LS = 1> = {
-  1: <U>(
-    A: TC.Applicative<U, L>,
-  ) => <A, B>(
-    faub: (a: A) => $<U, [B]>,
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [Record<K, A>]>;
-  2: <U>(
-    A: TC.Applicative<U, L>,
-  ) => <E, A, B>(
-    faub: (a: A) => $<U, [E, B]>,
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [E, Record<K, A>]>;
-  3: <U>(
-    A: TC.Applicative<U, L>,
-  ) => <R, E, A, B>(
-    faub: (a: A) => $<U, [R, E, B]>,
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [R, E, Record<K, A>]>;
-  4: <U>(
-    A: TC.Applicative<U, L>,
-  ) => <S, R, E, A, B>(
-    faub: (a: A) => $<U, [S, R, E, B]>,
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [S, R, E, Record<K, A>]>;
+  1: <U>(A: TC.Applicative<U, L>) => <A, B>(faub: (a: A) => $<U, [B]>)
+    => <K extends string>(ta: Record<K, A>) => $<U, [Record<K, A>]>;
+  2: <U>(A: TC.Applicative<U, L>) => <E, A, B>(faub: (a: A) => $<U, [E, B]>)
+    => <K extends string>(ta: Record<K, A>) => $<U, [E, Record<K, A>]>;
+  3: <U>(A: TC.Applicative<U, L>) => <R, E, A, B>(faub: (a: A) => $<U, [R, E, B]>)
+    => <K extends string>(ta: Record<K, A>) => $<U, [R, E, Record<K, A>]>;
+  4: <U>(A: TC.Applicative<U, L>) => <S, R, E, A, B>(faub: (a: A) => $<U, [S, R, E, B]>)
+    => <K extends string>(ta: Record<K, A>) => $<U, [S, R, E, Record<K, A>]>;
 }[L];
 
-export const traverse: TraverseFn = PipeableTraversable.traverse as TraverseFn;
+export const traverse = PipeableTraversable.traverse as TraverseFn;
 
+// deno-fmt-ignore
 type IndexedTraverseFn<I extends string = string, L extends TC.LS = 1> = {
-  1: <U>(
-    A: TC.Applicative<U, L>,
-  ) => <A, B>(
-    faub: (a: A, i: I) => $<U, [B]>,
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [Record<K, A>]>;
-  2: <U>(
-    A: TC.Applicative<U, L>,
-  ) => <E, A, B>(
-    faub: (a: A, i: I) => $<U, [E, B]>,
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [E, Record<K, A>]>;
-  3: <U>(
-    A: TC.Applicative<U, L>,
-  ) => <R, E, A, B>(
-    faub: (a: A, i: I) => $<U, [R, E, B]>,
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [R, E, Record<K, A>]>;
-  4: <U>(
-    A: TC.Applicative<U, L>,
-  ) => <S, R, E, A, B>(
-    faub: (a: A, i: I) => $<U, [S, R, E, B]>,
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [S, R, E, Record<K, A>]>;
+  1: <U>(A: TC.Applicative<U, L>) => <A, B>(faub: (a: A, i: I) => $<U, [B]>)
+    => <K extends string>(ta: Record<K, A>) => $<U, [Record<K, A>]>;
+  2: <U>(A: TC.Applicative<U, L>) => <E, A, B>(faub: (a: A, i: I) => $<U, [E, B]>)
+    => <K extends string>(ta: Record<K, A>) => $<U, [E, Record<K, A>]>;
+  3: <U>(A: TC.Applicative<U, L>) => <R, E, A, B>(faub: (a: A, i: I) => $<U, [R, E, B]>)
+    => <K extends string>(ta: Record<K, A>) => $<U, [R, E, Record<K, A>]>;
+  4: <U>(A: TC.Applicative<U, L>) => <S, R, E, A, B>(faub: (a: A, i: I) => $<U, [S, R, E, B]>)
+    => <K extends string>(ta: Record<K, A>) => $<U, [S, R, E, Record<K, A>]>;
 }[L];
 
-export const indexedTraverse: IndexedTraverseFn = PipeableTraversable
+export const indexedTraverse = PipeableTraversable
   .traverse as IndexedTraverseFn;
