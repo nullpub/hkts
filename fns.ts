@@ -1,4 +1,4 @@
-import type { Nil, Fn, Lazy } from "./types.ts";
+import type { Fn, Lazy, Nil } from "./types.ts";
 
 /***************************************************************************************************
  * @section Guards
@@ -30,6 +30,31 @@ export const compose = <A, B>(fab: Fn<[A], B>) =>
   <C>(fbc: Fn<[B], C>): Fn<[A], C> => (a) => fbc(fab(a));
 
 export const constant = <A>(a: A): Lazy<A> => () => a;
+
+export const memoize = <A, B>(f: (a: A) => B): (a: A) => B => {
+  let cache = new Map();
+  return (a) => {
+    if (cache.has(a)) {
+      return cache.get(a);
+    }
+    const b = f(a);
+    cache.set(a, b);
+    return b;
+  };
+};
+
+export const typeOf = (x: unknown): string => (x === null ? "null" : typeof x);
+
+export const intersect = <A, B>(a: A, b: B): A & B => {
+  if (a !== undefined && b !== undefined) {
+    const tx = typeOf(a);
+    const ty = typeOf(b);
+    if (tx === "object" || ty === "object") {
+      return Object.assign({}, a, b);
+    }
+  }
+  return b as any;
+};
 
 /***************************************************************************************************
  * @section Pipe

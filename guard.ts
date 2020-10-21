@@ -1,14 +1,14 @@
 import type { _, Refinement } from "./types.ts";
 
-import { pipe } from "./fns.ts";
 import * as S from "./schemable.ts";
+import { memoize, pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types
  **************************************************************************************************/
 
 export interface Guard<I, A extends I> {
-  is: Refinement<I, A>;
+  readonly is: Refinement<I, A>;
 }
 
 export type InputOf<D> = D extends Guard<infer I, any> ? I : never;
@@ -137,7 +137,7 @@ export const union = <A extends readonly [unknown, ...Array<unknown>]>(
 });
 
 export const lazy = <A>(f: () => Guard<unknown, A>): Guard<unknown, A> => {
-  const get = S.memoize<void, Guard<unknown, A>>(f);
+  const get = memoize<void, Guard<unknown, A>>(f);
   return {
     is: (u: unknown): u is A => get().is(u),
   };

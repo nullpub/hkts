@@ -1,5 +1,7 @@
-import type { $, _ } from "./types.ts";
+import type { $, _, Fix } from "./types.ts";
 import type { LS } from "./type_classes.ts";
+
+import { memoize } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -173,48 +175,17 @@ export type Schemable<T, L extends LS = 1> = {
   readonly lazy: LazySchemable<T, L>;
 };
 
-export type Schema<A, L extends LS = 1> = {
-  1: <T>(S: Schemable<T>) => $<T, [A]>;
-  2: <T, E>(S: Schemable<T>) => $<T, [E, A]>;
-  3: <T, R, E>(S: Schemable<T>) => $<T, [R, E, A]>;
-  4: <T, S, R, E>(S: Schemable<T>) => $<T, [S, R, E, A]>;
-}[L];
+export type Schema<A> = {
+  <T, L extends 1>(S: Schemable<T, L>): $<T, [A]>;
+  <T, L extends 2, E>(S: Schemable<T, L>): $<T, [E, A]>;
+  <T, L extends 3, R, E>(S: Schemable<T, L>): $<T, [R, E, A]>;
+  <T, L extends 4, S, R, E>(S: Schemable<T, L>): $<T, [S, R, E, A]>;
+};
 
 /***************************************************************************************************
  * @section Utilities
  **************************************************************************************************/
 
-export const memoize = <A, B>(f: (a: A) => B): (a: A) => B => {
-  let cache = new Map();
-  return (a) => {
-    if (cache.has(a)) {
-      return cache.get(a);
-    }
-    const b = f(a);
-    cache.set(a, b);
-    return b;
-  };
-};
-
-const typeOf = (x: unknown): string => (x === null ? "null" : typeof x);
-
-export const intersect_ = <A, B>(a: A, b: B): A & B => {
-  if (a !== undefined && b !== undefined) {
-    const tx = typeOf(a);
-    const ty = typeOf(b);
-    if (tx === "object" || ty === "object") {
-      return Object.assign({}, a, b);
-    }
-  }
-  return b as any;
-};
-
-type MakeSchema<L extends LS = 1> = {
-  1: <A>(S: Schema<A, L>) => Schema<A, L>;
-  2: <A>(S: Schema<A, L>) => Schema<A, L>;
-  3: <A>(S: Schema<A, L>) => Schema<A, L>;
-  4: <A>(S: Schema<A, L>) => Schema<A, L>;
-}[L];
-
-export const make: MakeSchema = <A>(schema: Schema<A>): Schema<A> =>
-  memoize(schema);
+export const make = <A>(
+  ft: (S: Schemable<_>) => A,
+): Schema<A> => memoize(ft);
