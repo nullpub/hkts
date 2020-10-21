@@ -1,11 +1,12 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1, Refinement, Predicate } from "./types.ts";
+import type { _0, _1, Predicate, Refinement } from "./types.ts";
 import type { Traversal } from "./traversal.ts";
+import type { Optional } from "./optional.ts";
 
 import * as L from "./lens.ts";
 import * as O from "./option.ts";
-import { Optional, compose as composeO } from "./optional.ts";
-import { identity, flow, pipe } from "./fns.ts";
+import * as OP from "./optional.ts";
+import { flow, identity, pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -76,10 +77,10 @@ export const composeLens = <A, B>(
   ab: L.Lens<A, B>,
 ) =>
   <S>(sa: Prism<S, A>): Optional<S, B> =>
-    composeO(L.asOptional(ab))(asOptional(sa));
+    OP.compose(L.asOptional(ab))(asOptional(sa));
 
 export const composeOptional = <A, B>(ab: Optional<A, B>) =>
-  <S>(sa: Prism<S, A>): Optional<S, B> => composeO(ab)(asOptional(sa));
+  <S>(sa: Prism<S, A>): Optional<S, B> => OP.compose(ab)(asOptional(sa));
 
 export const getModifyOption = <S, A>(sa: Prism<S, A>) =>
   (faa: (a: A) => A) =>
@@ -141,16 +142,19 @@ export const component = <A extends ReadonlyArray<unknown>, P extends keyof A>(
   composeLens(pipe(L.id<A>(), L.component(prop)));
 
 export const index = (i: number) =>
-  <S, A>(sa: Prism<S, ReadonlyArray<A>>): Optional<S, A> => ({
-    getOption: flow(sa.getOption, O.chain((as) => O.fromNullable(as[i]))),
-    set: component<To<typeof sa>, number>(i)(sa).set,
-  });
+  <S, A>(sa: Prism<S, ReadonlyArray<A>>): Optional<S, A> =>
+    pipe(asOptional(sa), OP.compose(OP.indexArray<A>().index(i)));
 
 export const key = (key: string) =>
-  <S, A>(sa: Prism<S, Readonly<Record<string, A>>>): Optional<S, A> => ({
-    getOption: flow(sa.getOption, O.chain((a) => O.fromNullable(a[key]))),
-    set: prop<To<typeof sa>, string>(key)(sa).set,
-  });
+  <S, A>(sa: Prism<S, Readonly<Record<string, A>>>): Optional<S, A> =>
+    pipe(
+      asOptional(sa),
+      OP.compose(OP.indexRecord<A>().index(key)),
+    );
+
+export const atKey = (key: string) =>
+  <S, A>(sa: Prism<S, Readonly<Record<string, A>>>): Optional<S, O.Option<A>> =>
+    composeLens(L.atRecord<A>().at(key))(sa);
 
 /***************************************************************************************************
  * @section Modules

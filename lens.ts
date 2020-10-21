@@ -1,9 +1,10 @@
 import type * as TC from "./type_classes.ts";
 import type { _0, _1, Predicate, Refinement } from "./types.ts";
-import type { Optional } from "./optional.ts";
 import type { Prism } from "./prism.ts";
 import type { Traversal } from "./traversal.ts";
+import type { Optional } from "./optional.ts";
 
+import * as OP from "./optional.ts";
 import * as O from "./option.ts";
 import * as I from "./iso.ts";
 import * as R from "./record.ts";
@@ -185,16 +186,19 @@ export const component = <A extends ReadonlyArray<unknown>, P extends keyof A>(
   });
 
 export const index = (i: number) =>
-  <S, A>(sa: Lens<S, ReadonlyArray<A>>): Optional<S, A> => ({
-    getOption: flow(sa.get, (as) => O.fromNullable(as[i])),
-    set: component<To<typeof sa>, number>(i)(sa).set,
-  });
+  <S, A>(sa: Lens<S, ReadonlyArray<A>>): Optional<S, A> =>
+    pipe(sa, asOptional, OP.compose(OP.indexArray<A>().index(i)));
 
 export const key = (key: string) =>
-  <S, A>(sa: Lens<S, Readonly<Record<string, A>>>): Optional<S, A> => ({
-    getOption: flow(sa.get, (a) => O.fromNullable(a[key])),
-    set: prop<To<typeof sa>, string>(key)(sa).set,
-  });
+  <S, A>(sa: Lens<S, Readonly<Record<string, A>>>): Optional<S, A> =>
+    pipe(
+      asOptional(sa),
+      OP.compose(OP.indexRecord<A>().index(key)),
+    );
+
+export const atKey = (key: string) =>
+  <S, A>(sa: Lens<S, Readonly<Record<string, A>>>): Lens<S, O.Option<A>> =>
+    pipe(sa, compose(atRecord<A>().at(key)));
 
 /***************************************************************************************************
  * @section Modules

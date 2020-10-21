@@ -174,16 +174,18 @@ export const component = <A extends ReadonlyArray<unknown>, P extends keyof A>(
   compose(pipe(L.id<A>(), L.component(prop), L.asOptional));
 
 export const index = (i: number) =>
-  <S, A>(sa: Optional<S, ReadonlyArray<A>>): Optional<S, A> => ({
-    getOption: flow(sa.getOption, O.chain((as) => O.fromNullable(as[i]))),
-    set: component<To<typeof sa>, number>(i)(sa).set,
-  });
+  <S, A>(sa: Optional<S, ReadonlyArray<A>>): Optional<S, A> =>
+    pipe(sa, compose(indexArray<A>().index(i)));
 
 export const key = (key: string) =>
-  <S, A>(sa: Optional<S, Readonly<Record<string, A>>>): Optional<S, A> => ({
-    getOption: flow(sa.getOption, O.chain((a) => O.fromNullable(a[key]))),
-    set: prop<To<typeof sa>, string>(key)(sa).set,
-  });
+  <S, A>(sa: Optional<S, Readonly<Record<string, A>>>): Optional<S, A> =>
+    pipe(sa, compose(indexRecord<A>().index(key)));
+
+export const atKey = (key: string) =>
+  <S, A>(
+    sa: Optional<S, Readonly<Record<string, A>>>,
+  ): Optional<S, O.Option<A>> =>
+    pipe(sa, compose(L.asOptional(L.atRecord<A>().at(key))));
 
 /***************************************************************************************************
  * @section Modules
