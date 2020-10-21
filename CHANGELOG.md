@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.28](https://github.com/nullpub/hkts/compare/v0.0.27...v0.0.28) (2020-10-21)
+
+
+### Features
+
+* implement encoder and codec ([5468f22](https://github.com/nullpub/hkts/commit/5468f22e0e16510ebf215408d1155aef56b09d28))
+
+
+### Bug Fixes
+
+* initialize Applicative of types with never ([d3c6de3](https://github.com/nullpub/hkts/commit/d3c6de3e621e807591f20fb783cdd89bbed95587))
+
 ### [0.0.27](https://github.com/nullpub/hkts/compare/v0.0.26...v0.0.27) (2020-10-17)
 
 
