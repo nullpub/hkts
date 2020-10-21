@@ -123,3 +123,21 @@ type IndexedTraverseFn<I extends string = string, L extends TC.LS = 1> = {
 
 export const indexedTraverse = PipeableTraversable
   .traverse as IndexedTraverseFn;
+
+export const insertAt = <K extends string, A>(k: K, a: A) =>
+  <KS extends K>(r: Record<KS | K, A>): Record<KS | K, A> =>
+    r[k] === a ? r : ({ ...r, [k]: a });
+
+export const deleteAt = <K extends string>(
+  k: K,
+) =>
+  <KS extends string, A>(
+    r: Record<KS | K, A>,
+  ): Record<Exclude<KS, K>, A> => {
+    if (!r.hasOwnProperty(k)) {
+      return r;
+    }
+    const out = Object.assign({}, r);
+    delete out[k];
+    return out;
+  };

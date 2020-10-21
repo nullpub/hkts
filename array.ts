@@ -2,6 +2,7 @@ import type * as TC from "./type_classes.ts";
 import type { $, _ } from "./types.ts";
 
 import * as D from "./derivations.ts";
+import * as O from "./option.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
@@ -9,7 +10,7 @@ import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
  **************************************************************************************************/
 
 export const _map = <A, B>(
-  as: ReadonlyArray<A>,
+  as: readonly A[],
   fab: (a: A, i: number) => B,
 ): ReadonlyArray<B> => {
   const out: B[] = new Array(as.length);
@@ -20,7 +21,7 @@ export const _map = <A, B>(
 };
 
 export const _reduce = <A, B>(
-  as: ReadonlyArray<A>,
+  as: readonly A[],
   fbab: (b: B, a: A, i: number) => B,
   b: B,
 ): B => {
@@ -32,9 +33,9 @@ export const _reduce = <A, B>(
 };
 
 const _concat = <A>(
-  a: ReadonlyArray<A>,
-  b: ReadonlyArray<A>,
-): ReadonlyArray<A> => {
+  a: readonly A[],
+  b: readonly A[],
+): readonly A[] => {
   if (a.length === 0) {
     return b;
   }
@@ -55,13 +56,49 @@ const _concat = <A>(
   return result;
 };
 
+const isOutOfBounds = <A>(i: number, as: readonly A[]): boolean =>
+  i < 0 || i >= as.length;
+
+const unsafeInsertAt = <A>(
+  i: number,
+  a: A,
+  as: ReadonlyArray<A>,
+): ReadonlyArray<A> => {
+  const xs = as.slice();
+  xs.splice(i, 0, a);
+  return xs;
+};
+
+const unsafeUpdateAt = <A>(
+  i: number,
+  a: A,
+  as: ReadonlyArray<A>,
+): ReadonlyArray<A> => {
+  if (as[i] === a) {
+    return as;
+  } else {
+    const xs = as.slice();
+    xs[i] = a;
+    return xs;
+  }
+};
+
+const unsafeDeleteAt = <A>(
+  i: number,
+  as: ReadonlyArray<A>,
+): ReadonlyArray<A> => {
+  const xs = as.slice();
+  xs.splice(i, 1);
+  return xs;
+};
+
 /***************************************************************************************************
  * @section Constructors
  **************************************************************************************************/
 
 export const zero: ReadonlyArray<never> = [];
 
-export const empty = <A = never>(): ReadonlyArray<A> => zero;
+export const empty = <A = never>(): readonly A[] => zero;
 
 /***************************************************************************************************
  * @section Module Getters
@@ -71,7 +108,7 @@ export const getShow = <A>({ show }: TC.Show<A>): TC.Show<readonly A[]> => ({
   show: (ta) => `ReadonlyArray[${ta.map(show).join(", ")}]`,
 });
 
-export const getMonoid = <A = never>(): TC.Monoid<ReadonlyArray<A>> => ({
+export const getMonoid = <A = never>(): TC.Monoid<readonly A[]> => ({
   empty,
   concat: _concat,
 });
@@ -112,7 +149,7 @@ export const IndexedTraversable: TC.IndexedTraversable<ReadonlyArray<_>> = {
   traverse: <U, A, B>(
     A: TC.Applicative<U>,
     faub: (a: A, i: number) => $<U, [B]>,
-    ta: ReadonlyArray<A>,
+    ta: readonly A[],
   ) =>
     IndexedFoldable.reduce(
       (fbs, a, i) =>
@@ -152,6 +189,22 @@ export const {
     <A, B>(faUb: (a: A, i: number) => $<U, [B]>) =>
       (ta: readonly A[]) => IndexedTraversable.traverse(A, faUb, ta),
 };
+
+export const lookup = (i: number) =>
+  <A>(as: readonly A[]): O.Option<A> =>
+    isOutOfBounds(i, as) ? O.none : O.some(as[i]);
+
+export const insertAt = <A>(i: number, a: A) =>
+  (as: readonly A[]): O.Option<readonly A[]> =>
+    isOutOfBounds(i, as) ? O.none : O.some(unsafeInsertAt(i, a, as));
+
+export const updateAt = <A>(i: number, a: A) =>
+  (as: readonly A[]): O.Option<readonly A[]> =>
+    isOutOfBounds(i, as) ? O.none : O.some(unsafeUpdateAt(i, a, as));
+
+export const deleteAt = (i: number) =>
+  <A>(as: readonly A[]): O.Option<readonly A[]> =>
+    isOutOfBounds(i, as) ? O.none : O.some(unsafeDeleteAt(i, as));
 
 /***************************************************************************************************
  * @section Sequence

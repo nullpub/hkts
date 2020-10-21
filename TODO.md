@@ -1,7 +1,5 @@
 # Initial Push Todos
 
-- port io-ts
-  - need encoder and codec
 - port monocle-ts
   - need to finish Traversal
 - implement tests for other algebraic modules

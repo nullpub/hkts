@@ -1,10 +1,14 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1, Refinement, Predicate } from "./types.ts";
+import type { _0, _1, Predicate, Refinement } from "./types.ts";
 import type { Traversal } from "./traversal.ts";
 
 import * as O from "./option.ts";
 import * as L from "./lens.ts";
-import { constant, pipe, flow, identity } from "./fns.ts";
+import * as I from "./iso.ts";
+import * as A from "./array.ts";
+import * as R from "./record.ts";
+import { compose as composeOptional } from "./optional.ts";
+import { constant, flow, identity, pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -16,7 +20,12 @@ export type Optional<S, A> = {
 };
 
 export type From<T> = T extends Optional<infer S, any> ? S : never;
+
 export type To<T> = T extends Optional<any, infer A> ? A : never;
+
+export type Index<S, I, A> = {
+  readonly index: (i: I) => Optional<S, A>;
+};
 
 /***************************************************************************************************
  * @section Constructors
@@ -25,6 +34,60 @@ export type To<T> = T extends Optional<any, infer A> ? A : never;
 export const id = <S>(): Optional<S, S> => ({
   getOption: O.some,
   set: constant,
+});
+
+export const fromAt = <T, J, B>(
+  at: L.At<T, J, O.Option<B>>,
+): Index<T, J, B> => ({
+  index: flow(
+    at.at,
+    L.composePrism({
+      getOption: identity,
+      reverseGet: O.some,
+    }),
+  ),
+});
+
+export const fromIso = <T, S>(iso: I.Iso<T, S>) =>
+  <I, A>(sia: Index<S, I, A>): Index<T, I, A> => ({
+    index: (i) =>
+      pipe(
+        I.asOptional(iso),
+        composeOptional(sia.index(i)),
+      ),
+  });
+
+export const indexArray = <A = never>(): Index<
+  ReadonlyArray<A>,
+  number,
+  A
+> => ({
+  index: (i) => ({
+    getOption: A.lookup(i),
+    set: (a) =>
+      (as) =>
+        pipe(
+          A.updateAt(i, a)(as),
+          O.getOrElse(() => as),
+        ),
+  }),
+});
+
+export const indexRecord = <A = never>(): Index<
+  Readonly<Record<string, A>>,
+  string,
+  A
+> => ({
+  index: (k) => ({
+    getOption: (r) => O.fromNullable(r[k]),
+    set: (a) =>
+      (r) => {
+        if (r[k] === a || O.isNone(O.fromNullable(r[k]))) {
+          return r;
+        }
+        return R.insertAt(k, a)(r);
+      },
+  }),
 });
 
 /***************************************************************************************************

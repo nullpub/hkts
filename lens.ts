@@ -5,6 +5,8 @@ import type { Prism } from "./prism.ts";
 import type { Traversal } from "./traversal.ts";
 
 import * as O from "./option.ts";
+import * as I from "./iso.ts";
+import * as R from "./record.ts";
 import { constant, flow, identity, pipe } from "./fns.ts";
 
 /***************************************************************************************************
@@ -17,7 +19,12 @@ export type Lens<S, A> = {
 };
 
 export type From<T> = T extends Lens<infer S, any> ? S : never;
+
 export type To<T> = T extends Lens<any, infer A> ? A : never;
+
+export type At<S, I, A> = {
+  readonly at: (i: I) => Lens<S, A>;
+};
 
 /***************************************************************************************************
  * @section Constructors
@@ -26,6 +33,25 @@ export type To<T> = T extends Lens<any, infer A> ? A : never;
 export const id = <S>(): Lens<S, S> => ({
   get: identity,
   set: constant,
+});
+
+export const fromIso = <T, S>(iso: I.Iso<T, S>) =>
+  <I, A>(sia: At<S, I, A>): At<T, I, A> => ({
+    at: (i) => pipe(I.asLens(iso), compose(sia.at(i))),
+  });
+
+export const atRecord = <A = never>(): At<
+  Readonly<Record<string, A>>,
+  string,
+  O.Option<A>
+> => ({
+  at: (key) => ({
+    get: (r) => O.fromNullable(r[key]),
+    set: O.fold(
+      (a) => R.insertAt(key, a),
+      () => R.deleteAt(key),
+    ),
+  }),
 });
 
 /***************************************************************************************************

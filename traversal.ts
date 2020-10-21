@@ -1,9 +1,11 @@
 import type * as TC from "./type_classes.ts";
-import type { $, _0, _1, Refinement, Predicate } from "./types.ts";
+import type { $, _0, _1, Predicate, Refinement } from "./types.ts";
+import type { Option } from "./option.ts";
 
 import * as I from "./identity.ts";
 import * as P from "./prism.ts";
 import * as L from "./lens.ts";
+import * as O from "./optional.ts";
 import { pipe } from "./fns.ts";
 
 /***************************************************************************************************
@@ -21,7 +23,7 @@ export type From<T> = T extends Traversal<infer S, infer _> ? S : never;
 export type To<T> = T extends Traversal<infer _, infer A> ? A : never;
 
 /***************************************************************************************************
- * @section Types
+ * @section Constructors
  **************************************************************************************************/
 
 export const id = <S>(): Traversal<S, S> => ({
@@ -91,3 +93,17 @@ export const component = <A extends ReadonlyArray<unknown>, P extends keyof A>(
   prop: P,
 ): (<S>(sa: Traversal<S, A>) => Traversal<S, A[P]>) =>
   compose(pipe(L.id<A>(), L.component(prop), L.asTraversal));
+
+export const index = (i: number) =>
+  <S, A>(sa: Traversal<S, ReadonlyArray<A>>): Traversal<S, A> =>
+    pipe(sa, compose(O.asTraversal(O.indexArray<A>().index(i))));
+
+export const key = (key: string) =>
+  <S, A>(sa: Traversal<S, Readonly<Record<string, A>>>): Traversal<S, A> =>
+    pipe(sa, compose(O.asTraversal(O.indexRecord<A>().index(key))));
+
+export const atKey = (key: string) =>
+  <S, A>(
+    sa: Traversal<S, Readonly<Record<string, A>>>,
+  ): Traversal<S, Option<A>> =>
+    pipe(sa, compose(L.asTraversal(L.atRecord<A>().at(key))));
