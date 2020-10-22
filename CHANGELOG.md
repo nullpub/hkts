@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.29](https://github.com/nullpub/hkts/compare/v0.0.28...v0.0.29) (2020-10-22)
+
+
+### Features
+
+* add TypeOf to schemable.ts ([b2599e7](https://github.com/nullpub/hkts/commit/b2599e7c3e5e4e12f6d0e03eb5406c753c9c33b1))
+* finish Traversal implementation ([49f9dc3](https://github.com/nullpub/hkts/commit/49f9dc370c22cf861013d9636d55e0e92b662ee6))
+* implement index, key, and atKey ([723c876](https://github.com/nullpub/hkts/commit/723c8763b1f680c471eaa241d1700dade389c3a0))
+
 ### [0.0.28](https://github.com/nullpub/hkts/compare/v0.0.27...v0.0.28) (2020-10-21)
 
 
