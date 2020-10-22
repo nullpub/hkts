@@ -162,5 +162,5 @@ export const atKey = (key: string) =>
 
 export const Category: TC.Category<Prism<_0, _1>> = {
   compose: (ij, jk) => compose(jk)(ij),
-  id: id as <I, J>() => Prism<I, J>,
+  id,
 };
