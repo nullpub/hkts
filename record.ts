@@ -2,6 +2,7 @@ import type * as TC from "./type_classes.ts";
 import type { $, _ } from "./types.ts";
 
 import * as D from "./derivations.ts";
+import { hasOwnProperty } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Optimizations
@@ -33,7 +34,7 @@ export const _reduce = <A, B, KS extends string>(
 };
 
 export const _assign = <KS extends string>(i: KS) =>
-  <R extends { [K in KS]: any }>(bs: R) =>
+  <R extends { [K in KS]: unknown }>(bs: R) =>
     (b: R[typeof i]): Partial<R> => {
       bs[i] = b;
       return bs;
@@ -134,7 +135,7 @@ export const deleteAt = <K extends string>(
   <KS extends string, A>(
     r: Record<KS | K, A>,
   ): Record<Exclude<KS, K>, A> => {
-    if (!r.hasOwnProperty(k)) {
+    if (!hasOwnProperty.call(r, k)) {
       return r;
     }
     const out = Object.assign({}, r);

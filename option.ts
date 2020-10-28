@@ -314,12 +314,16 @@ type ComposeOptionMonad = {
  */
 export const composeMonad: ComposeOptionMonad = <T>(M: TC.Monad<T>) =>
   D.createMonad<$<T, [Option<_>]>>({
-    of: (a) => M.of(some(a)) as any,
-    chain: (fatb, ta) =>
+    of: <A>(a: A) => (M.of(some(a)) as unknown) as $<$<T, [Option<_<0>>]>, [A]>,
+    chain: <A, B>(
+      fatb: (a: A) => $<$<T, [Option<_<0>>]>, [B]>,
+      ta: $<$<T, [Option<_<0>>]>, [A]>,
+    ) =>
       M.chain(
-        (a: any) => isNone(a) ? M.of(a) : fatb(a) as any,
-        ta as any,
-      ) as any,
+        (a: Option<A>) =>
+          ((isNone(a) ? M.of(a) : fatb(a.value)) as unknown) as $<T, [unknown]>,
+        ta as $<T, [Option<A>]>,
+      ) as $<$<T, [Option<_<0>>]>, [B]>,
   });
 
 /***************************************************************************************************

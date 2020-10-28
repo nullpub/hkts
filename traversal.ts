@@ -75,9 +75,7 @@ type FilterFn = {
 };
 
 export const filter: FilterFn = <A>(predicate: Predicate<A>) =>
-  <S>(sa: Traversal<S, A>): Traversal<S, A> => ({
-    getModify: compose(P.asTraversal(P.fromPredicate(predicate)))(sa) as any,
-  });
+  compose(P.asTraversal(P.fromPredicate(predicate)));
 
 export const prop = <A, P extends keyof A>(
   prop: P,

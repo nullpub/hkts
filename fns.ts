@@ -1,4 +1,4 @@
-import type { Fn, Lazy, Nil } from "./types.ts";
+import type { Fn, Lazy, Nil, UnknownFn } from "./types.ts";
 
 /***************************************************************************************************
  * @section Guards
@@ -32,7 +32,7 @@ export const compose = <A, B>(fab: Fn<[A], B>) =>
 export const constant = <A>(a: A): Lazy<A> => () => a;
 
 export const memoize = <A, B>(f: (a: A) => B): (a: A) => B => {
-  let cache = new Map();
+  const cache = new Map();
   return (a) => {
     if (cache.has(a)) {
       return cache.get(a);
@@ -53,8 +53,10 @@ export const intersect = <A, B>(a: A, b: B): A & B => {
       return Object.assign({}, a, b);
     }
   }
-  return b as any;
+  return b as A & B;
 };
+
+export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /***************************************************************************************************
  * @section Pipe
@@ -173,7 +175,7 @@ export type PipeFn = {
   ): L;
 };
 
-export const pipe: PipeFn = (a: unknown, ...fns: Function[]): unknown =>
+export const pipe: PipeFn = (a: unknown, ...fns: UnknownFn[]): unknown =>
   fns.reduce((val, fn) => fn(val), a);
 
 /***************************************************************************************************
@@ -246,9 +248,10 @@ type FlowFn = {
   ): (...a: A) => J;
 };
 
-export const flow: FlowFn = <AS extends any[], B>(
+export const flow: FlowFn = <AS extends unknown[], B>(
   a: (...as: AS) => B,
-  ...fns: Function[]
-): (...as: AS) => any => {
-  return (...args: AS): any => fns.reduce((b, f) => f(b), a(...args));
+  ...fns: UnknownFn[]
+): (...as: AS) => unknown => {
+  return (...args: AS): unknown =>
+    fns.reduce((b: unknown, f) => f(b), a(...args));
 };

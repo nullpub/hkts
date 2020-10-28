@@ -54,9 +54,8 @@ export const asOptional = <S, A>(sa: Iso<S, A>): Optional<S, A> => ({
 });
 
 export const asTraversal = <S, A>(sa: Iso<S, A>): Traversal<S, A> => ({
-  getModify: ({ map }: any) =>
-    (f: (a: A) => any) =>
-      (s: S) => map((a: A) => sa.reverseGet(a), f(sa.get(s))),
+  getModify: ({ map }) =>
+    (f) => (s: S) => map((a: A) => sa.reverseGet(a), f(sa.get(s))),
 });
 
 /***************************************************************************************************

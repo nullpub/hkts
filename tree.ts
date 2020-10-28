@@ -10,6 +10,7 @@ import { identity } from "./fns.ts";
  * @section Optimizations
  **************************************************************************************************/
 
+// deno-lint-ignore no-explicit-any
 const _concat = A.getMonoid<Tree<any>>().concat;
 
 const _draw = (indentation: string, forest: Forest<string>): string => {

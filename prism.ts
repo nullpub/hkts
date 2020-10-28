@@ -17,8 +17,9 @@ export type Prism<S, A> = {
   readonly reverseGet: (a: A) => S;
 };
 
-export type From<T> = T extends Prism<infer S, any> ? S : never;
-export type To<T> = T extends Prism<any, infer A> ? A : never;
+export type From<T> = T extends Prism<infer S, infer _> ? S : never;
+
+export type To<T> = T extends Prism<infer _, infer A> ? A : never;
 
 /***************************************************************************************************
  * @section Constructors

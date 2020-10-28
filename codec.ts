@@ -74,11 +74,15 @@ export const nullable = <I, O, A>(
   or: Codec<I, O, A>,
 ): Codec<null | I, null | O, null | A> => make(D.nullable(or), E.nullable(or));
 
-export const type = <P extends Record<string, Codec<unknown, any, any>>>(
+export const type = <
+  P extends Record<string, Codec<unknown, unknown, unknown>>,
+>(
   properties: P,
 ) => fromDecoder(D.type(properties));
 
-export const partial = <P extends Record<string, Codec<any, any, any>>>(
+export const partial = <
+  P extends Record<string, Codec<unknown, unknown, unknown>>,
+>(
   properties: P,
 ) => fromDecoder(D.partial(properties));
 
@@ -92,7 +96,8 @@ export const record = <O, A>(
 
 export const tuple = <A extends ReadonlyArray<unknown>>(
   ...components: { [K in keyof A]: Codec<unknown, A[K], A[K]> }
-): Codec<unknown, A, A> => fromDecoder(D.tuple(...components)) as any;
+): Codec<unknown, A, A> =>
+  (fromDecoder(D.tuple(...components)) as unknown) as Codec<unknown, A, A>;
 
 export const intersect = <OA, A, OB, B>(
   left: Codec<unknown, OA, A>,
@@ -101,7 +106,7 @@ export const intersect = <OA, A, OB, B>(
 
 export const sum = <
   T extends string,
-  M extends Record<string, Codec<unknown, any, any>>,
+  M extends Record<string, Codec<unknown, unknown, unknown>>,
 >(
   tag: T,
   members: M,
@@ -128,6 +133,6 @@ export const Schemable: S.Schemable<Codec<unknown, _0, _0>> = {
   array,
   tuple: tuple as S.TupleSchemable<Codec<unknown, _0, _0>, 1>,
   intersect: intersect,
-  sum,
+  sum: sum as S.SumSchemable<Codec<unknown, _0, _0>, 1>,
   lazy,
 };

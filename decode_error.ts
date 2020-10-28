@@ -16,8 +16,8 @@ export type Leaf<E> = {
   readonly error: E;
 };
 
-export const required: "required" = "required";
-export const optional: "optional" = "optional";
+export const required = "required" as const;
+export const optional = "optional" as const;
 
 export type Kind = "required" | "optional";
 

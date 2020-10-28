@@ -19,9 +19,9 @@ export type Optional<S, A> = {
   readonly set: (a: A) => (s: S) => S;
 };
 
-export type From<T> = T extends Optional<infer S, any> ? S : never;
+export type From<T> = T extends Optional<infer S, infer _> ? S : never;
 
-export type To<T> = T extends Optional<any, infer A> ? A : never;
+export type To<T> = T extends Optional<infer _, infer A> ? A : never;
 
 export type Index<S, I, A> = {
   readonly index: (i: I) => Optional<S, A>;

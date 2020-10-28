@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-explicit-any
+
 import type * as TC from "./type_classes.ts";
 import type { _0, _1 } from "./types.ts";
 

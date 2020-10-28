@@ -1,8 +1,12 @@
+// deno-lint-ignore-file
+
 /***************************************************************************************************
  * @section Utility Types
  **************************************************************************************************/
 
 export type Fn<AS extends unknown[], B> = (...as: AS) => B;
+
+export type UnknownFn = Fn<unknown[], unknown>;
 
 export type Nil = undefined | null;
 

@@ -127,7 +127,14 @@ export const Monad: TC.Monad<ReadonlyArray<_>> = {
   map: (fab, ta) => _map(ta, (a) => fab(a)),
   join: (tta) => tta.flat(1),
   chain: (fatb, ta) =>
-    _reduce(ta, (bs: readonly any[], a) => _concat(bs, fatb(a)), []),
+    // deno-lint-ignore no-explicit-any
+    _reduce(ta, (bs, a) => _concat(bs, fatb(a)), [] as readonly any[]),
+};
+
+export const Applicative: TC.Applicative<ReadonlyArray<_>> = {
+  of: Monad.of,
+  ap: Monad.ap,
+  map: Functor.map,
 };
 
 export const Filterable: TC.Filterable<ReadonlyArray<_>> = {

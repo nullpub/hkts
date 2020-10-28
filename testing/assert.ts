@@ -1,18 +1,20 @@
+// deno-lint-ignore-file no-explicit-any
+
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import type * as TC from "../type_classes.ts";
-import type { $, Predicate } from "../types.ts";
+import type { $, Predicate, UnknownFn } from "../types.ts";
 
 /***************************************************************************************************
  * @section Assert: Extended Equals (calls functions and awaits promises until reduced)
  **************************************************************************************************/
 
-const isFunction = (t: unknown): t is Function => typeof t === "function";
+const isFunction = (t: unknown): t is UnknownFn => typeof t === "function";
 
 const isPromise = (t: unknown): t is Promise<unknown> => t instanceof Promise;
 
-const evaluate = async (t: unknown): Promise<any> => {
-  let out: any = t;
+const evaluate = async (t: unknown): Promise<unknown> => {
+  let out: unknown = t;
   while (isFunction(out) || isPromise(out)) {
     if (isFunction(out)) {
       out = out();
@@ -741,7 +743,7 @@ export const assertApplicative: AssertApplicative = async <T, A, B, C>(
 ): Promise<void> => {
   // Identity: A.ap(A.of(x => x), v) ≡ v
   await assertRunEquals(
-    A.ap(A.of((x: any) => x), ta),
+    A.ap(A.of((x: unknown) => x), ta),
     ta,
     `${name} : Applicative Identity`,
   );

@@ -280,7 +280,7 @@ type ComposeEitherMonad = {
   <T, L extends 1>(M: TC.Monad<T, L>): TC.Monad<$<T, [Either<_0, _1>]>, 2>;
   <T, L extends 2>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, Either<_1, _2>]>, 3>;
   <T, L extends 3>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, _1, Either<_2, _3>]>, 4>;
-  <T, L extends 4>(M: any): unknown;
+  <T, L extends 4>(M: TC.Monad<T, L>): unknown;
 };
 
 /**
@@ -290,13 +290,21 @@ type ComposeEitherMonad = {
  */
 export const composeMonad: ComposeEitherMonad = <T>(M: TC.Monad<T>) =>
   D.createMonad<$<T, [Either<_0, _1>]>, 2>({
-    of: (a) => M.of(right(a)) as any,
-    chain: (fatb: any, ta: any) =>
-      M.chain(
-        (e: any) => (isLeft(e) ? M.of(left(e.left)) : fatb(e.right)),
-        ta,
-      ) as any,
-  }) as any;
+    of: <E, A>(a: A) =>
+      (M.of(right(a)) as unknown) as $<$<T, [Either<_0, _1>]>, [E, A]>,
+    chain: <E, A, B>(
+      fatb: (a: A) => $<$<T, [Either<_0, _1>]>, [E, B]>,
+      ta: $<$<T, [Either<_0, _1>]>, [E, A]>,
+    ) =>
+      (M.chain(
+        (e: Either<E, A>): $<T, [unknown]> =>
+          ((isLeft(e) ? M.of(left(e.left)) : fatb(e.right)) as unknown) as $<
+            T,
+            [unknown]
+          >,
+        ta as $<T, [Either<E, A>]>,
+      ) as unknown) as $<$<T, [Either<_0, _1>]>, [E, B]>,
+  });
 
 /***************************************************************************************************
  * @section Pipeables

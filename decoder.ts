@@ -189,7 +189,7 @@ export const unknownArray = fromGuard(G.unknownArray, "unknownArray");
 
 export const unknownRecord = fromGuard(G.unknownRecord, "unknownRecord");
 
-export const type = <P extends Record<string, Decoder<any, any>>>(
+export const type = <P extends Record<string, Decoder<unknown, unknown>>>(
   properties: P,
 ): Decoder<
   unknown,
@@ -213,7 +213,7 @@ export const type = <P extends Record<string, Decoder<any, any>>>(
     ),
   }) as Decoder<unknown, { [K in keyof P]: TypeOf<P[K]> }>;
 
-export const partial = <P extends Record<string, Decoder<any, any>>>(
+export const partial = <P extends Record<string, Decoder<unknown, unknown>>>(
   properties: P,
 ): Decoder<unknown, Partial<{ [K in keyof P]: TypeOf<P[K]> }>> =>
   ({
@@ -293,15 +293,18 @@ export const tuple = <A extends ReadonlyArray<unknown>>(
   }) as Decoder<unknown, A>;
 
 export const union = <
-  MS extends readonly [Decoder<any, any>, ...Array<Decoder<any, any>>],
+  MS extends readonly [
+    Decoder<unknown, unknown>,
+    ...Array<Decoder<unknown, unknown>>,
+  ],
 >(
   ...members: MS
 ): Decoder<InputOf<MS[keyof MS]>, TypeOf<MS[keyof MS]>> => ({
   decode: (i) => {
-    let out: Decoded<TypeOf<MS[keyof MS]>> = E.Bifunctor.mapLeft(
+    let out = E.Bifunctor.mapLeft(
       (e) => FS.of(DE.member(0, e)),
       members[0].decode(i),
-    );
+    ) as Decoded<TypeOf<MS[keyof MS]>>;
     for (let index = 1; index < members.length; index++) {
       out = Alt.alt(
         out,
@@ -309,7 +312,7 @@ export const union = <
           (e) => FS.of(DE.member(index, e)),
           members[index].decode(i),
         ),
-      );
+      ) as Decoded<TypeOf<MS[keyof MS]>>;
     }
     return out;
   },
@@ -337,7 +340,7 @@ export const sum = <T extends string, A>(
       chain((ir) => {
         const v = ir[tag];
         if (typeof v === "string" && v in members) {
-          return (members as any)[v].decode(ir);
+          return members[v as keyof A].decode(ir);
         }
         return E.left(FS.of(
           DE.key(

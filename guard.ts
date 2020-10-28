@@ -11,9 +11,9 @@ export interface Guard<I, A extends I> {
   readonly is: Refinement<I, A>;
 }
 
-export type InputOf<D> = D extends Guard<infer I, any> ? I : never;
+export type InputOf<D> = D extends Guard<infer I, infer _> ? I : never;
 
-export type TypeOf<D> = D extends Guard<any, infer A> ? A : never;
+export type TypeOf<D> = D extends Guard<infer _, infer A> ? A : never;
 
 /***************************************************************************************************
  * @section Guard Schemables
@@ -167,6 +167,7 @@ export const sum = <T extends string, A>(
 ): Guard<unknown, A[keyof A]> =>
   pipe(
     unknownRecord,
+    // deno-lint-ignore no-explicit-any
     refine((r): r is any => {
       const v = r[tag] as keyof A;
       if (v in members) {

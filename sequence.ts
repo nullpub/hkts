@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-explicit-any
+
 import type { $ } from "./types.ts";
 import type { Apply, LS } from "./type_classes.ts";
 
@@ -10,7 +12,7 @@ const loopTuple = <T>(len: number, init: T[] = []): T[] | ((t: T) => any) =>
 
 const loopRecord = (
   keys: ReadonlyArray<string>,
-  i: number = 0,
+  i = 0,
   init: Record<string, any> = {},
 ): Record<string, any> | ((a: unknown) => any) =>
   i === keys.length
@@ -46,16 +48,16 @@ type SequenceTuple<T, R extends NonEmptyArray<$<T, any[]>>, L extends LS = 1> = 
 // deno-fmt-ignore
 type CreateSequenceTuple = {
   <T, L extends 1>(A: Apply<T, L>):
-    <R extends NonEmptyArray<$<T, [unknown]>>>(...r: R) =>
+    <R extends NonEmptyArray<$<T, [any]>>>(...r: R) =>
       SequenceTuple<T, R, L>;
   <T, L extends 2>(A: Apply<T, L>):
-    <R extends NonEmptyArray<$<T, [unknown, unknown]>>>(...r: R) =>
+    <R extends NonEmptyArray<$<T, [any, any]>>>(...r: R) =>
       SequenceTuple<T, R, L>;
   <T, L extends 3>(A: Apply<T, L>):
-    <R extends NonEmptyArray<$<T, [unknown, unknown, unknown]>>>(...r: R) =>
+    <R extends NonEmptyArray<$<T, [any, any, any]>>>(...r: R) =>
       SequenceTuple<T, R, L>;
   <T, L extends 4>(A: Apply<T, L>):
-    <R extends NonEmptyArray<$<T, [unknown, unknown, unknown, unknown]>>>(...r: R) =>
+    <R extends NonEmptyArray<$<T, [any, any, any, any]>>>(...r: R) =>
       SequenceTuple<T, R, L>;
 };
 
@@ -63,7 +65,7 @@ type CreateSequenceTuple = {
  * Create a sequence over tuple function from Apply
  */
 export const createSequenceTuple: CreateSequenceTuple = <T>(A: Apply<T>) =>
-  <R extends NonEmptyArray<$<T, [unknown]>>>(
+  <R extends NonEmptyArray<$<T, [any]>>>(
     ...r: R
   ): SequenceTuple<T, R> => {
     const [head, ...tail] = r;

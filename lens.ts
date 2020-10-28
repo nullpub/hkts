@@ -19,9 +19,9 @@ export type Lens<S, A> = {
   readonly set: (a: A) => (s: S) => S;
 };
 
-export type From<T> = T extends Lens<infer S, any> ? S : never;
+export type From<T> = T extends Lens<infer S, infer _> ? S : never;
 
-export type To<T> = T extends Lens<any, infer A> ? A : never;
+export type To<T> = T extends Lens<infer _, infer A> ? A : never;
 
 export type At<S, I, A> = {
   readonly at: (i: I) => Lens<S, A>;
@@ -154,7 +154,7 @@ export const props = <A, P extends keyof A>(
       for (const k of props) {
         r[k] = a[k];
       }
-      return r as any;
+      return r as { [K in P]: A[K] };
     },
     set: (a) =>
       (s) => {
@@ -179,7 +179,7 @@ export const component = <A extends ReadonlyArray<unknown>, P extends keyof A>(
         if (ap === oa[prop]) {
           return s;
         }
-        const copy: A = oa.slice() as any;
+        const copy = (oa.slice() as unknown) as A;
         copy[prop] = ap;
         return sa.set(copy)(s);
       },
