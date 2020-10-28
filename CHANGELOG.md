@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.30](https://github.com/nullpub/hkts/compare/v0.0.29...v0.0.30) (2020-10-28)
+
+
+### Bug Fixes
+
+* add missing overload for pipe with 10 args ([aed36c1](https://github.com/nullpub/hkts/commit/aed36c13cd561f658cf67a358bc5a1f27ec44a75))
+* get deno lint to pass ([3e50b9c](https://github.com/nullpub/hkts/commit/3e50b9c552f89cf388eff86531ffeea283876ae3))
+
 ### [0.0.29](https://github.com/nullpub/hkts/compare/v0.0.28...v0.0.29) (2020-10-22)
 
 
