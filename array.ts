@@ -32,7 +32,7 @@ export const _reduce = <A, B>(
   return out;
 };
 
-const _concat = <A>(
+export const _concat = <A>(
   a: readonly A[],
   b: readonly A[],
 ): readonly A[] => {
@@ -101,21 +101,13 @@ export const zero: ReadonlyArray<never> = [];
 export const empty = <A = never>(): readonly A[] => zero;
 
 /***************************************************************************************************
- * @section Module Getters
- **************************************************************************************************/
-
-export const getShow = <A>({ show }: TC.Show<A>): TC.Show<readonly A[]> => ({
-  show: (ta) => `ReadonlyArray[${ta.map(show).join(", ")}]`,
-});
-
-export const getMonoid = <A = never>(): TC.Monoid<readonly A[]> => ({
-  empty,
-  concat: _concat,
-});
-
-/***************************************************************************************************
  * @section Modules
  **************************************************************************************************/
+
+export const Monoid: TC.Monoid<ReadonlyArray<_>> = {
+  empty,
+  concat: _concat,
+};
 
 export const Functor: TC.Functor<ReadonlyArray<_>> = {
   map: (fab, ta) => _map(ta, (a) => fab(a)),
@@ -131,19 +123,24 @@ export const Monad: TC.Monad<ReadonlyArray<_>> = {
     _reduce(ta, (bs, a) => _concat(bs, fatb(a)), [] as readonly any[]),
 };
 
+export const Apply: TC.Apply<ReadonlyArray<_>> = {
+  ap: Monad.ap,
+  map: Functor.map,
+};
+
 export const Applicative: TC.Applicative<ReadonlyArray<_>> = {
   of: Monad.of,
   ap: Monad.ap,
   map: Functor.map,
 };
 
-export const Filterable: TC.Filterable<ReadonlyArray<_>> = {
-  filter: (predicate, ta) => ta.filter(predicate),
+export const Alt: TC.Alt<ReadonlyArray<_>> = {
+  alt: (ta, tb) => ta.length === 0 ? tb : ta,
+  map: Functor.map,
 };
 
-export const Apply: TC.Apply<ReadonlyArray<_>> = {
-  ap: Monad.ap,
-  map: Functor.map,
+export const Filterable: TC.Filterable<ReadonlyArray<_>> = {
+  filter: (predicate, ta) => ta.filter(predicate),
 };
 
 export const IndexedFoldable: TC.IndexedFoldable<ReadonlyArray<_>> = {
@@ -176,6 +173,50 @@ export const IndexedTraversable: TC.IndexedTraversable<ReadonlyArray<_>> = {
 export const Foldable: TC.Foldable<ReadonlyArray<_>> = IndexedFoldable;
 
 export const Traversable: TC.Traversable<ReadonlyArray<_>> = IndexedTraversable;
+
+/***************************************************************************************************
+ * @section Module Getters
+ **************************************************************************************************/
+
+export const getSetoid = <A>(S: TC.Setoid<A>): TC.Setoid<readonly A[]> => ({
+  equals: (a, b) =>
+    a === b || (a.length === b.length && a.every((v, i) => S.equals(v, b[i]))),
+});
+
+export const getOrd = <A>(O: TC.Ord<A>): TC.Ord<readonly A[]> => {
+  const { equals } = getSetoid(O);
+  return ({
+    equals,
+    lte: (a, b) => {
+      const length = Math.min(a.length, b.length);
+      for (let i = 0; i < length; i++) {
+        if (!O.equals(a[i], b[i])) {
+          return O.lte(a[i], b[i]);
+        }
+      }
+      return a.length <= b.length;
+    },
+  });
+};
+
+export const getSemigroup = <A>(
+  S: TC.Semigroup<A>,
+): TC.Semigroup<readonly A[]> => ({
+  concat: (a, b) => [a.reduce(S.concat, b.reduce(S.concat))],
+});
+
+export const getFreeSemigroup = <A>(): TC.Semigroup<readonly A[]> => ({
+  concat: _concat,
+});
+
+export const getShow = <A>({ show }: TC.Show<A>): TC.Show<readonly A[]> => ({
+  show: (ta) => `ReadonlyArray[${ta.map(show).join(", ")}]`,
+});
+
+export const getMonoid = <A = never>(): TC.Monoid<readonly A[]> => ({
+  empty,
+  concat: _concat,
+});
 
 /***************************************************************************************************
  * @section Pipeables
