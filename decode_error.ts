@@ -1,5 +1,5 @@
-import { Semigroup } from "./type_classes.ts";
-import * as FS from "./free_semigroup.ts";
+import type { Semigroup } from "./type_classes.ts";
+import { Free, getFreeSemigroup } from "./semigroup.ts";
 
 /***************************************************************************************************
  * @section DecodeError
@@ -25,32 +25,32 @@ export type Key<E> = {
   readonly tag: "Key";
   readonly key: string;
   readonly kind: Kind;
-  readonly errors: FS.FreeSemigroup<DecodeError<E>>;
+  readonly errors: Free<DecodeError<E>>;
 };
 
 export type Index<E> = {
   readonly tag: "Index";
   readonly index: number;
   readonly kind: Kind;
-  readonly errors: FS.FreeSemigroup<DecodeError<E>>;
+  readonly errors: Free<DecodeError<E>>;
 };
 
 export type Member<E> = {
   readonly tag: "Member";
   readonly index: number;
-  readonly errors: FS.FreeSemigroup<DecodeError<E>>;
+  readonly errors: Free<DecodeError<E>>;
 };
 
 export type Lazy<E> = {
   readonly tag: "Lazy";
   readonly id: string;
-  readonly errors: FS.FreeSemigroup<DecodeError<E>>;
+  readonly errors: Free<DecodeError<E>>;
 };
 
 export type Wrap<E> = {
   readonly tag: "Wrap";
   readonly error: E;
-  readonly errors: FS.FreeSemigroup<DecodeError<E>>;
+  readonly errors: Free<DecodeError<E>>;
 };
 
 export type DecodeError<E> =
@@ -74,7 +74,7 @@ export const leaf = <E>(actual: unknown, error: E): DecodeError<E> => ({
 export const key = <E>(
   key: string,
   kind: Kind,
-  errors: FS.FreeSemigroup<DecodeError<E>>,
+  errors: Free<DecodeError<E>>
 ): DecodeError<E> => ({
   tag: "Key",
   key,
@@ -85,7 +85,7 @@ export const key = <E>(
 export const index = <E>(
   index: number,
   kind: Kind,
-  errors: FS.FreeSemigroup<DecodeError<E>>,
+  errors: Free<DecodeError<E>>
 ): DecodeError<E> => ({
   tag: "Index",
   index,
@@ -95,7 +95,7 @@ export const index = <E>(
 
 export const member = <E>(
   index: number,
-  errors: FS.FreeSemigroup<DecodeError<E>>,
+  errors: Free<DecodeError<E>>
 ): DecodeError<E> => ({
   tag: "Member",
   index,
@@ -104,7 +104,7 @@ export const member = <E>(
 
 export const lazy = <E>(
   id: string,
-  errors: FS.FreeSemigroup<DecodeError<E>>,
+  errors: Free<DecodeError<E>>
 ): DecodeError<E> => ({
   tag: "Lazy",
   id,
@@ -113,7 +113,7 @@ export const lazy = <E>(
 
 export const wrap = <E>(
   error: E,
-  errors: FS.FreeSemigroup<DecodeError<E>>,
+  errors: Free<DecodeError<E>>
 ): DecodeError<E> => ({
   tag: "Wrap",
   error,
@@ -126,15 +126,11 @@ export const wrap = <E>(
 
 export const fold = <E, R>(patterns: {
   Leaf: (input: unknown, error: E) => R;
-  Key: (key: string, kind: Kind, errors: FS.FreeSemigroup<DecodeError<E>>) => R;
-  Index: (
-    index: number,
-    kind: Kind,
-    errors: FS.FreeSemigroup<DecodeError<E>>,
-  ) => R;
-  Member: (index: number, errors: FS.FreeSemigroup<DecodeError<E>>) => R;
-  Lazy: (id: string, errors: FS.FreeSemigroup<DecodeError<E>>) => R;
-  Wrap: (error: E, errors: FS.FreeSemigroup<DecodeError<E>>) => R;
+  Key: (key: string, kind: Kind, errors: Free<DecodeError<E>>) => R;
+  Index: (index: number, kind: Kind, errors: Free<DecodeError<E>>) => R;
+  Member: (index: number, errors: Free<DecodeError<E>>) => R;
+  Lazy: (id: string, errors: Free<DecodeError<E>>) => R;
+  Wrap: (error: E, errors: Free<DecodeError<E>>) => R;
 }): ((e: DecodeError<E>) => R) => {
   const f = (e: DecodeError<E>): R => {
     switch (e.tag) {
@@ -159,6 +155,5 @@ export const fold = <E, R>(patterns: {
  * @section Module Getters
  **************************************************************************************************/
 
-export const getSemigroup = <E = never>(): Semigroup<
-  FS.FreeSemigroup<DecodeError<E>>
-> => FS.getSemigroup();
+export const getSemigroup = <E = never>(): Semigroup<Free<DecodeError<E>>> =>
+  getFreeSemigroup();
