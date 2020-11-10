@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.31](https://github.com/nullpub/hkts/compare/v0.0.30...v0.0.31) (2020-11-10)
+
+
+### Features
+
+* fill out static-land modules for array ([ea5f3f4](https://github.com/nullpub/hkts/commit/ea5f3f44a7b4614f0184218fd5a941c446e0d09f))
+* implement experimental nilable.ts ([e85c01b](https://github.com/nullpub/hkts/commit/e85c01b7cf2961fc79b30d90e9fe87e61c42d6b8))
+
 ### [0.0.30](https://github.com/nullpub/hkts/compare/v0.0.29...v0.0.30) (2020-10-28)
 
 
