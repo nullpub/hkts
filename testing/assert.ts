@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 
-import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.77.0/testing/asserts.ts";
 
 import type * as TC from "../type_classes.ts";
 import type { $, Predicate, UnknownFn } from "../types.ts";
