@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.32](https://github.com/nullpub/hkts/compare/v0.0.31...v0.0.32) (2020-11-16)
+
+
+### Features
+
+* implement basic setoid, ord, and semigroup ([f443cdb](https://github.com/nullpub/hkts/commit/f443cdb627298c81314979bdf2de1152ffd80cac))
+
 ### [0.0.31](https://github.com/nullpub/hkts/compare/v0.0.30...v0.0.31) (2020-11-10)
 
 ### Features
