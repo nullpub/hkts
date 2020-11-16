@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-explicit-any
+
 import type { Ord } from "./type_classes.ts";
 
 import { setoidStrict } from "./setoid.ts";

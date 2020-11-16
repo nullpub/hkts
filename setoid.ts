@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-explicit-any
+
 import type { Setoid } from "./type_classes.ts";
 
 /***************************************************************************************************
