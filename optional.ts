@@ -1,14 +1,19 @@
 import type * as TC from "./type_classes.ts";
 import type { _0, _1, Predicate, Refinement } from "./types.ts";
+import type { Iso } from "./iso.ts";
+import type { Lens } from "./lens.ts";
+import type { Prism } from "./prism.ts";
 import type { Traversal } from "./traversal.ts";
 
-import * as O from "./option.ts";
 import * as L from "./lens.ts";
+import * as T from "./traversal.ts";
+import * as OP from "./optional.ts";
+import * as P from "./prism.ts";
+import * as O from "./option.ts";
 import * as I from "./iso.ts";
 import * as A from "./array.ts";
 import * as R from "./record.ts";
-import { compose as composeOptional } from "./optional.ts";
-import { constant, flow, identity, pipe } from "./fns.ts";
+import { constant, flow, identity, isNil, pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -53,7 +58,7 @@ export const fromIso = <T, S>(iso: I.Iso<T, S>) =>
     index: (i) =>
       pipe(
         I.asOptional(iso),
-        composeOptional(sia.index(i)),
+        OP.compose(sia.index(i)),
       ),
   });
 
@@ -80,15 +85,27 @@ export const indexRecord = <A = never>(): Index<
 > => ({
   index: (k) => ({
     getOption: (r) => O.fromNullable(r[k]),
-    set: (a) =>
-      (r) => {
-        if (r[k] === a || O.isNone(O.fromNullable(r[k]))) {
-          return r;
-        }
-        return R.insertAt(k, a)(r);
-      },
+    set: (a) => (r) => r[k] === a || isNil(r[k]) ? r : R.insertAt(k, a)(r),
   }),
 });
+
+/***************************************************************************************************
+ * @section Modules
+ **************************************************************************************************/
+
+export const Category: TC.Category<Optional<_0, _1>> = {
+  id,
+  compose: (ij, jk) => ({
+    getOption: flow(ij.getOption, O.chain(jk.getOption)),
+    set: (b) =>
+      (s) =>
+        pipe(
+          ij.getOption(s),
+          O.map(jk.set(b)),
+          O.fold(ij.set, () => identity),
+        )(s),
+  }),
+};
 
 /***************************************************************************************************
  * @section Converters
@@ -107,41 +124,46 @@ export const asTraversal = <S, A>(sa: Optional<S, A>): Traversal<S, A> => ({
         ),
 });
 
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
-
-export const compose = <A, B>(
-  ab: Optional<A, B>,
-) =>
-  <S>(sa: Optional<S, A>): Optional<S, B> => ({
-    getOption: flow(sa.getOption, O.chain(ab.getOption)),
-    set: (b) =>
-      (s) =>
-        pipe(
-          sa.getOption(s),
-          O.map(ab.set(b)),
-          O.fold(sa.set, () => identity),
-        )(s),
-  });
-
-export const modify = <A>(
-  faa: (a: A) => A,
-) =>
-  <S>(sa: Optional<S, A>) =>
-    (s: S): S =>
-      pipe(
-        sa.getOption(s),
-        O.map(faa),
-        O.fold((a) => sa.set(a)(s), constant(s)),
-      );
-
 export const fromNullable = <S, A>(
   sa: Optional<S, A>,
 ): Optional<S, NonNullable<A>> => ({
   getOption: flow(sa.getOption, O.chain(O.fromNullable)),
   set: sa.set,
 });
+
+/***************************************************************************************************
+ * @section Pipeable Compose
+ **************************************************************************************************/
+
+export const compose = <A, B>(
+  ab: Optional<A, B>,
+) => <S>(sa: Optional<S, A>): Optional<S, B> => Category.compose(sa, ab);
+
+export const composeLens = <A, B>(
+  ab: Lens<A, B>,
+) =>
+  <S>(sa: Optional<S, A>): Optional<S, B> =>
+    Category.compose(sa, L.asOptional(ab));
+
+export const composeIso = <A, B>(
+  ab: Iso<A, B>,
+) =>
+  <S>(sa: Optional<S, A>): Optional<S, B> =>
+    Category.compose(sa, I.asOptional(ab));
+
+export const composePrism = <A, B>(
+  ab: Prism<A, B>,
+) =>
+  <S>(sa: Optional<S, A>): Optional<S, B> =>
+    Category.compose(sa, P.asOptional(ab));
+
+export const composeTraversal = <A, B>(
+  ab: Traversal<A, B>,
+) => <S>(sa: Optional<S, A>): Traversal<S, B> => T.compose(ab)(asTraversal(sa));
+
+/***************************************************************************************************
+ * @section Pipeables
+ **************************************************************************************************/
 
 type FilterFn = {
   <A, B extends A>(
@@ -158,6 +180,17 @@ export const filter: FilterFn = <A>(predicate: Predicate<A>) =>
     set: sa.set,
   });
 
+export const modify = <A>(
+  faa: (a: A) => A,
+) =>
+  <S>(sa: Optional<S, A>) =>
+    (s: S): S =>
+      pipe(
+        sa.getOption(s),
+        O.map(faa),
+        O.fold((a) => sa.set(a)(s), constant(s)),
+      );
+
 export const prop = <A, P extends keyof A>(
   prop: P,
 ): (<S>(sa: Optional<S, A>) => Optional<S, A[P]>) =>
@@ -167,11 +200,6 @@ export const props = <A, P extends keyof A>(
   ...props: [P, P, ...Array<P>]
 ): (<S>(sa: Optional<S, A>) => Optional<S, { [K in P]: A[K] }>) =>
   compose(pipe(L.id<A>(), L.props(...props), L.asOptional));
-
-export const component = <A extends ReadonlyArray<unknown>, P extends keyof A>(
-  prop: P,
-): (<S>(sa: Optional<S, A>) => Optional<S, A[P]>) =>
-  compose(pipe(L.id<A>(), L.component(prop), L.asOptional));
 
 export const index = (i: number) =>
   <S, A>(sa: Optional<S, ReadonlyArray<A>>): Optional<S, A> =>
@@ -186,12 +214,3 @@ export const atKey = (key: string) =>
     sa: Optional<S, Readonly<Record<string, A>>>,
   ): Optional<S, O.Option<A>> =>
     pipe(sa, compose(L.asOptional(L.atRecord<A>().at(key))));
-
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
-
-export const Category: TC.Category<Optional<_0, _1>> = {
-  compose: (ij, jk) => compose(jk)(ij),
-  id: id as <I, J>() => Optional<I, J>,
-};

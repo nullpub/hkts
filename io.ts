@@ -2,7 +2,7 @@ import type * as TC from "./type_classes.ts";
 import type { $, _ } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-import { constant, pipe } from "./fns.ts";
+import { constant } from "./fns.ts";
 import * as D from "./derivations.ts";
 
 /***************************************************************************************************

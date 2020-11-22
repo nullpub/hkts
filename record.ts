@@ -87,14 +87,8 @@ export const PipeableTraversable = D.createPipeableTraversable(
 );
 
 /***************************************************************************************************
- * @section Pipeables
+ * @section Module Getters
  **************************************************************************************************/
-
-export const map = PipeableTraversable.map as <A, B>(
-  fab: (a: A) => B,
-) => <K extends string>(r: Record<K, A>) => Record<K, B>;
-
-export const reduce = PipeableTraversable.reduce;
 
 // deno-fmt-ignore
 type TraverseFn<L extends TC.LS = 1> = {
@@ -125,6 +119,16 @@ type IndexedTraverseFn<I extends string = string, L extends TC.LS = 1> = {
 export const indexedTraverse = PipeableTraversable
   .traverse as IndexedTraverseFn;
 
+/***************************************************************************************************
+ * @section Pipeables
+ **************************************************************************************************/
+
+export const map = PipeableTraversable.map as <A, B>(
+  fab: (a: A) => B,
+) => <K extends string>(r: Record<K, A>) => Record<K, B>;
+
+export const reduce = PipeableTraversable.reduce;
+
 export const insertAt = <K extends string, A>(k: K, a: A) =>
   <KS extends K>(r: Record<KS | K, A>): Record<KS | K, A> =>
     r[k] === a ? r : ({ ...r, [k]: a });
@@ -141,4 +145,13 @@ export const deleteAt = <K extends string>(
     const out = Object.assign({}, r);
     delete out[k];
     return out;
+  };
+
+export const pick = <R, K extends keyof R>(...props: [K, K, ...K[]]) =>
+  (record: R): Pick<R, K> => {
+    const output: { [Key in keyof R]?: R[Key] } = {};
+    for (const k of props) {
+      output[k] = record[k];
+    }
+    return record;
   };

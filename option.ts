@@ -290,9 +290,11 @@ export const Plus: TC.Plus<Option<_>> = {
 export const Traversable: TC.Traversable<Option<_>> = {
   map: Functor.map,
   reduce: Foldable.reduce,
-  traverse: <U>(F: TC.Applicative<U>) =>
-    <A, B>(faub: (a: A) => $<U, [B]>, ta: Option<A>) =>
-      isNone(ta) ? F.of(none) : F.map(some, faub(ta.value)),
+  traverse: <U, A, B>(
+    F: TC.Applicative<U>,
+    faub: (a: A) => $<U, [B]>,
+    ta: Option<A>,
+  ) => isNone(ta) ? F.of(none) : F.map(some, faub(ta.value)),
 };
 
 /***************************************************************************************************

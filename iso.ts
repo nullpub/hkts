@@ -14,7 +14,7 @@ import { constant, flow, identity } from "./fns.ts";
 
 export type Iso<S, A> = {
   readonly get: (s: S) => A;
-  readonly reverseGet: (a: A) => S;
+  readonly reverseGet: (b: A) => S;
 };
 
 /***************************************************************************************************
@@ -33,6 +33,18 @@ export const make = <A, B>(
   get,
   reverseGet,
 });
+
+/***************************************************************************************************
+ * @section Modules
+ **************************************************************************************************/
+
+export const Category: TC.Category<Iso<_0, _1>> = {
+  compose: (ij, jk) => ({
+    get: flow(ij.get, jk.get),
+    reverseGet: flow(jk.reverseGet, ij.reverseGet),
+  }),
+  id,
+};
 
 /***************************************************************************************************
  * @section Converters
@@ -59,6 +71,10 @@ export const asTraversal = <S, A>(sa: Iso<S, A>): Traversal<S, A> => ({
 });
 
 /***************************************************************************************************
+ * @section Pipeable Compose
+ **************************************************************************************************/
+
+/***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
 
@@ -71,12 +87,6 @@ export const map = <A, B>(
     reverseGet: flow(ba, sa.reverseGet),
   });
 
-export const compose = <A, B>(ab: Iso<A, B>) =>
-  <S>(sa: Iso<S, A>): Iso<S, B> => ({
-    get: flow(sa.get, ab.get),
-    reverseGet: flow(ab.reverseGet, sa.reverseGet),
-  });
-
 export const reverse = <S, A>(sa: Iso<S, A>): Iso<A, S> => ({
   get: sa.reverseGet,
   reverseGet: sa.get,
@@ -84,12 +94,3 @@ export const reverse = <S, A>(sa: Iso<S, A>): Iso<A, S> => ({
 
 export const modify = <A>(f: (a: A) => A) =>
   <S>(sa: Iso<S, A>) => (s: S): S => sa.reverseGet(f(sa.get(s)));
-
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
-
-export const Category: TC.Category<Iso<_0, _1>> = {
-  compose: (ij, jk) => compose(jk)(ij),
-  id,
-};

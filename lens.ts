@@ -1,5 +1,6 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1, Predicate, Refinement } from "./types.ts";
+import type { $, _0, _1, Predicate, Refinement } from "./types.ts";
+import type { Iso } from "./iso.ts";
 import type { Prism } from "./prism.ts";
 import type { Traversal } from "./traversal.ts";
 import type { Optional } from "./optional.ts";
@@ -8,6 +9,7 @@ import * as OP from "./optional.ts";
 import * as O from "./option.ts";
 import * as I from "./iso.ts";
 import * as R from "./record.ts";
+import * as T from "./traversal.ts";
 import { constant, flow, identity, pipe } from "./fns.ts";
 
 /***************************************************************************************************
@@ -36,11 +38,6 @@ export const id = <S>(): Lens<S, S> => ({
   set: constant,
 });
 
-export const fromIso = <T, S>(iso: I.Iso<T, S>) =>
-  <I, A>(sia: At<S, I, A>): At<T, I, A> => ({
-    at: (i) => pipe(I.asLens(iso), compose(sia.at(i))),
-  });
-
 export const atRecord = <A = never>(): At<
   Readonly<Record<string, A>>,
   string,
@@ -55,6 +52,36 @@ export const atRecord = <A = never>(): At<
   }),
 });
 
+export const atMap = <A = never>(): At<
+  Map<string, A>,
+  string,
+  O.Option<A>
+> => ({
+  at: (key) => ({
+    get: (m) => O.fromNullable(m.get(key)),
+    set: O.fold(
+      (a) => (m) => m.set(key, a),
+      () =>
+        (m) => {
+          m.delete(key);
+          return m;
+        },
+    ),
+  }),
+});
+
+/***************************************************************************************************
+ * @section Modules
+ **************************************************************************************************/
+
+export const Category: TC.Category<Lens<_0, _1>> = {
+  compose: (ij, jk) => ({
+    get: (s) => jk.get(ij.get(s)),
+    set: (b) => (s) => ij.set(jk.set(b)(ij.get(s)))(s),
+  }),
+  id,
+};
+
 /***************************************************************************************************
  * @section Converters
  **************************************************************************************************/
@@ -68,17 +95,29 @@ export const asTraversal = <S, A>(sa: Lens<S, A>): Traversal<S, A> => ({
   getModify: (A) => (f) => (s) => A.map((a) => sa.set(a)(s), f(sa.get(s))),
 });
 
+export const fromIso = <T, S>(iso: I.Iso<T, S>) =>
+  <I, A>(sia: At<S, I, A>): At<T, I, A> => ({
+    at: (i) => pipe(I.asLens(iso), compose(sia.at(i))),
+  });
+
+export const fromNullable = <S, A>(
+  sa: Lens<S, A>,
+): Optional<S, NonNullable<A>> => ({
+  getOption: flow(sa.get, O.fromNullable),
+  set: sa.set,
+});
+
 /***************************************************************************************************
- * @section Pipeables
+ * @section Pipeable Compose
  **************************************************************************************************/
 
 export const compose = <A, B>(
   ab: Lens<A, B>,
-) =>
-  <S>(sa: Lens<S, A>): Lens<S, B> => ({
-    get: (s) => ab.get(sa.get(s)),
-    set: (b) => (s) => sa.set(ab.set(b)(sa.get(s)))(s),
-  });
+) => <S>(sa: Lens<S, A>): Lens<S, B> => Category.compose(sa, ab);
+
+export const composeIso = <A, B>(
+  ab: Iso<A, B>,
+) => <S>(sa: Lens<S, A>): Lens<S, B> => Category.compose(sa, I.asLens(ab));
 
 export const composePrism = <A, B>(
   ab: Prism<A, B>,
@@ -98,20 +137,12 @@ export const composeOptional = <A, B>(ab: Optional<A, B>) =>
       ),
   });
 
-export const modify = <A>(f: (a: A) => A) =>
-  <S>(sa: Lens<S, A>) =>
-    (s: S): S => {
-      const o = sa.get(s);
-      const n = f(o);
-      return o === n ? s : sa.set(n)(s);
-    };
+export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
+  <S>(sa: Lens<S, A>): Traversal<S, B> => T.compose(ab)(asTraversal(sa));
 
-export const fromNullable = <S, A>(
-  sa: Lens<S, A>,
-): Optional<S, NonNullable<A>> => ({
-  getOption: flow(sa.get, O.fromNullable),
-  set: sa.set,
-});
+/***************************************************************************************************
+ * @section Pipeables
+ **************************************************************************************************/
 
 type FilterFn = {
   <A, B extends A>(
@@ -128,61 +159,28 @@ export const filter: FilterFn = <A>(predicate: Predicate<A>) =>
     set: sa.set,
   });
 
+export const modify = <A>(f: (a: A) => A) =>
+  <S>(sa: Lens<S, A>) =>
+    (s: S): S => {
+      const o = sa.get(s);
+      const n = f(o);
+      return o === n ? s : sa.set(n)(s);
+    };
+
 export const prop = <A, P extends keyof A>(
   prop: P,
 ) =>
   <S>(sa: Lens<S, A>): Lens<S, A[P]> => ({
     get: flow(sa.get, (a) => a[prop]),
-    set: (ap) =>
-      (s) =>
-        pipe(
-          sa.get(s),
-          (oa) =>
-            ap === oa[prop]
-              ? s
-              : sa.set(Object.assign({}, oa, { [prop]: ap }))(s),
-        ),
+    set: (ap) => (s) => sa.set({ ...sa.get(s), [prop]: ap })(s),
   });
 
 export const props = <A, P extends keyof A>(
   ...props: [P, P, ...Array<P>]
 ) =>
   <S>(sa: Lens<S, A>): Lens<S, { [K in P]: A[K] }> => ({
-    get: (s) => {
-      const a = sa.get(s);
-      const r: { [K in P]?: A[K] } = {};
-      for (const k of props) {
-        r[k] = a[k];
-      }
-      return r as { [K in P]: A[K] };
-    },
-    set: (a) =>
-      (s) => {
-        const oa = sa.get(s);
-        for (const k of props) {
-          if (a[k] !== oa[k]) {
-            return sa.set(Object.assign({}, oa, a))(s);
-          }
-        }
-        return s;
-      },
-  });
-
-export const component = <A extends ReadonlyArray<unknown>, P extends keyof A>(
-  prop: P,
-) =>
-  <S>(sa: Lens<S, A>): Lens<S, A[P]> => ({
-    get: (s) => sa.get(s)[prop],
-    set: (ap) =>
-      (s) => {
-        const oa = sa.get(s);
-        if (ap === oa[prop]) {
-          return s;
-        }
-        const copy = (oa.slice() as unknown) as A;
-        copy[prop] = ap;
-        return sa.set(copy)(s);
-      },
+    get: flow(sa.get, R.pick(...props)),
+    set: (a) => (s) => sa.set({ ...sa.get(s), ...a })(s),
   });
 
 export const index = (i: number) =>
@@ -200,11 +198,11 @@ export const atKey = (key: string) =>
   <S, A>(sa: Lens<S, Readonly<Record<string, A>>>): Lens<S, O.Option<A>> =>
     pipe(sa, compose(atRecord<A>().at(key)));
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
-
-export const Category: TC.Category<Lens<_0, _1>> = {
-  compose: (ij, jk) => compose(jk)(ij),
-  id,
-};
+export const traverse = <T>(
+  M: TC.Traversable<T>,
+) =>
+  <S, A>(sta: Lens<S, $<T, [A]>>): Traversal<S, A> =>
+    pipe(
+      asTraversal(sta),
+      T.compose(T.fromTraversable(M)()),
+    );
