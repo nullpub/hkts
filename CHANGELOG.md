@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.35](https://github.com/nullpub/hkts/compare/v0.0.34...v0.0.35) (2020-11-22)
+
+
+### Features
+
+* add optics over option and either types ([ab411b3](https://github.com/nullpub/hkts/commit/ab411b352c1231941b904feff2ae1de395a1bf64))
+
 ### [0.0.34](https://github.com/nullpub/hkts/compare/v0.0.33...v0.0.34) (2020-11-22)
 
 
