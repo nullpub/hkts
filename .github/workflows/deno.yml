@@ -28,9 +28,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Setup Deno
-        uses: denolib/setup-deno@v2.2.0
+        uses: denolib/setup-deno@v2.3.0
         with:
-          deno-version: ${{ matrix.deno }} # tests across multiple Deno versions
+          deno-version: ${{ matrix.deno }}
 
       - name: Run Deno Lint
         run: deno lint --unstable
