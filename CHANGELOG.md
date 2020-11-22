@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.34](https://github.com/nullpub/hkts/compare/v0.0.33...v0.0.34) (2020-11-22)
+
+
+### Features
+
+* clean up monocle-ts implementation ([ff14c4f](https://github.com/nullpub/hkts/commit/ff14c4f704af2626676f0f895af755416b4f13e9))
+
 ### [0.0.33](https://github.com/nullpub/hkts/compare/v0.0.32...v0.0.33) (2020-11-16)
 
 ### [0.0.32](https://github.com/nullpub/hkts/compare/v0.0.31...v0.0.32) (2020-11-16)
