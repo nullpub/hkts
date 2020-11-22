@@ -1,5 +1,6 @@
 import type * as TC from "./type_classes.ts";
 import type { _0, _1, Predicate, Refinement } from "./types.ts";
+import type { Either } from "./either.ts";
 import type { Iso } from "./iso.ts";
 import type { Lens } from "./lens.ts";
 import type { Prism } from "./prism.ts";
@@ -214,3 +215,17 @@ export const atKey = (key: string) =>
     sa: Optional<S, Readonly<Record<string, A>>>,
   ): Optional<S, O.Option<A>> =>
     pipe(sa, compose(L.asOptional(L.atRecord<A>().at(key))));
+
+/***************************************************************************************************
+ * @section Pipeable Over ADT
+ **************************************************************************************************/
+
+export const some: <S, A>(soa: Optional<S, O.Option<A>>) => Optional<S, A> =
+  composePrism(P.some());
+
+export const right: <S, E, A>(
+  sea: Optional<S, Either<E, A>>,
+) => Optional<S, A> = composePrism(P.right());
+
+export const left: <S, E, A>(sea: Optional<S, Either<E, A>>) => Optional<S, E> =
+  composePrism(P.left());

@@ -1,12 +1,17 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1 } from "./types.ts";
+import type { $, _0, _1 } from "./types.ts";
+import type { Either } from "./either.ts";
 import type { Lens } from "./lens.ts";
 import type { Optional } from "./optional.ts";
 import type { Prism } from "./prism.ts";
 import type { Traversal } from "./traversal.ts";
 
 import * as O from "./option.ts";
-import { constant, flow, identity } from "./fns.ts";
+import * as L from "./lens.ts";
+import * as P from "./prism.ts";
+import * as OP from "./optional.ts";
+import * as T from "./traversal.ts";
+import { constant, flow, identity, pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -74,9 +79,27 @@ export const asTraversal = <S, A>(sa: Iso<S, A>): Traversal<S, A> => ({
  * @section Pipeable Compose
  **************************************************************************************************/
 
+export const compose = <A, B>(ab: Iso<A, B>) =>
+  <S>(sa: Iso<S, A>): Iso<S, B> => Category.compose(sa, ab);
+
+export const composeLens = <A, B>(ab: Lens<A, B>) =>
+  <S>(sa: Iso<S, A>): Lens<S, B> => L.compose(ab)(asLens(sa));
+
+export const composePrism = <A, B>(ab: Prism<A, B>) =>
+  <S>(sa: Iso<S, A>): Prism<S, B> => P.compose(ab)(asPrism(sa));
+
+export const composeOptional = <A, B>(ab: Optional<A, B>) =>
+  <S>(sa: Iso<S, A>): Optional<S, B> => OP.compose(ab)(asOptional(sa));
+
+export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
+  <S>(sa: Iso<S, A>): Traversal<S, B> => T.compose(ab)(asTraversal(sa));
+
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
+
+export const modify = <A>(f: (a: A) => A) =>
+  <S>(sa: Iso<S, A>) => (s: S): S => sa.reverseGet(f(sa.get(s)));
 
 export const map = <A, B>(
   ab: (a: A) => B,
@@ -92,5 +115,24 @@ export const reverse = <S, A>(sa: Iso<S, A>): Iso<A, S> => ({
   reverseGet: sa.get,
 });
 
-export const modify = <A>(f: (a: A) => A) =>
-  <S>(sa: Iso<S, A>) => (s: S): S => sa.reverseGet(f(sa.get(s)));
+export const traverse = <T>(
+  M: TC.Traversable<T>,
+) =>
+  <S, A>(sta: Iso<S, $<T, [A]>>): Traversal<S, A> =>
+    pipe(
+      asTraversal(sta),
+      T.compose(T.fromTraversable(M)()),
+    );
+
+/***************************************************************************************************
+ * @section Pipeable Over ADT
+ **************************************************************************************************/
+
+export const some: <S, A>(soa: Iso<S, O.Option<A>>) => Prism<S, A> =
+  composePrism(P.some());
+
+export const right: <S, E, A>(sea: Iso<S, Either<E, A>>) => Prism<S, A> =
+  composePrism(P.right());
+
+export const left: <S, E, A>(sea: Iso<S, Either<E, A>>) => Prism<S, E> =
+  composePrism(P.left());

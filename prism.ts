@@ -1,12 +1,12 @@
 import type * as TC from "./type_classes.ts";
 import type { _0, _1, Predicate, Refinement } from "./types.ts";
-import type { Iso } from "./iso.ts";
 import type { Traversal } from "./traversal.ts";
 import type { Optional } from "./optional.ts";
 
 import * as I from "./iso.ts";
 import * as L from "./lens.ts";
 import * as O from "./option.ts";
+import * as E from "./either.ts";
 import * as OP from "./optional.ts";
 import * as T from "./traversal.ts";
 import { flow, identity, pipe } from "./fns.ts";
@@ -174,3 +174,22 @@ export const key = (key: string) =>
 export const atKey = (key: string) =>
   <S, A>(sa: Prism<S, Readonly<Record<string, A>>>): Optional<S, O.Option<A>> =>
     composeLens(L.atRecord<A>().at(key))(sa);
+
+/***************************************************************************************************
+ * @section Pipeable Over ADT
+ **************************************************************************************************/
+
+export const some = <A>(): Prism<O.Option<A>, A> => ({
+  getOption: identity,
+  reverseGet: O.some,
+});
+
+export const right = <E, A>(): Prism<E.Either<E, A>, A> => ({
+  getOption: E.getRight,
+  reverseGet: E.right,
+});
+
+export const left = <E, A>(): Prism<E.Either<E, A>, E> => ({
+  getOption: E.getLeft,
+  reverseGet: E.left,
+});

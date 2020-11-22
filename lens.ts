@@ -1,14 +1,16 @@
 import type * as TC from "./type_classes.ts";
 import type { $, _0, _1, Predicate, Refinement } from "./types.ts";
+import type { Either } from "./either.ts";
 import type { Iso } from "./iso.ts";
 import type { Prism } from "./prism.ts";
 import type { Traversal } from "./traversal.ts";
 import type { Optional } from "./optional.ts";
 
-import * as OP from "./optional.ts";
 import * as O from "./option.ts";
-import * as I from "./iso.ts";
 import * as R from "./record.ts";
+import * as I from "./iso.ts";
+import * as P from "./prism.ts";
+import * as OP from "./optional.ts";
 import * as T from "./traversal.ts";
 import { constant, flow, identity, pipe } from "./fns.ts";
 
@@ -206,3 +208,16 @@ export const traverse = <T>(
       asTraversal(sta),
       T.compose(T.fromTraversable(M)()),
     );
+
+/***************************************************************************************************
+ * @section Pipeable Over ADT
+ **************************************************************************************************/
+
+export const some: <S, A>(soa: Lens<S, O.Option<A>>) => Optional<S, A> =
+  composePrism(P.some());
+
+export const right: <S, E, A>(sea: Lens<S, Either<E, A>>) => Optional<S, A> =
+  composePrism(P.right());
+
+export const left: <S, E, A>(sea: Lens<S, Either<E, A>>) => Optional<S, E> =
+  composePrism(P.left());

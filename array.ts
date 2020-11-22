@@ -56,10 +56,10 @@ export const _concat = <A>(
   return result;
 };
 
-const isOutOfBounds = <A>(i: number, as: readonly A[]): boolean =>
+export const _isOutOfBounds = <A>(i: number, as: readonly A[]): boolean =>
   i < 0 || i >= as.length;
 
-const unsafeInsertAt = <A>(
+export const _unsafeInsertAt = <A>(
   i: number,
   a: A,
   as: ReadonlyArray<A>,
@@ -69,7 +69,7 @@ const unsafeInsertAt = <A>(
   return xs;
 };
 
-const unsafeUpdateAt = <A>(
+export const _unsafeUpdateAt = <A>(
   i: number,
   a: A,
   as: ReadonlyArray<A>,
@@ -83,7 +83,7 @@ const unsafeUpdateAt = <A>(
   }
 };
 
-const unsafeDeleteAt = <A>(
+export const _unsafeDeleteAt = <A>(
   i: number,
   as: ReadonlyArray<A>,
 ): ReadonlyArray<A> => {
@@ -240,19 +240,19 @@ export const {
 
 export const lookup = (i: number) =>
   <A>(as: readonly A[]): O.Option<A> =>
-    isOutOfBounds(i, as) ? O.none : O.some(as[i]);
+    _isOutOfBounds(i, as) ? O.none : O.some(as[i]);
 
 export const insertAt = <A>(i: number, a: A) =>
   (as: readonly A[]): O.Option<readonly A[]> =>
-    isOutOfBounds(i, as) ? O.none : O.some(unsafeInsertAt(i, a, as));
+    _isOutOfBounds(i, as) ? O.none : O.some(_unsafeInsertAt(i, a, as));
 
 export const updateAt = <A>(i: number, a: A) =>
   (as: readonly A[]): O.Option<readonly A[]> =>
-    isOutOfBounds(i, as) ? O.none : O.some(unsafeUpdateAt(i, a, as));
+    _isOutOfBounds(i, as) ? O.none : O.some(_unsafeUpdateAt(i, a, as));
 
 export const deleteAt = (i: number) =>
   <A>(as: readonly A[]): O.Option<readonly A[]> =>
-    isOutOfBounds(i, as) ? O.none : O.some(unsafeDeleteAt(i, as));
+    _isOutOfBounds(i, as) ? O.none : O.some(_unsafeDeleteAt(i, as));
 
 /***************************************************************************************************
  * @section Sequence

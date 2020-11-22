@@ -5,6 +5,7 @@ import type { Lens } from "./lens.ts";
 import type { Prism } from "./prism.ts";
 import type { Optional } from "./optional.ts";
 import type { Option } from "./option.ts";
+import type { Either } from "./either.ts";
 
 import * as Id from "./identity.ts";
 import * as I from "./iso.ts";
@@ -150,6 +151,21 @@ export const atKey = (key: string) =>
     sa: Traversal<S, Readonly<Record<string, A>>>,
   ): Traversal<S, Option<A>> =>
     pipe(sa, compose(L.asTraversal(L.atRecord<A>().at(key))));
+
+/***************************************************************************************************
+ * @section Pipeable Over ADT
+ **************************************************************************************************/
+
+export const some: <S, A>(soa: Traversal<S, Option<A>>) => Traversal<S, A> =
+  composePrism(P.some());
+
+export const right: <S, E, A>(
+  sea: Traversal<S, Either<E, A>>,
+) => Traversal<S, A> = composePrism(P.right());
+
+export const left: <S, E, A>(
+  sea: Traversal<S, Either<E, A>>,
+) => Traversal<S, E> = composePrism(P.left());
 
 /***************************************************************************************************
  * @section Utilities
