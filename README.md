@@ -8,20 +8,76 @@ This library is primarily an exercise, but I intend to maintain 100% test covera
 
 This library is meant to be used with Deno, thus it follows the [Deno imports](https://deno.land/manual/examples/import_export) syntax.
 
+## Examples
+
+Many common algebraic datatypes with pipeable utility functions:
+
 ```ts
 import * as O from "https://deno.land/x/hkts/option.ts";
 import { pipe } from "https://deno.land/x/hkts/fns.ts";
 
 const result = pipe(
-  O.sequenceTuple(
-      O.some(1),
-      O.fromNullable([1, 2, 3][4]),
-      O.some(-1),
-  ),
+  O.sequenceTuple(O.some(1), O.fromNullable([1, 2, 3][4]), O.some(-1)),
   O.map(([a, b, c]) => a + b + c),
-  O.chain(n => n % 2 === 0 ? O.none : O.some(n))
+  O.chain((n) => (n % 2 === 0 ? O.none : O.some(n)))
 );
 // result === O.none
+```
+
+A full featured pipeable optics library:
+
+```ts
+import * as A from "https://deno.land/x/hkts/array.ts";
+import * as T from "https://deno.land/x/hkts/traversal.ts";
+import * as P from "https://deno.land/x/hkts/prism.ts";
+import { none, Option, some } from "https://deno.land/x/hkts/option.ts";
+import { pipe } from "https://deno.land/x/hkts/fns.ts";
+
+interface User {
+  username: Option<string>;
+  ready: boolean;
+}
+
+type Users = readonly User[];
+
+const capitalize = (s: string): string =>
+  s.substring(0, 1).toUpperCase() + s.substring(1);
+
+const getArrayTraversal = T.fromTraversable(A.Traversable);
+
+const capitalizeUsernames = pipe(
+  T.id<Users>(),
+  T.compose(getArrayTraversal()),
+  T.prop("username"),
+  T.composePrism(P.some()),
+  T.modify(capitalize)
+);
+
+const users: Users = [
+  { username: some("brandon"), ready: true },
+  { username: some("breonna"), ready: true },
+  { username: some("george"), ready: true },
+  { username: none, ready: false },
+];
+
+console.log({
+  before: users,
+  after: capitalizeUsernames(users),
+});
+// {
+//   before: [
+//     { username: { tag: "Some", value: "brandon" }, ready: true },
+//     { username: { tag: "Some", value: "breonna" }, ready: true },
+//     { username: { tag: "Some", value: "george" }, ready: true },
+//     { username: { tag: "None" }, ready: false }
+//   ],
+//   after: [
+//     { username: { tag: "Some", value: "Brandon" }, ready: true },
+//     { username: { tag: "Some", value: "Breonna" }, ready: true },
+//     { username: { tag: "Some", value: "George" }, ready: true },
+//     { username: { tag: "None" }, ready: false }
+//   ]
+// }
 ```
 
 ## Conventions
