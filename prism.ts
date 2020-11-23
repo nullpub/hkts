@@ -1,15 +1,17 @@
 import type * as TC from "./type_classes.ts";
 import type { _0, _1, Predicate, Refinement } from "./types.ts";
-import type { Traversal } from "./traversal.ts";
+import type { Iso } from "./iso.ts";
+import type { Lens } from "./lens.ts";
 import type { Optional } from "./optional.ts";
+import type { Traversal } from "./traversal.ts";
 
-import * as I from "./iso.ts";
-import * as L from "./lens.ts";
 import * as O from "./option.ts";
 import * as E from "./either.ts";
-import * as OP from "./optional.ts";
-import * as T from "./traversal.ts";
 import { flow, identity, pipe } from "./fns.ts";
+
+import { atRecord } from "./at.ts";
+import { indexArray, indexRecord } from "./index.ts";
+import { id as lensId, prop as lensProp, props as lensProps } from "./lens.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -94,20 +96,42 @@ export const compose = <A, B>(ab: Prism<A, B>) =>
   <S>(sa: Prism<S, A>): Prism<S, B> => Category.compose(sa, ab);
 
 export const composeIso = <A, B>(
-  ab: I.Iso<A, B>,
-) => <S>(sa: Prism<S, A>): Prism<S, B> => Category.compose(sa, I.asPrism(ab));
+  ab: Iso<A, B>,
+) =>
+  <S>(sa: Prism<S, A>): Prism<S, B> => ({
+    getOption: flow(sa.getOption, O.map(ab.get)),
+    reverseGet: flow(ab.reverseGet, sa.reverseGet),
+  });
 
 export const composeLens = <A, B>(
-  ab: L.Lens<A, B>,
+  ab: Lens<A, B>,
 ) =>
-  <S>(sa: Prism<S, A>): Optional<S, B> =>
-    OP.compose(L.asOptional(ab))(asOptional(sa));
+  <S>(sa: Prism<S, A>): Optional<S, B> => ({
+    getOption: flow(sa.getOption, O.map(ab.get)),
+    set: (b) =>
+      (s) =>
+        pipe(
+          sa.getOption(s),
+          O.fold(
+            flow(ab.set(b), sa.reverseGet),
+            () => s,
+          ),
+        ),
+  });
 
 export const composeOptional = <A, B>(ab: Optional<A, B>) =>
-  <S>(sa: Prism<S, A>): Optional<S, B> => OP.compose(ab)(asOptional(sa));
-
-export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
-  <S>(sa: Prism<S, A>): Traversal<S, B> => T.compose(ab)(asTraversal(sa));
+  <S>(sa: Prism<S, A>): Optional<S, B> => ({
+    getOption: flow(sa.getOption, O.chain(ab.getOption)),
+    set: (b) =>
+      (s) =>
+        pipe(
+          sa.getOption(s),
+          O.fold(
+            flow(ab.set(b), sa.reverseGet),
+            () => s,
+          ),
+        ),
+  });
 
 /***************************************************************************************************
  * @section Pipeables
@@ -153,27 +177,32 @@ export const getSet = <S, A>(sa: Prism<S, A>) =>
 export const prop = <A, P extends keyof A>(
   prop: P,
 ): (<S>(sa: Prism<S, A>) => Optional<S, A[P]>) =>
-  composeLens(pipe(L.id<A>(), L.prop(prop)));
+  pipe(
+    lensId<A>(),
+    lensProp(prop),
+    composeLens,
+  );
 
 export const props = <A, P extends keyof A>(
   ...props: [P, P, ...Array<P>]
 ): (<S>(sa: Prism<S, A>) => Optional<S, { [K in P]: A[K] }>) =>
-  composeLens(pipe(L.id<A>(), L.props(...props)));
+  pipe(
+    lensId<A>(),
+    lensProps(...props),
+    composeLens,
+  );
 
 export const index = (i: number) =>
   <S, A>(sa: Prism<S, ReadonlyArray<A>>): Optional<S, A> =>
-    pipe(asOptional(sa), OP.compose(OP.indexArray<A>().index(i)));
+    composeOptional(indexArray<A>().index(i))(sa);
 
 export const key = (key: string) =>
   <S, A>(sa: Prism<S, Readonly<Record<string, A>>>): Optional<S, A> =>
-    pipe(
-      asOptional(sa),
-      OP.compose(OP.indexRecord<A>().index(key)),
-    );
+    composeOptional(indexRecord<A>().index(key))(sa);
 
 export const atKey = (key: string) =>
   <S, A>(sa: Prism<S, Readonly<Record<string, A>>>): Optional<S, O.Option<A>> =>
-    composeLens(L.atRecord<A>().at(key))(sa);
+    composeLens(atRecord<A>().at(key))(sa);
 
 /***************************************************************************************************
  * @section Pipeable Over ADT
