@@ -74,7 +74,7 @@ export const record = <O, A>(
 
 export const array = <O, A>(
   item: Encoder<O, A>,
-): Encoder<Array<O>, Array<A>> => ({
+): Encoder<Array<O>, ReadonlyArray<A>> => ({
   encode: (as) => as.map(item.encode),
 });
 

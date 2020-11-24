@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { $, _0, _1 } from "./types.ts";
+import type { $, _0, _1, Fn } from "./types.ts";
 import type { Either } from "./either.ts";
 import type { Option } from "./option.ts";
 import type { Lens } from "./lens.ts";
@@ -9,7 +9,6 @@ import type { Traversal } from "./traversal.ts";
 
 import * as O from "./option.ts";
 import * as E from "./either.ts";
-
 import { constant, flow, identity } from "./fns.ts";
 
 /***************************************************************************************************
@@ -70,8 +69,9 @@ export const asOptional = <S, A>(sa: Iso<S, A>): Optional<S, A> => ({
 });
 
 export const asTraversal = <S, A>(sa: Iso<S, A>): Traversal<S, A> => ({
-  getModify: ({ map }) =>
-    (f) => (s: S) => map((a: A) => sa.reverseGet(a), f(sa.get(s))),
+  getModify: <T>({ map }: TC.Applicative<T>) =>
+    (f: Fn<[A], $<T, [A]>>) =>
+      (s: S) => map((a: A) => sa.reverseGet(a), f(sa.get(s))),
 });
 
 /***************************************************************************************************
@@ -102,6 +102,13 @@ export const composeOptional = <A, B>(ab: Optional<A, B>) =>
   <S>(sa: Iso<S, A>): Optional<S, B> => ({
     getOption: flow(sa.get, ab.getOption),
     set: (b) => flow(sa.get, ab.set(b), sa.reverseGet),
+  });
+
+export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
+  <S>(sa: Iso<S, A>): Traversal<S, B> => ({
+    getModify: <T>(A: TC.Applicative<T>) =>
+      (f: Fn<[B], $<T, [B]>>) =>
+        (s: S) => A.map(sa.reverseGet, ab.getModify(A)(f)(sa.get(s))),
   });
 
 /***************************************************************************************************

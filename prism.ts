@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1, Predicate, Refinement } from "./types.ts";
+import type { $, _0, _1, Fn, Predicate, Refinement } from "./types.ts";
 import type { Iso } from "./iso.ts";
 import type { Lens } from "./lens.ts";
 import type { Optional } from "./optional.ts";
@@ -69,9 +69,9 @@ export const asOptional = <S, A>(sa: Prism<S, A>): Optional<S, A> => ({
 });
 
 export const asTraversal = <S, A>(sa: Prism<S, A>): Traversal<S, A> => ({
-  getModify: (F) =>
-    (f) =>
-      (s) =>
+  getModify: <T>(F: TC.Applicative<T>) =>
+    (f: Fn<[A], $<T, [A]>>) =>
+      (s: S) =>
         pipe(
           sa.getOption(s),
           O.fold(
@@ -131,6 +131,20 @@ export const composeOptional = <A, B>(ab: Optional<A, B>) =>
             () => s,
           ),
         ),
+  });
+
+export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
+  <S>(sa: Prism<S, A>): Traversal<S, B> => ({
+    getModify: <T>(A: TC.Applicative<T>) =>
+      (f: Fn<[B], $<T, [B]>>) =>
+        (s: S) =>
+          pipe(
+            sa.getOption(s),
+            O.fold(
+              (a) => A.map(sa.reverseGet, ab.getModify(A)(f)(a)),
+              () => A.of(s),
+            ),
+          ),
   });
 
 /***************************************************************************************************

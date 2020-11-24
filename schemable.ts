@@ -92,10 +92,12 @@ export type RecordSchemable<T, L extends LS> = {
 }[L];
 
 export type ArraySchemable<T, L extends LS> = {
-  1: <A>(item: $<T, [A]>) => $<T, [Array<A>]>;
-  2: <E, A>(item: $<T, [E, A]>) => $<T, [E, Array<A>]>;
-  3: <R, E, A>(item: $<T, [R, E, A]>) => $<T, [R, E, Array<A>]>;
-  4: <S, R, E, A>(item: $<T, [S, R, E, A]>) => $<T, [S, R, E, Array<A>]>;
+  1: <A>(item: $<T, [A]>) => $<T, [ReadonlyArray<A>]>;
+  2: <E, A>(item: $<T, [E, A]>) => $<T, [E, ReadonlyArray<A>]>;
+  3: <R, E, A>(item: $<T, [R, E, A]>) => $<T, [R, E, ReadonlyArray<A>]>;
+  4: <S, R, E, A>(
+    item: $<T, [S, R, E, A]>,
+  ) => $<T, [S, R, E, ReadonlyArray<A>]>;
 }[L];
 
 export type TupleSchemable<T, L extends LS> = {

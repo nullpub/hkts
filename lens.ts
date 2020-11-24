@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { $, _0, _1, Predicate, Refinement } from "./types.ts";
+import type { $, _0, _1, Fn, Predicate, Refinement } from "./types.ts";
 import type { At } from "./at.ts";
 import type { Either } from "./either.ts";
 import type { Iso } from "./iso.ts";
@@ -59,7 +59,9 @@ export const asOptional = <S, A>(sa: Lens<S, A>): Optional<S, A> => ({
 });
 
 export const asTraversal = <S, A>(sa: Lens<S, A>): Traversal<S, A> => ({
-  getModify: (A) => (f) => (s) => A.map((a) => sa.set(a)(s), f(sa.get(s))),
+  getModify: <T>(A: TC.Applicative<T>) =>
+    (f: Fn<[A], $<T, [A]>>) =>
+      (s: S) => A.map((a) => sa.set(a)(s), f(sa.get(s))),
 });
 
 export const fromIso = <T, S>(iso: Iso<T, S>) =>
@@ -114,17 +116,25 @@ export const composeOptional = <A, B>(ab: Optional<A, B>) =>
         )(s),
   });
 
+// deno-fmt-ignore
+export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
+  <S>(sa: Lens<S, A>): Traversal<S, B> => ({
+    getModify: <T>(A: TC.Applicative<T>) =>
+      (f: Fn<[B], $<T, [B]>>) =>
+        (s: S) => A.map((a: A) => sa.set(a)(s), ab.getModify(A)(f)(sa.get(s))),
+  });
+
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
 
 type FilterFn = {
-  <A, B extends A>(
-    refinement: Refinement<A, B>,
-  ): <S>(sa: Lens<S, A>) => Optional<S, B>;
   <A>(
     predicate: Predicate<A>,
   ): <S>(sa: Lens<S, A>) => Optional<S, A>;
+  <A, B extends A>(
+    refinement: Refinement<A, B>,
+  ): <S>(sa: Lens<S, A>) => Optional<S, B>;
 };
 
 export const filter: FilterFn = <A>(predicate: Predicate<A>) =>

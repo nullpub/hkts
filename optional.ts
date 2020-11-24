@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1, Predicate, Refinement } from "./types.ts";
+import type { $, _0, _1, Fn, Predicate, Refinement } from "./types.ts";
 import type { Either } from "./either.ts";
 import type { Option } from "./option.ts";
 import type { Iso } from "./iso.ts";
@@ -60,13 +60,13 @@ export const Category: TC.Category<Optional<_0, _1>> = {
  **************************************************************************************************/
 
 export const asTraversal = <S, A>(sa: Optional<S, A>): Traversal<S, A> => ({
-  getModify: (F) =>
-    (f) =>
-      (s) =>
+  getModify: <T>(F: TC.Applicative<T>) =>
+    (f: Fn<[A], $<T, [A]>>) =>
+      (s: S) =>
         pipe(
           sa.getOption(s),
           O.fold(
-            (a) => F.map((a: A) => sa.set(a)(s), f(a)),
+            (a) => F.map((a) => sa.set(a)(s), f(a)),
             () => F.of(s),
           ),
         ),
@@ -114,6 +114,20 @@ export const composePrism = <A, B>(
   <S>(sa: Optional<S, A>): Optional<S, B> => ({
     getOption: flow(sa.getOption, O.chain(ab.getOption)),
     set: flow(ab.reverseGet, sa.set),
+  });
+
+export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
+  <S>(sa: Optional<S, A>): Traversal<S, B> => ({
+    getModify: <T>(A: TC.Applicative<T>) =>
+      (f: Fn<[B], $<T, [B]>>) =>
+        (s: S) =>
+          pipe(
+            sa.getOption(s),
+            O.fold(
+              (a) => A.map((a) => sa.set(a)(s), ab.getModify(A)(f)(a)),
+              () => A.of(s),
+            ),
+          ),
   });
 
 /***************************************************************************************************

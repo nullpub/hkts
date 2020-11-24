@@ -69,7 +69,7 @@ export const success: <A>(a: A) => Decoded<A> = E.right;
 
 export const failure = <A = never>(
   actual: unknown,
-  message: string
+  message: string,
 ): Decoded<A> => E.left(error(actual, message));
 
 /***************************************************************************************************
@@ -78,14 +78,14 @@ export const failure = <A = never>(
 
 export const fromRefinement = <I, A extends I>(
   refinement: Refinement<I, A>,
-  expected: string
+  expected: string,
 ): Decoder<I, A> => ({
   decode: (i) => (refinement(i) ? success(i) : failure(i, expected)),
 });
 
 export const fromGuard = <I, A extends I>(
   guard: G.Guard<I, A>,
-  expected: string
+  expected: string,
 ): Decoder<I, A> => fromRefinement(guard.is, expected);
 
 /***************************************************************************************************
@@ -94,7 +94,7 @@ export const fromGuard = <I, A extends I>(
 
 const toTree: (e: DE.DecodeError<string>) => T.Tree<string> = DE.fold({
   Leaf: (input, error) =>
-    T.make(`cannot decode ${JSON.stringify(input)}, should be ${error}`),
+    T.make(`cannot decode leaf ${JSON.stringify(input)}, should be ${error}`),
   Key: (key, kind, errors) =>
     T.make(`${kind} property ${JSON.stringify(key)}`, toForest(errors)),
   Index: (index, kind, errors) =>
@@ -106,7 +106,7 @@ const toTree: (e: DE.DecodeError<string>) => T.Tree<string> = DE.fold({
 
 const toForest: (e: DecodeError) => ReadonlyArray<T.Tree<string>> = Free.fold(
   (value) => [toTree(value)],
-  (left, right) => toForest(left).concat(toForest(right))
+  (left, right) => toForest(left).concat(toForest(right)),
 );
 
 /***************************************************************************************************
@@ -117,53 +117,51 @@ export const draw = (e: DecodeError): string =>
   toForest(e).map(T.drawTree).join("\n");
 
 export const stringify: <A>(
-  e: E.Either<DecodeError, A>
+  e: E.Either<DecodeError, A>,
 ) => string = E.fold(draw, (a) => JSON.stringify(a, null, 2));
 
 export const mapLeftWithInput = <I>(
-  f: (input: I, e: DecodeError) => DecodeError
-) => <A>(decoder: Decoder<I, A>): Decoder<I, A> => ({
-  decode: (i) => E.Bifunctor.mapLeft((e) => f(i, e), decoder.decode(i)),
-});
+  f: (input: I, e: DecodeError) => DecodeError,
+) =>
+  <A>(decoder: Decoder<I, A>): Decoder<I, A> => ({
+    decode: (i) => E.Bifunctor.mapLeft((e) => f(i, e), decoder.decode(i)),
+  });
 
 export const withMessage = <I>(
-  message: (input: I, e: DecodeError) => string
+  message: (input: I, e: DecodeError) => string,
 ): (<A>(decoder: Decoder<I, A>) => Decoder<I, A>) =>
   mapLeftWithInput((input, e) => Free.of(DE.wrap(message(input, e), e)));
 
 export const refine = <A, B extends A>(
   refinement: (a: A) => a is B,
-  id: string
-) => <I>(from: Decoder<I, A>): Decoder<I, B> => ({
+  id: string,
+) =>
+  <I>(from: Decoder<I, A>): Decoder<I, B> => ({
+    decode: (i) =>
+      pipe(
+        from.decode(i),
+        E.chain((a) => (refinement(a) ? success(a) : failure(i, id))),
+      ),
+  });
+
+export const nullable = <I, A>(
+  or: Decoder<I, A>,
+): Decoder<null | I, null | A> => ({
   decode: (i) =>
-    pipe(
-      from.decode(i),
-      E.chain((a) => (refinement(a) ? success(a) : failure(i, id)))
+    i === null ? E.right(i as A | null) : E.Bifunctor.mapLeft(
+      (e) => Free.concat(Free.of(DE.member(0, error(i, "null"))), e),
+      or.decode(i),
     ),
 });
 
-export const nullable = <I, A>(
-  or: Decoder<I, A>
-): Decoder<null | I, null | A> => ({
-  decode: (i) =>
-    i === null
-      ? E.right(i as A | null)
-      : E.Bifunctor.mapLeft(
-          (e) => Free.concat(Free.of(DE.member(0, error(i, "null"))), e),
-          or.decode(i)
-        ),
-});
-
 export const undefinable = <I, A>(
-  or: Decoder<I, A>
+  or: Decoder<I, A>,
 ): Decoder<undefined | I, undefined | A> => ({
   decode: (i) =>
-    i === undefined
-      ? E.right(i as A | undefined)
-      : E.Bifunctor.mapLeft(
-          (e) => Free.concat(e, Free.of(DE.leaf(i, "undefined"))),
-          or.decode(i)
-        ),
+    i === undefined ? E.right(i as A | undefined) : E.Bifunctor.mapLeft(
+      (e) => Free.concat(e, Free.of(DE.leaf(i, "undefined"))),
+      or.decode(i),
+    ),
 });
 
 /***************************************************************************************************
@@ -191,118 +189,115 @@ export const unknownArray = fromGuard(G.unknownArray, "unknownArray");
 export const unknownRecord = fromGuard(G.unknownRecord, "unknownRecord");
 
 export const type = <P extends Record<string, Decoder<unknown, unknown>>>(
-  properties: P
-): Decoder<unknown, { [K in keyof P]: TypeOf<P[K]> }> =>
-  ({
-    decode: flow(
-      unknownRecord.decode,
-      chain((r) =>
-        pipe(
-          properties,
-          traverseRecord(({ decode }, key) =>
-            E.Bifunctor.mapLeft(
-              (e) => Free.of(DE.key(key, DE.required, e)),
-              decode(r[key])
-            )
+  properties: P,
+): Decoder<unknown, { [K in keyof P]: TypeOf<P[K]> }> => ({
+  decode: flow(
+    unknownRecord.decode,
+    chain((r) =>
+      pipe(
+        properties,
+        traverseRecord(({ decode }, key) =>
+          E.Bifunctor.mapLeft(
+            (e) => Free.of(DE.key(key, DE.required, e)),
+            decode(r[key]),
           )
-        )
+        ),
       )
     ),
-  } as Decoder<unknown, { [K in keyof P]: TypeOf<P[K]> }>);
+  ),
+} as Decoder<unknown, { [K in keyof P]: TypeOf<P[K]> }>);
 
 export const partial = <P extends Record<string, Decoder<unknown, unknown>>>(
-  properties: P
-): Decoder<unknown, Partial<{ [K in keyof P]: TypeOf<P[K]> }>> =>
-  ({
-    decode: flow(
-      unknownRecord.decode,
-      chain((r) =>
-        pipe(
-          properties,
-          traverseRecord((decoder, key) =>
-            E.Bifunctor.mapLeft(
-              (e) => Free.of(DE.key(key, DE.required, e)),
-              undefinable(decoder).decode(r[key])
-            )
-          )
-        )
-      )
-    ),
-  } as Decoder<unknown, Partial<{ [K in keyof P]: TypeOf<P[K]> }>>);
-
-export const array = <A>(item: Decoder<unknown, A>): Decoder<unknown, A[]> =>
-  ({
-    decode: flow(
-      unknownArray.decode,
-      chain(
-        traverseArray((a, i) =>
+  properties: P,
+): Decoder<unknown, Partial<{ [K in keyof P]: TypeOf<P[K]> }>> => ({
+  decode: flow(
+    unknownRecord.decode,
+    chain((r) =>
+      pipe(
+        properties,
+        traverseRecord((decoder, key) =>
           E.Bifunctor.mapLeft(
-            (e) => Free.of(DE.index(i, DE.optional, e)),
-            item.decode(a)
+            (e) => Free.of(DE.key(key, DE.required, e)),
+            undefinable(decoder).decode(r[key]),
           )
-        )
+        ),
       )
     ),
-  } as Decoder<unknown, A[]>);
+  ),
+} as Decoder<unknown, Partial<{ [K in keyof P]: TypeOf<P[K]> }>>);
+
+export const array = <A>(
+  item: Decoder<unknown, A>,
+): Decoder<unknown, readonly A[]> => ({
+  decode: flow(
+    unknownArray.decode,
+    chain(
+      traverseArray((a, i) =>
+        E.Bifunctor.mapLeft(
+          (e) => Free.of(DE.index(i, DE.optional, e)),
+          item.decode(a),
+        )
+      ),
+    ),
+  ),
+} as Decoder<unknown, A[]>);
 
 export const record = <A>({
   decode,
-}: Decoder<unknown, A>): Decoder<unknown, Record<string, A>> =>
-  ({
-    decode: flow(
-      unknownRecord.decode,
-      chain(
-        traverseRecord((value: unknown, key) =>
-          E.Bifunctor.mapLeft(
-            (e) => Free.of(DE.key(key, DE.required, e)),
-            decode(value)
-          )
+}: Decoder<unknown, A>): Decoder<unknown, Record<string, A>> => ({
+  decode: flow(
+    unknownRecord.decode,
+    chain(
+      traverseRecord((value: unknown, key) =>
+        E.Bifunctor.mapLeft(
+          (e) => Free.of(DE.key(key, DE.required, e)),
+          decode(value),
         )
-      )
+      ),
     ),
-  } as Decoder<unknown, Record<string, A>>);
+  ),
+} as Decoder<unknown, Record<string, A>>);
 
 export const tuple = <A extends ReadonlyArray<unknown>>(
   ...components: { [K in keyof A]: Decoder<unknown, A[K]> }
-): Decoder<unknown, A> =>
-  ({
-    decode: (i) =>
-      pipe(
-        unknownArray.decode(i),
-        chain((as) =>
-          pipe(
-            components,
-            traverseArray(({ decode }, i) =>
-              E.Bifunctor.mapLeft(
-                (e) => Free.of(DE.index(i, DE.required, e)),
-                decode(as[i])
-              )
+): Decoder<unknown, A> => ({
+  decode: (i) =>
+    pipe(
+      unknownArray.decode(i),
+      chain((as) =>
+        pipe(
+          components,
+          traverseArray(({ decode }, i) =>
+            E.Bifunctor.mapLeft(
+              (e) => Free.of(DE.index(i, DE.required, e)),
+              decode(as[i]),
             )
-          )
+          ),
         )
       ),
-  } as Decoder<unknown, A>);
+    ),
+} as Decoder<unknown, A>);
 
 export const union = <
   MS extends readonly [
     Decoder<unknown, unknown>,
-    ...Array<Decoder<unknown, unknown>>
-  ]
+    ...Array<Decoder<unknown, unknown>>,
+  ],
 >(
   ...members: MS
 ): Decoder<InputOf<MS[keyof MS]>, TypeOf<MS[keyof MS]>> => ({
   decode: (i) => {
     let out = E.Bifunctor.mapLeft(
       (e) => Free.of(DE.member(0, e)),
-      members[0].decode(i)
+      members[0].decode(i),
     ) as Decoded<TypeOf<MS[keyof MS]>>;
     for (let index = 1; index < members.length; index++) {
       out = Alt.alt(
         out,
         E.Bifunctor.mapLeft(
           (e) => Free.of(DE.member(index, e)),
-          members[index].decode(i)
-        )
+          members[index].decode(i),
+        ),
       ) as Decoded<TypeOf<MS[keyof MS]>>;
     }
     return out;
@@ -311,18 +306,18 @@ export const union = <
 
 export const intersect = <IA, A, IB, B>(
   left: Decoder<IA, A>,
-  right: Decoder<IB, B>
+  right: Decoder<IB, B>,
 ): Decoder<IA & IB, A & B> => ({
   decode: (i) =>
     Monad.ap(
       Monad.map((a: A) => (b: B) => _intersect(a, b), left.decode(i)),
-      right.decode(i)
+      right.decode(i),
     ),
 });
 
 export const sum = <T extends string, A>(
   tag: T,
-  members: { [K in keyof A]: Decoder<unknown, A[K]> }
+  members: { [K in keyof A]: Decoder<unknown, A[K]> },
 ): Decoder<unknown, A[keyof A]> => {
   const keys = Object.keys(members);
   return {
@@ -342,25 +337,25 @@ export const sum = <T extends string, A>(
                 v,
                 keys.length === 0
                   ? "never"
-                  : keys.map((k) => JSON.stringify(k)).join(" | ")
-              )
-            )
-          )
+                  : keys.map((k) => JSON.stringify(k)).join(" | "),
+              ),
+            ),
+          ),
         );
-      })
+      }),
     ),
   };
 };
 
 export const lazy = <I, A>(
   id: string,
-  f: () => Decoder<I, A>
+  f: () => Decoder<I, A>,
 ): Decoder<I, A> => {
   const get = memoize<void, Decoder<I, A>>(f);
   return {
     decode: flow(
       get().decode,
-      E.mapLeft((e) => Free.of(DE.lazy(id, e)))
+      E.mapLeft((e) => Free.of(DE.lazy(id, e))),
     ),
   };
 };
