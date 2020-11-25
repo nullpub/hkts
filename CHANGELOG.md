@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.37](https://github.com/nullpub/hkts/compare/v0.0.36...v0.0.37) (2020-11-25)
+
+
+### Features
+
+* implement composeTraversal for other optics ([11d6355](https://github.com/nullpub/hkts/commit/11d63558a9d73991e222e277f239248edc4af569))
+* implement traverse for all optics ([0269f89](https://github.com/nullpub/hkts/commit/0269f89d00e3cf7bb9c873c36203686edb99ecb1))
+
 ### [0.0.36](https://github.com/nullpub/hkts/compare/v0.0.35...v0.0.36) (2020-11-23)
 
 
