@@ -46,7 +46,7 @@ export type To<T> = T extends Traversal<infer _, infer A> ? A : never;
  **************************************************************************************************/
 
 export const id = <S>(): Traversal<S, S> => ({
-  getModify: <T>(_: TC.Applicative<T, any>) => <A>(f: (a: A) => $<T, [A]>) => f,
+  getModify: <T>(_: TC.Applicative<T>) => <A>(f: (a: A) => $<T, [A]>) => f,
 });
 
 export const fromTraversable = createTraversal;
