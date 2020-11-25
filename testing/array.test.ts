@@ -6,7 +6,7 @@ import * as A from "../array.ts";
 
 Deno.test({
   name: "Array Constructors",
-  async fn() {
+  fn() {
     assertEquals(A.zero, []);
     assertEquals(A.empty(), []);
   },

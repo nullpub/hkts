@@ -14,7 +14,7 @@ import { identity } from "./fns.ts";
 const _concat = A.getMonoid<Tree<any>>().concat;
 
 const _draw = (indentation: string, forest: Forest<string>): string => {
-  let r: string = "";
+  let r = "";
   const len = forest.length;
   let tree: Tree<string>;
   for (let i = 0; i < len; i++) {

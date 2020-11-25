@@ -104,10 +104,9 @@ export const getRightMonad = <E>(
     of: right,
     ap: (tfab, ta) => async () => M.ap(await tfab(), await ta()),
     map: (fab, ta) => async () => M.map(fab, await ta()),
-    join: (tta) =>
-      async () => tta().then((ta) => E.isLeft(ta) ? ta : ta.right()),
+    join: (tta) => () => tta().then((ta) => E.isLeft(ta) ? ta : ta.right()),
     chain: (fatb, ta) =>
-      async () => ta().then((a) => E.isLeft(a) ? a : fatb(a.right)()),
+      () => ta().then((a) => E.isLeft(a) ? a : fatb(a.right)()),
   });
 };
 
