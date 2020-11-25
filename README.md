@@ -17,11 +17,11 @@ import * as O from "https://deno.land/x/hkts/option.ts";
 import { pipe } from "https://deno.land/x/hkts/fns.ts";
 
 const result = pipe(
-  O.sequenceTuple(O.some(1), O.fromNullable([1, 2, 3][4]), O.some(-1)),
+  O.sequenceTuple(O.some(1), O.fromNullable([1, 2, 3][2]), O.some(-1)),
   O.map(([a, b, c]) => a + b + c),
   O.chain((n) => (n % 2 === 0 ? O.none : O.some(n)))
 );
-// result === O.none
+// result === O.some(3)
 ```
 
 A full featured pipeable optics library:
@@ -68,8 +68,18 @@ const users: Users = [
   O.some({
     name: "breonna",
     addresses: [
-      { street: "123 Main St", city: "davis", state: "California", zip: "00000" },
-      { street: "777 Jones Ave", city: "sacramento", state: "California", zip: "00000" },
+      {
+        street: "123 Main St",
+        city: "davis",
+        state: "California",
+        zip: "00000",
+      },
+      {
+        street: "777 Jones Ave",
+        city: "sacramento",
+        state: "California",
+        zip: "00000",
+      },
       { street: "881 Second St", city: "austin", state: "Texas", zip: "00000" },
     ],
   }),
@@ -77,9 +87,24 @@ const users: Users = [
   O.some({
     name: "george",
     addresses: [
-      { street: "123 Main St", city: "los angeles", state: "California", zip: "00000" },
-      { street: "777 Jones Ave", city: "jonesborough", state: "Tennessee", zip: "00000" },
-      { street: "881 Second St", city: "san francisco", state: "California", zip: "00000" },
+      {
+        street: "123 Main St",
+        city: "los angeles",
+        state: "California",
+        zip: "00000",
+      },
+      {
+        street: "777 Jones Ave",
+        city: "jonesborough",
+        state: "Tennessee",
+        zip: "00000",
+      },
+      {
+        street: "881 Second St",
+        city: "san francisco",
+        state: "California",
+        zip: "00000",
+      },
     ],
   }),
 ];
