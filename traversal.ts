@@ -6,6 +6,7 @@ import type { Option } from "./option.ts";
 import * as I from "./identity.ts";
 import * as O from "./option.ts";
 import * as E from "./either.ts";
+import { createTraversal } from "./derivations.ts";
 import { flow, identity, pipe } from "./fns.ts";
 
 import { atRecord } from "./at.ts";
@@ -48,20 +49,7 @@ export const id = <S>(): Traversal<S, S> => ({
   getModify: <T>(_: TC.Applicative<T, any>) => <A>(f: (a: A) => $<T, [A]>) => f,
 });
 
-// deno-fmt-ignore
-type FromTraversableFn = {
-  <T, L extends 1>(T: TC.Traversable<T, L>): <A>() => Traversal<$<T, [A]>, A>;
-  <T, L extends 2>(T: TC.Traversable<T, L>): <E, A>() => Traversal<$<T, [E, A]>, A>;
-  <T, L extends 3>(T: TC.Traversable<T, L>): <R, E, A>() => Traversal<$<T, [R, E, A]>, A>;
-  <T, L extends 4>(T: TC.Traversable<T, L>): <S, R, E, A>() => Traversal<$<T, [S, R, E, A]>, A>;
-};
-
-export const fromTraversable: FromTraversableFn = <T>(T: TC.Traversable<T>) =>
-  <A>(): Traversal<$<T, [A]>, A> => ({
-    getModify: <U>(A: TC.Applicative<U>) => {
-      return (f: (a: A) => $<U, [A]>) => (s: $<T, [A]>) => T.traverse(A, f, s);
-    },
-  });
+export const fromTraversable = createTraversal;
 
 /***************************************************************************************************
  * @section Modules
@@ -157,11 +145,9 @@ type TraverseFn = {
   <T, L extends 4>(T: TC.Traversable<T, L>): <S, Q, R, E, A>(sta: Traversal<S, $<T, [Q, R, E, A]>>) => Traversal<S, A>
 };
 
-export const traverse: TraverseFn = <T>(
-  M: TC.Traversable<T>,
-) =>
-  <S, A>(sta: Traversal<S, $<T, [A]>>): Traversal<S, A> =>
-    compose(fromTraversable(M)<A>())(sta);
+export const traverse = <T>(T: TC.Traversable<T>) =>
+  <S, A>(sa: Traversal<S, $<T, [A]>>): Traversal<S, A> =>
+    compose(createTraversal(T)<A>())(sa);
 
 /***************************************************************************************************
  * @section Pipeable Over ADT

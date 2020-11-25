@@ -7,6 +7,7 @@ import type { Traversal } from "./traversal.ts";
 
 import * as O from "./option.ts";
 import * as E from "./either.ts";
+import { createTraversal } from "./derivations.ts";
 import { flow, identity, pipe } from "./fns.ts";
 
 import { atRecord } from "./at.ts";
@@ -165,6 +166,10 @@ export const filter: FilterFn = <A>(predicate: Predicate<A>) =>
     getOption: flow(sa.getOption, O.chain(O.fromPredicate(predicate))),
     reverseGet: sa.reverseGet,
   });
+
+export const traverse = <T>(T: TC.Traversable<T>) =>
+  <S, A>(sa: Prism<S, $<T, [A]>>): Traversal<S, A> =>
+    composeTraversal(createTraversal(T)<A>())(sa);
 
 export const getModifyOption = <S, A>(sa: Prism<S, A>) =>
   (faa: (a: A) => A) =>

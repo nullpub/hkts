@@ -9,6 +9,7 @@ import type { Traversal } from "./traversal.ts";
 
 import * as O from "./option.ts";
 import * as E from "./either.ts";
+import { createTraversal } from "./derivations.ts";
 import { constant, flow, identity } from "./fns.ts";
 
 /***************************************************************************************************
@@ -131,6 +132,10 @@ export const reverse = <S, A>(sa: Iso<S, A>): Iso<A, S> => ({
   get: sa.reverseGet,
   reverseGet: sa.get,
 });
+
+export const traverse = <T>(T: TC.Traversable<T>) =>
+  <S, A>(sa: Iso<S, $<T, [A]>>): Traversal<S, A> =>
+    composeTraversal(createTraversal(T)<A>())(sa);
 
 /***************************************************************************************************
  * @section Pipeable Over ADT

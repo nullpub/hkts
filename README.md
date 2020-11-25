@@ -28,56 +28,63 @@ A full featured pipeable optics library:
 
 ```ts
 import * as A from "https://deno.land/x/hkts/array.ts";
+import * as L from "https://deno.land/x/hkts/lens.ts";
 import * as T from "https://deno.land/x/hkts/traversal.ts";
-import * as P from "https://deno.land/x/hkts/prism.ts";
-import { none, Option, some } from "https://deno.land/x/hkts/option.ts";
-import { pipe } from "https://deno.land/x/hkts/fns.ts";
+import * as O from "https://deno.land/x/hkts/option.ts";
+import { flow, pipe } from "https://deno.land/x/hkts/fns.ts";
 
-interface User {
-  username: Option<string>;
-  ready: boolean;
-}
+const capitalizeWord = (str: string) =>
+  str.substr(0, 1).toUpperCase() + str.substr(1);
 
-type Users = readonly User[];
+const split = (char: string) => (str: string) => str.split(char);
 
-const capitalize = (s: string): string =>
-  s.substring(0, 1).toUpperCase() + s.substring(1);
+const join = (char: string) => (arr: readonly string[]) => arr.join(char);
 
-const getArrayTraversal = T.fromTraversable(A.Traversable);
+const capitalizeWords = flow(split(" "), A.map(capitalizeWord), join(" "));
 
-const capitalizeUsernames = pipe(
-  T.id<Users>(),
-  T.compose(getArrayTraversal()),
-  T.prop("username"),
-  T.composePrism(P.some()),
-  T.modify(capitalize)
+type User = {
+  name: string;
+  addresses: {
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+  }[];
+};
+
+type Users = readonly O.Option<User>[];
+
+const capitalizeCities = pipe(
+  L.id<Users>(),
+  L.traverse(A.Traversable),
+  T.traverse(O.Traversable),
+  T.prop("addresses"),
+  T.traverse(A.Traversable),
+  T.prop("city"),
+  T.modify(capitalizeWords)
 );
 
 const users: Users = [
-  { username: some("brandon"), ready: true },
-  { username: some("breonna"), ready: true },
-  { username: some("george"), ready: true },
-  { username: none, ready: false },
+  O.some({
+    name: "breonna",
+    addresses: [
+      { street: "123 Main St", city: "davis", state: "California", zip: "00000" },
+      { street: "777 Jones Ave", city: "sacramento", state: "California", zip: "00000" },
+      { street: "881 Second St", city: "austin", state: "Texas", zip: "00000" },
+    ],
+  }),
+  O.none,
+  O.some({
+    name: "george",
+    addresses: [
+      { street: "123 Main St", city: "los angeles", state: "California", zip: "00000" },
+      { street: "777 Jones Ave", city: "jonesborough", state: "Tennessee", zip: "00000" },
+      { street: "881 Second St", city: "san francisco", state: "California", zip: "00000" },
+    ],
+  }),
 ];
 
-console.log({
-  before: users,
-  after: capitalizeUsernames(users),
-});
-// {
-//   before: [
-//     { username: { tag: "Some", value: "brandon" }, ready: true },
-//     { username: { tag: "Some", value: "breonna" }, ready: true },
-//     { username: { tag: "Some", value: "george" }, ready: true },
-//     { username: { tag: "None" }, ready: false }
-//   ],
-//   after: [
-//     { username: { tag: "Some", value: "Brandon" }, ready: true },
-//     { username: { tag: "Some", value: "Breonna" }, ready: true },
-//     { username: { tag: "Some", value: "George" }, ready: true },
-//     { username: { tag: "None" }, ready: false }
-//   ]
-// }
+const capitalizedUserCities = capitalizeCities(users);
 ```
 
 ## Conventions

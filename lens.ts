@@ -10,6 +10,7 @@ import type { Optional } from "./optional.ts";
 import * as O from "./option.ts";
 import * as E from "./either.ts";
 import * as R from "./record.ts";
+import { createTraversal } from "./derivations.ts";
 import { constant, flow, identity, pipe } from "./fns.ts";
 
 import { atRecord } from "./at.ts";
@@ -150,6 +151,10 @@ export const modify = <A>(f: (a: A) => A) =>
       const n = f(o);
       return o === n ? s : sa.set(n)(s);
     };
+
+export const traverse = <T>(T: TC.Traversable<T>) =>
+  <S, A>(sa: Lens<S, $<T, [A]>>): Traversal<S, A> =>
+    composeTraversal(createTraversal(T)<A>())(sa);
 
 export const prop = <A, P extends keyof A>(
   prop: P,
