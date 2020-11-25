@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.38](https://github.com/nullpub/hkts/compare/v0.0.37...v0.0.38) (2020-11-25)
+
+
+### Bug Fixes
+
+* new lint rules mean new fixes ([9d0f3b4](https://github.com/nullpub/hkts/commit/9d0f3b4b75acb32c12e5c7685e176241c947b83b))
+* remove any so deno lint passes ([c88d34b](https://github.com/nullpub/hkts/commit/c88d34b76c140e3770df2af5a810625b0b66c373))
+
 ### [0.0.37](https://github.com/nullpub/hkts/compare/v0.0.36...v0.0.37) (2020-11-25)
 
 
