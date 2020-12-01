@@ -3,7 +3,7 @@ import type { _0, _1 } from "./types.ts";
 
 import * as D from "./derivations.ts";
 import { flow } from "./fns.ts";
-import { createSequenceTuple, createSequenceStruct } from "./sequence.ts";
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -21,11 +21,15 @@ export const get: <S>() => State<S, S> = () => (s) => [s, s];
 
 export const put: <S>(s: S) => State<S, void> = (s) => () => [undefined, s];
 
-export const modify: <S>(f: (s: S) => S) => State<S, void> = (f) =>
-  (s) => [undefined, f(s)];
+export const modify: <S>(f: (s: S) => S) => State<S, void> = (f) => (s) => [
+  undefined,
+  f(s),
+];
 
-export const gets: <S, A>(f: (s: S) => A) => State<S, A> = (f) =>
-  (s) => [f(s), s];
+export const gets: <S, A>(f: (s: S) => A) => State<S, A> = (f) => (s) => [
+  f(s),
+  s,
+];
 
 /***************************************************************************************************
  * @section Modules
@@ -68,3 +72,4 @@ export const execute = <S>(s: S) => <A>(ma: State<S, A>): S => ma(s)[1];
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
+
