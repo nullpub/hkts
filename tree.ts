@@ -1,10 +1,10 @@
 import type * as TC from "./type_classes.ts";
-import type { _ } from "./types.ts";
+import type { $, _ } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import * as A from "./array.ts";
 import * as D from "./derivations.ts";
-import { identity } from "./fns.ts";
+import { identity, pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Optimizations
@@ -86,6 +86,36 @@ export const Monad: TC.Monad<Tree<_>> = ({
 export const Apply: TC.Apply<Tree<_>> = {
   ap: Monad.ap,
   map: Monad.map,
+};
+
+export const Traversable: TC.Traversable<Tree<_>> = {
+  map: Functor.map,
+  reduce: (faba, b, ta) => {
+    let r = faba(b, ta.value);
+    const len = ta.forest.length;
+    for (let i = 0; i < len; i++) {
+      r = Traversable.reduce(faba, r, ta.forest[i]);
+    }
+    return r;
+  },
+  traverse: <U, A, B>(
+    F: TC.Applicative<U>,
+    faub: (a: A) => $<U, [B]>,
+    ta: Tree<A>,
+  ) => {
+    const traverseF = A.traverse(F);
+    const out = <A, B>(f: (a: A) => $<U, [B]>) =>
+      (ta: Tree<A>): $<U, [Tree<B>]> =>
+        F.ap(
+          F.map((value: B) =>
+            (forest: Forest<B>) => ({
+              value,
+              forest,
+            }), f(ta.value)),
+          pipe(ta.forest, traverseF(out(f))),
+        );
+    return out(faub)(ta);
+  },
 };
 
 /***************************************************************************************************

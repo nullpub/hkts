@@ -1,5 +1,5 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1, Fix, Lazy } from "./types.ts";
+import type { $, _0, _1, _2, _3, Fix, Lazy } from "./types.ts";
 
 import { pipe } from "./fns.ts";
 import * as E from "./either.ts";
