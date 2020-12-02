@@ -24,6 +24,8 @@ export interface Refinement<A, B extends A> {
 
 export type Ordering = -1 | 0 | 1;
 
+export type NonEmptyRecord<R> = keyof R extends never ? never : R;
+
 /***************************************************************************************************
  * @section Hole Types
  * @description Marks a type hole to be filled by the substitution ($) type

@@ -2,7 +2,7 @@ import type * as TC from "./type_classes.ts";
 import type { _0, _1 } from "./types.ts";
 
 import * as D from "./derivations.ts";
-import { flow } from "./fns.ts";
+import { identity } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
@@ -36,13 +36,26 @@ export const gets: <S, A>(f: (s: S) => A) => State<S, A> = (f) => (s) => [
  **************************************************************************************************/
 
 export const Functor: TC.Functor<State<_0, _1>, 2> = {
-  map: (fab, ta) => flow(ta, ([a, s]) => [fab(a), s]),
+  map: (fab, ta) => (s1) => {
+    const [a, s2] = ta(s1);
+    return [fab(a), s2];
+  },
 };
 
-export const Monad = D.createMonad<State<_0, _1>, 2>({
+export const Monad: TC.Monad<State<_0, _1>, 2> = {
   of: (a) => (s) => [a, s],
-  chain: (fatb, ta) => flow(ta, ([a, s]) => fatb(a)(s)),
-});
+  ap: (tfab, ta) => (s1) => {
+    const [f, s2] = tfab(s1);
+    const [a, s3] = ta(s2);
+    return [f(a), s3];
+  },
+  map: Functor.map,
+  join: (ta) => Monad.chain(identity, ta),
+  chain: (fatb, ta) => (s1) => {
+    const [a, s2] = ta(s1);
+    return fatb(a)(s2);
+  },
+};
 
 export const Applicative: TC.Applicative<State<_0, _1>, 2> = {
   of: Monad.of,
@@ -72,4 +85,3 @@ export const execute = <S>(s: S) => <A>(ma: State<S, A>): S => ma(s)[1];
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
-

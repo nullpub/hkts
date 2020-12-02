@@ -1,4 +1,4 @@
-import type { _, _0, _1, Refinement } from "./types.ts";
+import type { _, _0, _1, Refinement, NonEmptyRecord } from "./types.ts";
 import type * as TC from "./type_classes.ts";
 
 import * as S from "./schemable.ts";
@@ -178,7 +178,7 @@ export const unknownArray = fromGuard(G.unknownArray, "unknownArray");
 export const unknownRecord = fromGuard(G.unknownRecord, "unknownRecord");
 
 export const type = <P extends Record<string, Decoder<unknown, unknown>>>(
-  properties: P
+  properties: NonEmptyRecord<P>
 ): Decoder<unknown, { [K in keyof P]: TypeOf<P[K]> }> =>
   flow(
     unknownRecord,
@@ -196,7 +196,7 @@ export const type = <P extends Record<string, Decoder<unknown, unknown>>>(
   ) as Decoder<unknown, { [K in keyof P]: TypeOf<P[K]> }>;
 
 export const partial = <P extends Record<string, Decoder<unknown, unknown>>>(
-  properties: P
+  properties: NonEmptyRecord<P>
 ): Decoder<unknown, Partial<{ [K in keyof P]: TypeOf<P[K]> }>> =>
   flow(
     unknownRecord,

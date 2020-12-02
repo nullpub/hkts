@@ -1,4 +1,4 @@
-import type { _, Refinement } from "./types.ts";
+import type { _, Refinement, NonEmptyRecord } from "./types.ts";
 
 import * as S from "./schemable.ts";
 import { identity, memoize, pipe } from "./fns.ts";
@@ -57,7 +57,7 @@ export const nullable = <I, A extends I>(
 ): Guard<null | I, null | A> => (i): i is null | A => i === null || or(i);
 
 export const type = <A>(
-  properties: { [K in keyof A]: Guard<unknown, A[K]> }
+  properties: NonEmptyRecord<{ [K in keyof A]: Guard<unknown, A[K]> }>
 ): Guard<unknown, { [K in keyof A]: A[K] }> =>
   pipe(
     unknownRecord,
@@ -74,7 +74,7 @@ export const type = <A>(
   );
 
 export const partial = <A>(
-  properties: { [K in keyof A]: Guard<unknown, A[K]> }
+  properties: NonEmptyRecord<{ [K in keyof A]: Guard<unknown, A[K]> }>
 ): Guard<unknown, Partial<{ [K in keyof A]: A[K] }>> =>
   pipe(
     unknownRecord,
