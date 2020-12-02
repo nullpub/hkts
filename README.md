@@ -55,13 +55,13 @@ type User = {
 type Users = readonly O.Option<User>[];
 
 const capitalizeCities = pipe(
-  L.id<Users>(),
-  L.traverse(A.Traversable),
-  T.traverse(O.Traversable),
-  T.prop("addresses"),
-  T.traverse(A.Traversable),
-  T.prop("city"),
-  T.modify(capitalizeWords)
+  L.id<Users>(), // Focus on the Users type
+  L.traverse(A.Traversable), // Focus on each Option in the array
+  T.traverse(O.Traversable), // Focus on each Some in the array
+  T.prop("addresses"), // Focus on the addresses property
+  T.traverse(A.Traversable), // Focus on each address inside the array
+  T.prop("city"), // Focus on the city in each address
+  T.modify(capitalizeWords) // Modify each focal point with the capitalizeWords function
 );
 
 const users: Users = [
@@ -109,7 +109,70 @@ const users: Users = [
   }),
 ];
 
-const capitalizedUserCities = capitalizeCities(users);
+const capitalizedUserCities = capitalizeCities(users); // All city entries will be capitalized
+```
+
+A fairly cohesive validation, parsing, and schema generating library.
+
+```ts
+import * as J from "https://deno.land/x/hkts/json_schema.ts";
+import * as D from "https://deno.land/x/hkts/decoder.ts";
+import * as G from "https://deno.land/x/hkts/guard.ts";
+
+import * as S from "https://deno.land/x/hkts/schemable.ts";
+
+/**
+ * Define the Schemables
+ */
+
+const Bar = S.make((s) =>
+  s.type({
+    count: s.number(),
+  })
+);
+type Bar = S.TypeOf<typeof Bar>; // Derive type from implementation
+
+// Type definition is necessary for recursive types
+type Foo = {
+  foo: Foo[];
+  bar: Bar;
+};
+
+// This is the current *hack* to handle recursive types
+const Test: S.Schema<Foo> = S.make((s) => {
+  const Foo: any = s.lazy("Foo", () =>
+    s.type({
+      foo: s.array(Foo),
+      bar: s.lazy("Bar", () => Bar(s)),
+    })
+  );
+
+  return Foo;
+});
+
+/**
+ * Generate schema, decoder, and guards
+ */
+const schema = Test(J.Schemable);
+const decoder = Test(D.Schemable);
+const guard = Test(G.Schemable);
+
+/**
+ * Try running on good data
+ */
+const data: Foo = {
+  foo: [{ foo: [], bar: { count: 1 } }],
+  bar: { count: 2 },
+};
+const printableSchema = J.print(schema); // JsonType
+const decoded = decoder(data); // Right<Foo>
+const guarded = guard(data); // true
+
+console.log({
+  printableSchema,
+  decoded,
+  guarded,
+});
 ```
 
 ## Conventions
