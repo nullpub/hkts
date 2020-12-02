@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.39](https://github.com/nullpub/hkts/compare/v0.0.38...v0.0.39) (2020-12-02)
+
+
+### Features
+
+* revisit schemable and decoder ([f07af3e](https://github.com/nullpub/hkts/commit/f07af3e190aabe54dd271ba541126361cdd11e9e))
+
 ### [0.0.38](https://github.com/nullpub/hkts/compare/v0.0.37...v0.0.38) (2020-11-25)
 
 
