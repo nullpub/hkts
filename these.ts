@@ -1,8 +1,9 @@
 import type * as TC from "./type_classes.ts";
 import type { $, _0, _1, Fix } from "./types.ts";
 
-import * as D from "./derivations.ts";
 import * as E from "./either.ts";
+import { identity } from "./fns.ts";
+import { createMonad } from "./derivations.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -110,24 +111,32 @@ export const getSemigroup = <E, A>(
 export const getRightMonad = <E>(
   SE: TC.Semigroup<E>,
 ): TC.Monad<These<Fix<E>, _0>> =>
-  D.createMonad<These<Fix<E>, _0>>({
+  createMonad<These<Fix<E>, _0>>({
     of: right,
-    chain: (fatb, ta) => {
-      if (isLeft(ta)) {
-        return ta;
-      } else if (isRight(ta)) {
-        return fatb(ta.right);
-      }
+    map: (fab) =>
+      (ta) =>
+        isLeft(ta)
+          ? ta
+          : isBoth(ta)
+          ? both(ta.left, fab(ta.right))
+          : right(fab(ta.right)),
+    chain: (fatb) =>
+      (ta) => {
+        if (isLeft(ta)) {
+          return ta;
+        } else if (isRight(ta)) {
+          return fatb(ta.right);
+        }
 
-      const tb = fatb(ta.right);
+        const tb = fatb(ta.right);
 
-      if (isLeft(tb)) {
-        return left(SE.concat(ta.left, tb.left));
-      } else if (isRight(tb)) {
-        return both(ta.left, tb.right);
-      }
-      return both(SE.concat(ta.left, tb.left), tb.right);
-    },
+        if (isLeft(tb)) {
+          return left(SE.concat(ta.left, tb.left));
+        } else if (isRight(tb)) {
+          return both(ta.left, tb.right);
+        }
+        return both(SE.concat(ta.left, tb.left), tb.right);
+      },
   });
 
 /***************************************************************************************************
@@ -135,47 +144,49 @@ export const getRightMonad = <E>(
  **************************************************************************************************/
 
 export const Functor: TC.Functor<These<_0, _1>, 2> = {
-  map: (fab, ta) =>
-    isLeft(ta)
-      ? ta
-      : isRight(ta)
-      ? right(fab(ta.right))
-      : both(ta.left, fab(ta.right)),
+  map: (fab) =>
+    (ta) =>
+      isLeft(ta)
+        ? ta
+        : isRight(ta)
+        ? right(fab(ta.right))
+        : both(ta.left, fab(ta.right)),
 };
 
-export const Bifunctor = D.createBifunctor<These<_0, _1>>({
-  bimap: (fab, fcd, tac) =>
-    isLeft(tac)
-      ? left(fab(tac.left))
-      : isRight(tac)
-      ? right(fcd(tac.right))
-      : both(fab(tac.left), fcd(tac.right)),
-});
+export const Bifunctor: TC.Bifunctor<These<_0, _1>, 2> = {
+  bimap: (fab, fcd) =>
+    (tac) =>
+      isLeft(tac)
+        ? left(fab(tac.left))
+        : isRight(tac)
+        ? right(fcd(tac.right))
+        : both(fab(tac.left), fcd(tac.right)),
+  mapLeft: (fef) => Bifunctor.bimap(fef, identity),
+};
 
 export const Foldable: TC.Foldable<These<_0, _1>, 2> = {
-  reduce: (faba, a, tb) =>
-    isLeft(tb) ? a : isRight(tb) ? faba(a, tb.right) : faba(a, tb.right),
+  reduce: (faba, a) =>
+    (tb) =>
+      isLeft(tb) ? a : isRight(tb) ? faba(a, tb.right) : faba(a, tb.right),
 };
 
 export const Traversable: TC.Traversable<These<_0, _1>, 2> = {
   reduce: Foldable.reduce,
   map: Functor.map,
-  traverse: <U, A, B, E>(
-    F: TC.Applicative<U>,
-    faub: (a: A) => $<U, [B]>,
-    ta: These<E, A>,
-  ) =>
-    isLeft(ta)
-      ? F.of(ta)
-      : isRight(ta)
-      ? F.map(right, faub(ta.right))
-      : F.map((r) => both(ta.left, r), faub(ta.right)),
+  traverse: <U>(A: TC.Applicative<U>) =>
+    <E, A, B>(faub: (a: A) => $<U, [B]>) =>
+      (ta: These<E, A>) =>
+        isLeft(ta)
+          ? A.of(ta)
+          : isRight(ta)
+          ? A.map(right)(faub(ta.right))
+          : A.map((r) => both(ta.left, r))(faub(ta.right)),
 };
 
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
 
-export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
+export const { bimap } = Bifunctor;
 
-export const { bimap } = D.createPipeableBifunctor(Bifunctor);
+export const { reduce, traverse } = Traversable;

@@ -3,34 +3,8 @@
 import { assertEquals } from "https://deno.land/std@0.77.0/testing/asserts.ts";
 
 import type * as TC from "../type_classes.ts";
-import type { $, Predicate, UnknownFn } from "../types.ts";
-
-/***************************************************************************************************
- * @section Assert: Extended Equals (calls functions and awaits promises until reduced)
- **************************************************************************************************/
-
-const isFunction = (t: unknown): t is UnknownFn => typeof t === "function";
-
-const isPromise = (t: unknown): t is Promise<unknown> => t instanceof Promise;
-
-const evaluate = async (t: unknown): Promise<unknown> => {
-  let out: unknown = t;
-  while (isFunction(out) || isPromise(out)) {
-    if (isFunction(out)) {
-      out = out();
-    } else {
-      out = await out;
-    }
-  }
-  return out;
-};
-
-export const assertRunEquals = async <T>(
-  left: T,
-  right: T,
-  name: string,
-): Promise<void> =>
-  assertEquals(await evaluate(left), await evaluate(right), name);
+import type { $, Predicate } from "../types.ts";
+import { flow, identity, pipe } from "../fns.ts";
 
 /***************************************************************************************************
  * @section Assert: Setoid
@@ -39,38 +13,33 @@ export const assertRunEquals = async <T>(
 /**
  * Values a, b, and c must be equal, z must not be equal
  */
-export const assertSetoid = async <T>(
+export const assertSetoid = <T>(
   S: TC.Setoid<T>,
-  name: string,
   { a, b, c, z }: Record<"a" | "b" | "c" | "z", T>,
-): Promise<void> => {
+): void => {
   // DNE
-  await assertRunEquals(
+  assertEquals(
     S.equals(a, z),
     false,
-    `${name} : Setoid Unequaal`,
   );
 
   // Reflexivity: S.equals(a, a) === true
-  await assertRunEquals(
+  assertEquals(
     S.equals(a, a),
     true,
-    `${name} : Setoid Reflexivity`,
   );
 
   // Symmetry: S.equals(a, b) === S.equals(b, a)
-  await assertRunEquals(
+  assertEquals(
     S.equals(a, b),
     S.equals(b, a),
-    `${name} : Setoid Symmetry`,
   );
 
   // Transitivity: if S.equals(a, b) and S.equals(b, c), then S.equals(a, c)
-  await assertRunEquals(
+  assertEquals(
     S.equals(a, b) &&
       S.equals(b, c),
     S.equals(a, c),
-    `${name} : Setoid Transitivity`,
   );
 };
 
@@ -81,36 +50,32 @@ export const assertSetoid = async <T>(
 /**
  * Values must have a < b or b < a
  */
-export const assertOrd = async <T>(
+export const assertOrd = <T>(
   S: TC.Ord<T>,
-  name: string,
   { a, b }: Record<"a" | "b", T>,
-): Promise<void> => {
+): void => {
   // Totality: S.lte(a, b) or S.lte(b, a)
-  await assertRunEquals(
+  assertEquals(
     S.lte(a, b) || S.lte(b, a),
     true,
-    `${name} : Ord Totality`,
   );
 
   // Assert Setoid
-  await assertSetoid(S, name, { a, b: a, c: a, z: b });
+  assertSetoid(S, { a, b: a, c: a, z: b });
 };
 
 /***************************************************************************************************
  * @section Assert: Semigroup
  **************************************************************************************************/
 
-export const assertSemigroup = async <T>(
+export const assertSemigroup = <T>(
   S: TC.Semigroup<T>,
-  name: string,
   { a, b, c }: Record<"a" | "b" | "c", T>,
-): Promise<void> => {
+): void => {
   // Associativity: S.concat(S.concat(a, b), c) ≡ S.concat(a, S.concat(b, c))
-  await assertRunEquals(
+  assertEquals(
     S.concat(S.concat(a, b), c),
     S.concat(a, S.concat(b, c)),
-    `${name} : Semigroup Associativity`,
   );
 };
 
@@ -118,54 +83,48 @@ export const assertSemigroup = async <T>(
  * @section Assert: Monoid
  **************************************************************************************************/
 
-export const assertMonoid = async <T>(
+export const assertMonoid = <T>(
   M: TC.Monoid<T>,
-  name: string,
   { a, b, c }: Record<"a" | "b" | "c", T>,
-): Promise<void> => {
+): void => {
   // Right identity: M.concat(a, M.empty()) ≡ a
-  await assertRunEquals(
+  assertEquals(
     M.concat(a, M.empty()),
     a,
-    `${name} : Monoid Right Identity`,
   );
 
   // Left identity: M.concat(M.empty(), a) ≡ a
-  await assertRunEquals(
+  assertEquals(
     M.concat(M.empty(), a),
     a,
-    `${name} : Monoid Left Identity`,
   );
 
   // Assert Semigroup
-  await assertSemigroup(M, name, { a, b, c });
+  assertSemigroup(M, { a, b, c });
 };
 
 /***************************************************************************************************
  * @section Assert: Group
  **************************************************************************************************/
 
-export const assertGroup = async <T>(
+export const assertGroup = <T>(
   G: TC.Group<T>,
-  name: string,
   { a, b, c }: Record<"a" | "b" | "c", T>,
-): Promise<void> => {
+): void => {
   // Right inverse: G.concat(a, G.invert(a)) ≡ G.empty()
-  await assertRunEquals(
+  assertEquals(
     G.concat(a, G.invert(a)),
     G.empty(),
-    `${name} : Group Right Inverse`,
   );
 
   // Left inverse: G.concat(G.invert(a), a) ≡ G.empty()
-  await assertRunEquals(
+  assertEquals(
     G.concat(G.invert(a), a),
     G.empty(),
-    `${name} : Group Left Inverse`,
   );
 
   // Assert Monoid Laws
-  await assertMonoid(G, name, { a, b, c });
+  assertMonoid(G, { a, b, c });
 };
 
 /***************************************************************************************************
@@ -173,16 +132,14 @@ export const assertGroup = async <T>(
  * @todo Extend Types
  **************************************************************************************************/
 
-export const assertSemigroupoid = async <T>(
+export const assertSemigroupoid = <T>(
   S: TC.Semigroupoid<T>,
-  name: string,
   { a, b, c }: Record<"a" | "b" | "c", $<T, [any, any]>>,
-): Promise<void> => {
+): void => {
   // Associativity: S.compose(S.compose(a, b), c) ≡ S.compose(a, S.compose(b, c))
-  await assertRunEquals(
-    S.compose(S.compose(a, b), c),
-    S.compose(a, S.compose(b, c)),
-    `${name} : Semigroupoid Associativity`,
+  assertEquals(
+    S.compose(c)(S.compose(b)(a)),
+    S.compose(S.compose(c)(b))(a),
   );
 };
 
@@ -191,27 +148,24 @@ export const assertSemigroupoid = async <T>(
  * @todo Extend Types
  **************************************************************************************************/
 
-export const assertCategory = async <T>(
+export const assertCategory = <T>(
   C: TC.Category<T>,
-  name: string,
   { a, b, c }: Record<"a" | "b" | "c", $<T, [any, any]>>,
-): Promise<void> => {
+): void => {
   // Right identity: M.compose(a, M.id()) ≡ a
-  await assertRunEquals(
-    C.compose(a, C.id()),
+  assertEquals(
+    C.compose(C.id())(a),
     a,
-    `${name} : Category Right Identity`,
   );
 
   // Left identity: M.compose(M.id(), a) ≡ a
-  await assertRunEquals(
-    C.compose(C.id(), a),
+  assertEquals(
+    C.compose(a)(C.id()),
     a,
-    `${name} : Category Left Identity`,
   );
 
   // Assert Semigroupoid
-  await assertSemigroupoid(C, name, { a, b, c });
+  assertSemigroupoid(C, { a, b, c });
 };
 
 /***************************************************************************************************
@@ -219,77 +173,69 @@ export const assertCategory = async <T>(
  **************************************************************************************************/
 
 type AssertFilterable = {
-  <T, L extends 1, A>(
+  <A, T, L extends TC.LS = 1>(
     M: TC.Filterable<T, L>,
-    name: string,
     values: {
       a: $<T, [A]>;
       b: $<T, [A]>;
       f: Predicate<A>;
       g: Predicate<A>;
     },
-  ): Promise<void>;
-  <T, L extends 2, A>(
+  ): void;
+  <E, A, T, L extends TC.LS = 2>(
     M: TC.Filterable<T, L>,
-    name: string,
     values: {
-      a: $<T, [any, A]>;
-      b: $<T, [any, A]>;
+      a: $<T, [E, A]>;
+      b: $<T, [E, A]>;
       f: Predicate<A>;
       g: Predicate<A>;
     },
-  ): Promise<void>;
-  <T, L extends 3, A>(
+  ): void;
+  <R, E, A, T, L extends TC.LS = 3>(
     M: TC.Filterable<T, L>,
-    name: string,
     values: {
-      a: $<T, [any, any, A]>;
-      b: $<T, [any, any, A]>;
+      a: $<T, [R, E, A]>;
+      b: $<T, [R, E, A]>;
       f: Predicate<A>;
       g: Predicate<A>;
     },
-  ): Promise<void>;
-  <T, L extends 4, A>(
+  ): void;
+  <S, R, E, A, T, L extends TC.LS = 4>(
     M: TC.Filterable<T, L>,
-    name: string,
     values: {
-      a: $<T, [any, any, any, A]>;
-      b: $<T, [any, any, any, A]>;
+      a: $<T, [S, R, E, A]>;
+      b: $<T, [S, R, E, A]>;
       f: Predicate<A>;
       g: Predicate<A>;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertFilterable: AssertFilterable = async <T, A>(
+export const assertFilterable: AssertFilterable = <T, A>(
   F: TC.Filterable<T>,
-  name: string,
   { a, b, f, g }: {
     a: $<T, [A]>;
     b: $<T, [A]>;
     f: Predicate<A>;
     g: Predicate<A>;
   },
-): Promise<void> => {
+): void => {
   // Distributivity: F.filter(x => f(x) && g(x), a) ≡ F.filter(g, F.filter(f, a))
-  await assertRunEquals(
-    F.filter((n) => f(n) && g(n), a),
-    F.filter(g, F.filter(f, a)),
-    `${name} : Filterable Distributivity`,
+  assertEquals(
+    pipe(a, F.filter((n: A) => f(n) && g(n))),
+    pipe(a, F.filter(f), F.filter(g)),
   );
 
   // Identity: F.filter(x => true, a) ≡ a
-  await assertRunEquals(
-    F.filter((n) => true, a),
+  assertEquals(
+    F.filter((n) => true)(a),
     a,
-    `${name} : Filterable Identity`,
   );
 
   // Annihilation: F.filter(x => false, a) ≡ F.filter(x => false, b)
-  await assertRunEquals(
-    F.filter((n) => false, a),
-    F.filter((n) => false, b),
-    `${name} : Filterable Annihilation`,
+  assertEquals(
+    F.filter((n) => false)(a),
+    F.filter((n) => false)(b),
   );
 };
 
@@ -298,68 +244,58 @@ export const assertFilterable: AssertFilterable = async <T, A>(
  **************************************************************************************************/
 
 type AssertFunctor = {
-  <T, L extends 1, A, B, C>(
+  <A, B, C, T, L extends TC.LS = 1>(
     M: TC.Functor<T, L>,
-    name: string,
     values: {
       ta: $<T, [A]>;
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
-  <T, L extends 2, E, A, B, C>(
+  ): void;
+  <E, A, B, C, T, L extends TC.LS = 2>(
     M: TC.Functor<T, L>,
-    name: string,
     values: {
       ta: $<T, [E, A]>;
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, E, A, B, C>(
+  ): void;
+  <R, E, A, B, C, T, L extends TC.LS = 3>(
     M: TC.Functor<T, L>,
-    name: string,
     values: {
       ta: $<T, [R, E, A]>;
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, E, A, B, C>(
+  ): void;
+  <S, R, E, A, B, C, T, L extends TC.LS = 4>(
     M: TC.Functor<T, L>,
-    name: string,
     values: {
       ta: $<T, [S, R, E, A]>;
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertFunctor: AssertFunctor = async <T, A, B, C>(
+export const assertFunctor: AssertFunctor = <T, A, B, C>(
   F: TC.Functor<T>,
-  name: string,
   { ta, fab, fbc }: {
     ta: $<T, [A]>;
     fab: (a: A) => B;
     fbc: (b: B) => C;
   },
-): Promise<void> => {
+): void => {
   // Identity: F.map(x => x, a) ≡ a
-  await assertRunEquals(
-    F.map((x) => x, ta),
+  assertEquals(
+    F.map((x) => x)(ta),
     ta,
-    `${name} : Functor Identity`,
   );
 
   // Composition: F.map(x => f(g(x)), a) ≡ F.map(f, F.map(g, a))
-  await assertRunEquals(
-    F.map(
-      (a) => fbc(fab(a)),
-      ta,
-    ),
-    F.map(fbc, F.map(fab, ta)),
-    `${name} : Functor Composition`,
+  assertEquals(
+    pipe(ta, F.map((a) => fbc(fab(a)))),
+    pipe(ta, F.map(fab), F.map(fbc)),
   );
 };
 
@@ -368,9 +304,8 @@ export const assertFunctor: AssertFunctor = async <T, A, B, C>(
  **************************************************************************************************/
 
 type AssertBifunctor = {
-  <T, L extends 1, A, B, C, X, Y, Z>(
+  <A, B, C, X, Y, Z, T, L extends TC.LS = 1>(
     M: TC.Bifunctor<T, L>,
-    name: string,
     values: {
       tax: $<T, [A, X]>;
       fab: (a: A) => B;
@@ -378,10 +313,9 @@ type AssertBifunctor = {
       fxy: (x: X) => Y;
       fyz: (y: Y) => Z;
     },
-  ): Promise<void>;
-  <T, L extends 2, A, B, C, X, Y, Z>(
+  ): void;
+  <A, B, C, X, Y, Z, T, L extends TC.LS = 2>(
     M: TC.Bifunctor<T, L>,
-    name: string,
     values: {
       tax: $<T, [A, X]>;
       fab: (a: A) => B;
@@ -389,10 +323,9 @@ type AssertBifunctor = {
       fxy: (x: X) => Y;
       fyz: (y: Y) => Z;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, A, B, C, X, Y, Z>(
+  ): void;
+  <R, A, B, C, X, Y, Z, T, L extends TC.LS = 3>(
     M: TC.Bifunctor<T, L>,
-    name: string,
     values: {
       tax: $<T, [R, A, X]>;
       fab: (a: A) => B;
@@ -400,10 +333,9 @@ type AssertBifunctor = {
       fxy: (x: X) => Y;
       fyz: (y: Y) => Z;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, A, B, C, X, Y, Z>(
+  ): void;
+  <S, R, A, B, C, X, Y, Z, T, L extends TC.LS = 4>(
     M: TC.Bifunctor<T, L>,
-    name: string,
     values: {
       tax: $<T, [S, R, A, X]>;
       fab: (a: A) => B;
@@ -411,12 +343,11 @@ type AssertBifunctor = {
       fxy: (x: X) => Y;
       fyz: (y: Y) => Z;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertBifunctor: AssertBifunctor = async <T, A, B, C, X, Y, Z>(
+export const assertBifunctor: AssertBifunctor = <T, A, B, C, X, Y, Z>(
   B: TC.Bifunctor<T>,
-  name: string,
   { tax, fab, fbc, fxy, fyz }: {
     tax: $<T, [A, X]>;
     fab: (a: A) => B;
@@ -424,23 +355,23 @@ export const assertBifunctor: AssertBifunctor = async <T, A, B, C, X, Y, Z>(
     fxy: (x: X) => Y;
     fyz: (y: Y) => Z;
   },
-): Promise<void> => {
+): void => {
   // Identity: B.bimap(x => x, x => x, a) ≡ a
-  await assertRunEquals(
-    B.bimap((x) => x, (x) => x, tax),
+  assertEquals(
+    B.bimap((x) => x, (x) => x)(tax),
     tax,
-    `${name} : Bifunctor Identity`,
   );
 
   // Composition: B.bimap(x => f(g(x)), x => h(i(x)), a) ≡ B.bimap(f, h, B.bimap(g, i, a))
-  await assertRunEquals(
-    B.bimap(
-      (a) => fbc(fab(a)),
-      (x) => fyz(fxy(x)),
+  assertEquals(
+    pipe(
       tax,
+      B.bimap(
+        (a) => fbc(fab(a)),
+        (x) => fyz(fxy(x)),
+      ),
     ),
-    B.bimap(fbc, fyz, B.bimap(fab, fxy, tax)),
-    `${name} : Bifunctor Composition`,
+    pipe(tax, B.bimap(fab, fxy), B.bimap(fbc, fyz)),
   );
 };
 
@@ -449,68 +380,58 @@ export const assertBifunctor: AssertBifunctor = async <T, A, B, C, X, Y, Z>(
  **************************************************************************************************/
 
 type AssertContravariant = {
-  <T, L extends 1, A, B, C>(
+  <A, B, C, T, L extends TC.LS = 1>(
     M: TC.Contravariant<T, L>,
-    name: string,
     values: {
       tc: $<T, [C]>;
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
-  <T, L extends 2, E, A, B, C>(
+  ): void;
+  <E, A, B, C, T, L extends TC.LS = 2>(
     M: TC.Contravariant<T, L>,
-    name: string,
     values: {
       tc: $<T, [E, C]>;
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, E, A, B, C>(
+  ): void;
+  <R, E, A, B, C, T, L extends TC.LS = 3>(
     M: TC.Contravariant<T, L>,
-    name: string,
     values: {
       tc: $<T, [R, E, C]>;
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, E, A, B, C>(
+  ): void;
+  <S, R, E, A, B, C, T, L extends TC.LS = 4>(
     M: TC.Contravariant<T, L>,
-    name: string,
     values: {
       tc: $<T, [S, R, E, C]>;
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertContravariant: AssertContravariant = async <T, A, B, C>(
+export const assertContravariant: AssertContravariant = <T, A, B, C>(
   C: TC.Contravariant<T>,
-  name: string,
   { tc, fab, fbc }: {
     tc: $<T, [C]>;
     fab: (a: A) => B;
     fbc: (b: B) => C;
   },
-): Promise<void> => {
+): void => {
   // Identity: F.contramap(x => x, a) ≡ a
-  await assertRunEquals(
-    C.contramap((x) => x, tc),
+  assertEquals(
+    C.contramap((x) => x)(tc),
     tc,
-    `${name} : Contravariant Identity`,
   );
 
   // Composition: F.contramap(x => f(g(x)), a) ≡ F.contramap(g, F.contramap(f, a))
-  await assertRunEquals(
-    C.contramap(
-      (a: A) => fbc(fab(a)),
-      tc,
-    ),
-    C.contramap(fab, C.contramap(fbc, tc)),
-    `${name} : Contravariant Composition`,
+  assertEquals(
+    pipe(tc, C.contramap((a: A) => fbc(fab(a)))),
+    pipe(tc, C.contramap(fbc), C.contramap(fab)),
   );
 };
 
@@ -519,9 +440,8 @@ export const assertContravariant: AssertContravariant = async <T, A, B, C>(
  **************************************************************************************************/
 
 type AssertProfunctor = {
-  <T, L extends 1, A, B, C, X, Y, Z>(
+  <A, B, C, X, Y, Z, T, L extends TC.LS = 1>(
     M: TC.Profunctor<T, L>,
-    name: string,
     values: {
       tcx: $<T, [C, X]>;
       fab: (a: A) => B;
@@ -529,10 +449,9 @@ type AssertProfunctor = {
       fxy: (x: X) => Y;
       fyz: (y: Y) => Z;
     },
-  ): Promise<void>;
-  <T, L extends 2, A, B, C, X, Y, Z>(
+  ): void;
+  <A, B, C, X, Y, Z, T, L extends TC.LS = 2>(
     M: TC.Profunctor<T, L>,
-    name: string,
     values: {
       tcx: $<T, [C, X]>;
       fab: (a: A) => B;
@@ -540,10 +459,9 @@ type AssertProfunctor = {
       fxy: (x: X) => Y;
       fyz: (y: Y) => Z;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, A, B, C, X, Y, Z>(
+  ): void;
+  <R, A, B, C, X, Y, Z, T, L extends TC.LS = 3>(
     M: TC.Profunctor<T, L>,
-    name: string,
     values: {
       tcx: $<T, [R, C, X]>;
       fab: (a: A) => B;
@@ -551,10 +469,9 @@ type AssertProfunctor = {
       fxy: (x: X) => Y;
       fyz: (y: Y) => Z;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, A, B, C, X, Y, Z>(
+  ): void;
+  <S, R, A, B, C, X, Y, Z, T, L extends TC.LS = 4>(
     M: TC.Profunctor<T, L>,
-    name: string,
     values: {
       tcx: $<T, [S, R, C, X]>;
       fab: (a: A) => B;
@@ -562,12 +479,11 @@ type AssertProfunctor = {
       fxy: (x: X) => Y;
       fyz: (y: Y) => Z;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertProfunctor: AssertProfunctor = async <T, A, B, C, X, Y, Z>(
+export const assertProfunctor: AssertProfunctor = <T, A, B, C, X, Y, Z>(
   P: TC.Profunctor<T>,
-  name: string,
   { tcx, fab, fbc, fxy, fyz }: {
     tcx: $<T, [C, X]>;
     fab: (a: A) => B;
@@ -575,23 +491,23 @@ export const assertProfunctor: AssertProfunctor = async <T, A, B, C, X, Y, Z>(
     fxy: (x: X) => Y;
     fyz: (y: Y) => Z;
   },
-): Promise<void> => {
+): void => {
   // Identity: P.promap(x => x, x => x, a) ≡ a
-  await assertRunEquals(
-    P.promap((x) => x, (x) => x, tcx),
+  assertEquals(
+    pipe(tcx, P.promap((x) => x, (x) => x)),
     tcx,
-    `${name} : Profunctor Identity`,
   );
 
   // Composition: P.promap(x => f(g(x)), x => h(i(x)), a) ≡ P.promap(g, h, P.promap(f, i, a))
-  await assertRunEquals(
-    P.promap(
-      (a: A) => fbc(fab(a)),
-      (x) => fyz(fxy(x)),
+  assertEquals(
+    pipe(
       tcx,
+      P.promap(
+        (a: A) => fbc(fab(a)),
+        (x) => fyz(fxy(x)),
+      ),
     ),
-    P.promap(fab, fyz, P.promap(fbc, fxy, tcx)),
-    `${name} : Profunctor Composition`,
+    pipe(tcx, P.promap(fbc, fxy), P.promap(fab, fyz)),
   );
 };
 
@@ -600,9 +516,8 @@ export const assertProfunctor: AssertProfunctor = async <T, A, B, C, X, Y, Z>(
  **************************************************************************************************/
 
 type AssertApply = {
-  <T, L extends 1, A, B, C>(
+  <A, B, C, T, L extends TC.LS = 1>(
     M: TC.Apply<T, L>,
-    name: string,
     values: {
       ta: $<T, [A]>;
       fab: (a: A) => B;
@@ -610,10 +525,9 @@ type AssertApply = {
       tfab: $<T, [(a: A) => B]>;
       tfbc: $<T, [(b: B) => C]>;
     },
-  ): Promise<void>;
-  <T, L extends 2, E, A, B, C>(
+  ): void;
+  <E, A, B, C, T, L extends TC.LS = 2>(
     M: TC.Apply<T, L>,
-    name: string,
     values: {
       ta: $<T, [E, A]>;
       fab: (a: A) => B;
@@ -621,10 +535,9 @@ type AssertApply = {
       tfab: $<T, [E, (a: A) => B]>;
       tfbc: $<T, [E, (b: B) => C]>;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, E, A, B, C>(
+  ): void;
+  <R, E, A, B, C, T, L extends TC.LS = 3>(
     M: TC.Apply<T, L>,
-    name: string,
     values: {
       ta: $<T, [R, E, A]>;
       fab: (a: A) => B;
@@ -632,10 +545,9 @@ type AssertApply = {
       tfab: $<T, [R, E, (a: A) => B]>;
       tfbc: $<T, [R, E, (b: B) => C]>;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, E, A, B, C>(
+  ): void;
+  <S, R, E, A, B, C, T, L extends TC.LS = 4>(
     M: TC.Apply<T, L>,
-    name: string,
     values: {
       ta: $<T, [S, R, E, A]>;
       fab: (a: A) => B;
@@ -643,12 +555,11 @@ type AssertApply = {
       tfab: $<T, [S, R, E, (a: A) => B]>;
       tfbc: $<T, [S, R, E, (b: B) => C]>;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertApply: AssertApply = async <T, A, B, C>(
+export const assertApply: AssertApply = <T, A, B, C>(
   A: TC.Apply<T>,
-  name: string,
   { ta, fab, fbc, tfab, tfbc }: {
     ta: $<T, [A]>;
     fab: (a: A) => B;
@@ -656,22 +567,28 @@ export const assertApply: AssertApply = async <T, A, B, C>(
     tfab: $<T, [(a: A) => B]>;
     tfbc: $<T, [(b: B) => C]>;
   },
-): Promise<void> => {
+): void => {
   // Composition: A.ap(A.ap(A.map(f => g => x => f(g(x)), a), u), v) ≡ A.ap(a, A.ap(u, v))
-  await assertRunEquals(
-    A.ap(
-      A.ap(
-        A.map((f: (b: B) => C) => (g: (a: A) => B) => (x: A) => f(g(x)), tfbc),
-        tfab,
-      ),
+  assertEquals(
+    pipe(
       ta,
+      A.ap(
+        pipe(
+          tfab,
+          A.ap(
+            pipe(
+              tfbc,
+              A.map((f: (b: B) => C) => (g: (a: A) => B) => (x: A) => f(g(x))),
+            ),
+          ),
+        ),
+      ),
     ),
-    A.ap(tfbc, A.ap(tfab, ta)),
-    `${name} : Apply Composition`,
+    pipe(ta, A.ap(tfab), A.ap(tfbc)),
   );
 
   // Assert Functor
-  await assertFunctor(A, name, { ta, fab, fbc });
+  assertFunctor(A, { ta, fab, fbc });
 };
 
 /***************************************************************************************************
@@ -679,9 +596,8 @@ export const assertApply: AssertApply = async <T, A, B, C>(
  **************************************************************************************************/
 
 type AssertApplicative = {
-  <T, L extends 1, A, B, C>(
+  <A, B, C, T, L extends TC.LS = 1>(
     A: TC.Applicative<T, L>,
-    name: string,
     values: {
       a: A;
       ta: $<T, [A]>;
@@ -690,10 +606,9 @@ type AssertApplicative = {
       tfab: $<T, [(a: A) => B]>;
       tfbc: $<T, [(b: B) => C]>;
     },
-  ): Promise<void>;
-  <T, L extends 2, E, A, B, C>(
+  ): void;
+  <E, A, B, C, T, L extends TC.LS = 2>(
     A: TC.Applicative<T, L>,
-    name: string,
     values: {
       a: A;
       ta: $<T, [E, A]>;
@@ -702,10 +617,9 @@ type AssertApplicative = {
       tfab: $<T, [E, (a: A) => B]>;
       tfbc: $<T, [E, (b: B) => C]>;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, E, A, B, C>(
+  ): void;
+  <R, E, A, B, C, T, L extends TC.LS = 3>(
     A: TC.Applicative<T, L>,
-    name: string,
     values: {
       a: A;
       ta: $<T, [R, E, A]>;
@@ -714,10 +628,9 @@ type AssertApplicative = {
       tfab: $<T, [R, E, (a: A) => B]>;
       tfbc: $<T, [R, E, (b: B) => C]>;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, E, A, B, C>(
+  ): void;
+  <S, R, E, A, B, C, T, L extends TC.LS = 4>(
     A: TC.Applicative<T, L>,
-    name: string,
     values: {
       a: A;
       ta: $<T, [S, R, E, A]>;
@@ -726,12 +639,11 @@ type AssertApplicative = {
       tfab: $<T, [S, R, E, (a: A) => B]>;
       tfbc: $<T, [S, R, E, (b: B) => C]>;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertApplicative: AssertApplicative = async <T, A, B, C>(
+export const assertApplicative: AssertApplicative = <T, A, B, C>(
   A: TC.Applicative<T>,
-  name: string,
   { a, ta, fab, fbc, tfab, tfbc }: {
     a: A;
     ta: $<T, [A]>;
@@ -740,30 +652,27 @@ export const assertApplicative: AssertApplicative = async <T, A, B, C>(
     tfab: $<T, [(a: A) => B]>;
     tfbc: $<T, [(b: B) => C]>;
   },
-): Promise<void> => {
+): void => {
   // Identity: A.ap(A.of(x => x), v) ≡ v
-  await assertRunEquals(
-    A.ap(A.of((x: unknown) => x), ta),
+  assertEquals(
+    pipe(ta, A.ap(A.of((x) => x))),
     ta,
-    `${name} : Applicative Identity`,
   );
 
   // Homomorphism: A.ap(A.of(f), A.of(x)) ≡ A.of(f(x))
-  await assertRunEquals(
-    A.ap(A.of(fab), A.of(a)),
+  assertEquals(
+    pipe(A.of(a), A.ap(A.of(fab))),
     A.of(fab(a)),
-    `${name} : Applicative Homomorphism`,
   );
 
   // Interchange: A.ap(u, A.of(y)) ≡ A.ap(A.of(f => f(y)), u)
-  await assertRunEquals(
-    A.ap(tfab, A.of(a)),
-    A.ap(A.of((f: typeof fab) => f(a)), tfab),
-    `${name} : Applicative Interchange`,
+  assertEquals(
+    pipe(A.of(a), A.ap(tfab)),
+    pipe(tfab, A.ap(A.of((f) => f(a)))),
   );
 
   // Assert Apply
-  await assertApply(A, name, { ta, fab, fbc, tfab, tfbc });
+  assertApply(A, { ta, fab, fbc, tfab, tfbc });
 };
 
 /***************************************************************************************************
@@ -771,9 +680,8 @@ export const assertApplicative: AssertApplicative = async <T, A, B, C>(
  **************************************************************************************************/
 
 type AssertAlt = {
-  <T, L extends 1, A, B, C>(
+  <A, B, C, T, L extends TC.LS = 1>(
     A: TC.Alt<T, L>,
-    name: string,
     values: {
       ta: $<T, [A]>;
       tb: $<T, [A]>;
@@ -781,10 +689,9 @@ type AssertAlt = {
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
-  <T, L extends 2, E, A, B, C>(
+  ): void;
+  <E, A, B, C, T, L extends TC.LS = 2>(
     A: TC.Alt<T, L>,
-    name: string,
     values: {
       ta: $<T, [E, A]>;
       tb: $<T, [E, A]>;
@@ -792,10 +699,9 @@ type AssertAlt = {
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, E, A, B, C>(
+  ): void;
+  <R, E, A, B, C, T, L extends TC.LS = 3>(
     A: TC.Alt<T, L>,
-    name: string,
     values: {
       ta: $<T, [R, E, A]>;
       tb: $<T, [R, E, A]>;
@@ -803,10 +709,9 @@ type AssertAlt = {
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, E, A, B, C>(
+  ): void;
+  <S, R, E, A, B, C, T, L extends TC.LS = 4>(
     A: TC.Alt<T, L>,
-    name: string,
     values: {
       ta: $<T, [S, R, E, A]>;
       tb: $<T, [S, R, E, A]>;
@@ -814,12 +719,11 @@ type AssertAlt = {
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertAlt: AssertAlt = async <T, A, B, C>(
+export const assertAlt: AssertAlt = <T, A, B, C>(
   A: TC.Alt<T>,
-  name: string,
   { ta, tb, tc, fab, fbc }: {
     ta: $<T, [A]>;
     tb: $<T, [A]>;
@@ -827,23 +731,21 @@ export const assertAlt: AssertAlt = async <T, A, B, C>(
     fab: (a: A) => B;
     fbc: (b: B) => C;
   },
-): Promise<void> => {
+): void => {
   // Associativity: A.alt(A.alt(a, b), c) ≡ A.alt(a, A.alt(b, c))
-  await assertRunEquals(
-    A.alt(A.alt(ta, tb), tc),
-    A.alt(ta, A.alt(tb, tc)),
-    `${name} : Alt Associativity`,
+  assertEquals(
+    A.alt(A.alt(tc)(tb))(ta),
+    pipe(ta, A.alt(tb), A.alt(tc)),
   );
 
   // Distributivity: A.map(f, A.alt(a, b)) ≡ A.alt(A.map(f, a), A.map(f, b))
-  await assertRunEquals(
-    A.map(fab, A.alt(ta, tb)),
-    A.alt(A.map(fab, ta), A.map(fab, tb)),
-    `${name} : Alt Distributivity`,
+  assertEquals(
+    pipe(ta, A.alt(tb), A.map(fab)),
+    pipe(ta, A.map(fab), A.alt(pipe(tb, A.map(fab)))),
   );
 
   // Assert Functor
-  await assertFunctor(A, name, { ta, fab, fbc });
+  assertFunctor(A, { ta, fab, fbc });
 };
 
 /***************************************************************************************************
@@ -851,9 +753,8 @@ export const assertAlt: AssertAlt = async <T, A, B, C>(
  **************************************************************************************************/
 
 type AssertPlus = {
-  <T, L extends 1, A, B, C>(
+  <A, B, C, T, L extends TC.LS = 1>(
     A: TC.Plus<T, L>,
-    name: string,
     values: {
       ta: $<T, [A]>;
       tb: $<T, [A]>;
@@ -861,10 +762,9 @@ type AssertPlus = {
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
-  <T, L extends 2, E, A, B, C>(
+  ): void;
+  <E, A, B, C, T, L extends TC.LS = 2>(
     A: TC.Plus<T, L>,
-    name: string,
     values: {
       ta: $<T, [E, A]>;
       tb: $<T, [E, A]>;
@@ -872,10 +772,9 @@ type AssertPlus = {
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, E, A, B, C>(
+  ): void;
+  <R, E, A, B, C, T, L extends TC.LS = 3>(
     A: TC.Plus<T, L>,
-    name: string,
     values: {
       ta: $<T, [R, E, A]>;
       tb: $<T, [R, E, A]>;
@@ -883,10 +782,9 @@ type AssertPlus = {
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, E, A, B, C>(
+  ): void;
+  <S, R, E, A, B, C, T, L extends TC.LS = 4>(
     A: TC.Plus<T, L>,
-    name: string,
     values: {
       ta: $<T, [S, R, E, A]>;
       tb: $<T, [S, R, E, A]>;
@@ -894,12 +792,11 @@ type AssertPlus = {
       fab: (a: A) => B;
       fbc: (b: B) => C;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertPlus: AssertPlus = async <T, A, B, C>(
+export const assertPlus: AssertPlus = <T, A, B, C>(
   P: TC.Plus<T>,
-  name: string,
   { ta, tb, tc, fab, fbc }: {
     ta: $<T, [A]>;
     tb: $<T, [A]>;
@@ -907,30 +804,29 @@ export const assertPlus: AssertPlus = async <T, A, B, C>(
     fab: (a: A) => B;
     fbc: (b: B) => C;
   },
-): Promise<void> => {
+): void => {
+  const zero = P.zero<A>();
+
   // Right identity: P.alt(a, P.zero()) ≡ a
-  await assertRunEquals(
-    P.alt(ta, P.zero()),
+  assertEquals(
+    pipe(ta, P.alt(zero)),
     ta,
-    `${name} : Plus Right Identity`,
   );
 
-  // Left identity: P.alt(P.zero(), a) ≡ a
-  await assertRunEquals(
-    P.alt(P.zero(), ta),
+  // Left identity: P.alt(zero, a) ≡ a
+  assertEquals(
+    pipe(zero, P.alt(ta)),
     ta,
-    `${name} : Plus Left Identity`,
   );
 
-  // Annihilation: P.map(f, P.zero()) ≡ P.zero()
-  await assertRunEquals(
-    P.map(fab, P.zero()),
-    P.zero(),
-    `${name} : Plus Annihilation`,
+  // Annihilation: P.map(f, zero) ≡ zero
+  assertEquals(
+    pipe(zero, P.map(fab)),
+    zero,
   );
 
   // Assert Alt
-  await assertAlt(P, name, { ta, tb, tc, fab, fbc });
+  assertAlt(P, { ta, tb, tc, fab, fbc });
 };
 
 /***************************************************************************************************
@@ -938,9 +834,8 @@ export const assertPlus: AssertPlus = async <T, A, B, C>(
  **************************************************************************************************/
 
 type AssertAlternative = {
-  <T, L extends 1, A, B, C>(
+  <A, B, C, T, L extends TC.LS = 1>(
     A: TC.Alternative<T, L>,
-    name: string,
     values: {
       a: A;
       ta: $<T, [A]>;
@@ -951,10 +846,9 @@ type AssertAlternative = {
       tfab: $<T, [(a: A) => B]>;
       tfbc: $<T, [(b: B) => C]>;
     },
-  ): Promise<void>;
-  <T, L extends 2, E, A, B, C>(
+  ): void;
+  <E, A, B, C, T, L extends TC.LS = 2>(
     A: TC.Alternative<T, L>,
-    name: string,
     values: {
       a: A;
       ta: $<T, [E, A]>;
@@ -965,10 +859,9 @@ type AssertAlternative = {
       tfab: $<T, [E, (a: A) => B]>;
       tfbc: $<T, [E, (b: B) => C]>;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, E, A, B, C>(
+  ): void;
+  <R, E, A, B, C, T, L extends TC.LS = 3>(
     A: TC.Alternative<T, L>,
-    name: string,
     values: {
       a: A;
       ta: $<T, [R, E, A]>;
@@ -979,10 +872,9 @@ type AssertAlternative = {
       tfab: $<T, [R, E, (a: A) => B]>;
       tfbc: $<T, [R, E, (b: B) => C]>;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, E, A, B, C>(
+  ): void;
+  <S, R, E, A, B, C, T, L extends TC.LS = 4>(
     A: TC.Alternative<T, L>,
-    name: string,
     values: {
       a: A;
       ta: $<T, [S, R, E, A]>;
@@ -993,12 +885,11 @@ type AssertAlternative = {
       tfab: $<T, [S, R, E, (a: A) => B]>;
       tfbc: $<T, [S, R, E, (b: B) => C]>;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertAlternative: AssertAlternative = async <T, A, B, C>(
+export const assertAlternative: AssertAlternative = <T, A, B, C>(
   A: TC.Alternative<T>,
-  name: string,
   { a, ta, tb, tc, fab, fbc, tfab, tfbc }: {
     a: A;
     ta: $<T, [A]>;
@@ -1009,26 +900,24 @@ export const assertAlternative: AssertAlternative = async <T, A, B, C>(
     tfab: $<T, [(a: A) => B]>;
     tfbc: $<T, [(b: B) => C]>;
   },
-): Promise<void> => {
+): void => {
   // Distributivity: A.ap(A.alt(a, b), c) ≡ A.alt(A.ap(a, c), A.ap(b, c))
-  await assertRunEquals(
-    A.ap(A.alt(A.of(fab), tfab), ta),
-    A.alt(A.ap(A.of(fab), ta), A.ap(tfab, ta)),
-    `${name} : Alternative Distributivity`,
+  assertEquals(
+    pipe(ta, A.ap(pipe(tfab, A.alt(A.of(fab))))),
+    pipe(ta, A.ap(tfab), A.alt(pipe(ta, A.ap(A.of(fab))))),
   );
 
   // Annihilation: A.ap(A.zero(), a) ≡ A.zero()
-  await assertRunEquals(
-    A.ap(A.zero<(a: A) => B>(), ta),
+  assertEquals(
+    pipe(ta, A.ap(A.zero<(a: A) => B>())),
     A.zero(),
-    `${name} : Alternative Annihilation`,
   );
 
   // Assert Applicative
-  await assertApplicative(A, name, { a, ta, fab, fbc, tfab, tfbc });
+  assertApplicative(A, { a, ta, fab, fbc, tfab, tfbc });
 
   // Assert Plus
-  await assertPlus(A, name, { ta, tb, tc, fab, fbc });
+  assertPlus(A, { ta, tb, tc, fab, fbc });
 };
 
 /***************************************************************************************************
@@ -1036,9 +925,8 @@ export const assertAlternative: AssertAlternative = async <T, A, B, C>(
  **************************************************************************************************/
 
 type AssertChain = {
-  <T, L extends 1, A, B, C>(
+  <A, B, C, T, L extends TC.LS = 1>(
     A: TC.Chain<T, L>,
-    name: string,
     values: {
       ta: $<T, [A]>;
       fab: (a: A) => B;
@@ -1048,10 +936,9 @@ type AssertChain = {
       fatb: (a: A) => $<T, [B]>;
       fbtc: (a: B) => $<T, [C]>;
     },
-  ): Promise<void>;
-  <T, L extends 2, E, A, B, C>(
+  ): void;
+  <E, A, B, C, T, L extends TC.LS = 2>(
     A: TC.Chain<T, L>,
-    name: string,
     values: {
       ta: $<T, [E, A]>;
       fab: (a: A) => B;
@@ -1061,10 +948,9 @@ type AssertChain = {
       fatb: (a: A) => $<T, [E, B]>;
       fbtc: (a: B) => $<T, [E, C]>;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, E, A, B, C>(
+  ): void;
+  <R, E, A, B, C, T, L extends TC.LS = 3>(
     A: TC.Chain<T, L>,
-    name: string,
     values: {
       ta: $<T, [R, E, A]>;
       fab: (a: A) => B;
@@ -1074,10 +960,9 @@ type AssertChain = {
       fatb: (a: A) => $<T, [R, E, B]>;
       fbtc: (a: B) => $<T, [R, E, C]>;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, E, A, B, C>(
+  ): void;
+  <S, R, E, A, B, C, T, L extends TC.LS = 4>(
     A: TC.Chain<T, L>,
-    name: string,
     values: {
       ta: $<T, [S, R, E, A]>;
       fab: (a: A) => B;
@@ -1087,12 +972,11 @@ type AssertChain = {
       fatb: (a: A) => $<T, [S, R, E, B]>;
       fbtc: (a: B) => $<T, [S, R, E, C]>;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertChain: AssertChain = async <T, A, B, C>(
+export const assertChain: AssertChain = <T, A, B, C>(
   C: TC.Chain<T>,
-  name: string,
   { ta, fab, fbc, tfab, tfbc, fatb, fbtc }: {
     ta: $<T, [A]>;
     fab: (a: A) => B;
@@ -1102,16 +986,15 @@ export const assertChain: AssertChain = async <T, A, B, C>(
     fatb: (a: A) => $<T, [B]>;
     fbtc: (a: B) => $<T, [C]>;
   },
-): Promise<void> => {
-  // Associativity: M.chain(g, M.chain(f, u)) ≡ M.chain(x => M.chain(g, f(x)), u)
-  await assertRunEquals(
-    C.chain(fbtc, C.chain(fatb, ta)),
-    C.chain((x) => C.chain(fbtc, fatb(x)), ta),
-    `${name} : Chain Associativity`,
+): void => {
+  // Associativity: M.chain(g, M.chain(f, u)) === M.chain(x => M.chain(g, f(x)), u)
+  assertEquals(
+    pipe(ta, C.chain(fatb), C.chain(fbtc)),
+    pipe(ta, C.chain(flow(fatb, C.chain(fbtc)))),
   );
 
   // Assert Apply
-  await assertApply(C, name, { ta, fab, fbc, tfab, tfbc });
+  assertApply(C, { ta, fab, fbc, tfab, tfbc });
 };
 
 /***************************************************************************************************
@@ -1124,9 +1007,8 @@ export const assertChain: AssertChain = async <T, A, B, C>(
  **************************************************************************************************/
 
 type AssertMonad = {
-  <T, L extends 1, A, B, C>(
+  <A, B, C, T, L extends TC.LS = 1>(
     A: TC.Monad<T, L>,
-    name: string,
     values: {
       a: A;
       ta: $<T, [A]>;
@@ -1137,10 +1019,9 @@ type AssertMonad = {
       tfab: $<T, [(a: A) => B]>;
       tfbc: $<T, [(b: B) => C]>;
     },
-  ): Promise<void>;
-  <T, L extends 2, E, A, B, C>(
+  ): void;
+  <E, A, B, C, T, L extends TC.LS = 2>(
     A: TC.Monad<T, L>,
-    name: string,
     values: {
       a: A;
       ta: $<T, [E, A]>;
@@ -1151,10 +1032,9 @@ type AssertMonad = {
       tfab: $<T, [E, (a: A) => B]>;
       tfbc: $<T, [E, (b: B) => C]>;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, E, A, B, C>(
+  ): void;
+  <R, E, A, B, C, T, L extends TC.LS = 3>(
     A: TC.Monad<T, L>,
-    name: string,
     values: {
       a: A;
       ta: $<T, [R, E, A]>;
@@ -1165,10 +1045,9 @@ type AssertMonad = {
       tfab: $<T, [R, E, (a: A) => B]>;
       tfbc: $<T, [R, E, (b: B) => C]>;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, E, A, B, C>(
+  ): void;
+  <S, R, E, A, B, C, T, L extends TC.LS = 4>(
     A: TC.Monad<T, L>,
-    name: string,
     values: {
       a: A;
       ta: $<T, [S, R, E, A]>;
@@ -1179,12 +1058,11 @@ type AssertMonad = {
       tfab: $<T, [S, R, E, (a: A) => B]>;
       tfbc: $<T, [S, R, E, (b: B) => C]>;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertMonad: AssertMonad = async <T, A, B, C>(
+export const assertMonad: AssertMonad = <A, B, C, T>(
   M: TC.Monad<T>,
-  name: string,
   { a, ta, fab, fbc, fatb, fbtc, tfab, tfbc }: {
     a: A;
     ta: $<T, [A]>;
@@ -1195,26 +1073,24 @@ export const assertMonad: AssertMonad = async <T, A, B, C>(
     tfab: $<T, [(a: A) => B]>;
     tfbc: $<T, [(b: B) => C]>;
   },
-): Promise<void> => {
+): void => {
   // Left identity: M.chain(f, M.of(a)) ≡ f(a)
-  await assertRunEquals(
-    M.chain(fatb, M.of(a)),
+  assertEquals(
+    pipe(M.of(a), M.chain(fatb)),
     fatb(a),
-    `${name} : Monad Left Identity`,
   );
 
   // Right identity: M.chain(M.of, u) ≡ u
-  await assertRunEquals(
-    M.chain(M.of, ta),
+  assertEquals(
+    pipe(ta, M.chain(M.of)),
     ta,
-    `${name} : Monad Right Identity`,
   );
 
   // Assert Applicative
-  await assertApplicative(M, name, { a, ta, fab, fbc, tfab, tfbc });
+  assertApplicative(M, { a, ta, fab, fbc, tfab, tfbc });
 
   // Assert Chain
-  await assertChain(M, name, { ta, fab, fbc, fatb, fbtc, tfab, tfbc });
+  assertChain(M, { ta, fab, fbc, fatb, fbtc, tfab, tfbc });
 };
 
 /***************************************************************************************************
@@ -1222,58 +1098,52 @@ export const assertMonad: AssertMonad = async <T, A, B, C>(
  **************************************************************************************************/
 
 type AssertFoldable = {
-  <T, L extends 1, A, B>(
+  <A, B, T, L extends TC.LS = 1>(
     A: TC.Foldable<T, L>,
-    name: string,
     values: {
       a: A;
       tb: $<T, [B]>;
       faba: (a: A, b: B) => A;
     },
-  ): Promise<void>;
-  <T, L extends 2, E, A, B>(
+  ): void;
+  <E, A, B, T, L extends TC.LS = 2>(
     A: TC.Foldable<T, L>,
-    name: string,
     values: {
       a: A;
       tb: $<T, [E, B]>;
       faba: (a: A, b: B) => A;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, E, A, B>(
+  ): void;
+  <R, E, A, B, T, L extends TC.LS = 3>(
     A: TC.Foldable<T, L>,
-    name: string,
     values: {
       a: A;
       tb: $<T, [R, E, B]>;
       faba: (a: A, b: B) => A;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, E, A, B>(
+  ): void;
+  <S, R, E, A, B, T, L extends TC.LS = 4>(
     A: TC.Foldable<T, L>,
-    name: string,
     values: {
       a: A;
       tb: $<T, [S, R, E, B]>;
       faba: (a: A, b: B) => A;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertFoldable: AssertFoldable = async <T, A, B>(
+export const assertFoldable: AssertFoldable = <T, A, B>(
   F: TC.Foldable<T>,
-  name: string,
   { a, tb, faba }: {
     a: A;
     tb: $<T, [B]>;
     faba: (a: A, b: B) => A;
   },
-): Promise<void> => {
+): void => {
   // F.reduce ≡ (f, x, u) => F.reduce((acc, y) => acc.concat([y]), [], u).reduce(f, x)
-  await assertRunEquals(
-    F.reduce((acc: B[], y: B) => acc.concat([y]), [], tb).reduce(faba, a),
-    F.reduce(faba, a, tb),
-    `${name} : Foldable Law?`,
+  assertEquals(
+    F.reduce((acc: B[], y: B) => acc.concat([y]), [])(tb).reduce(faba, a),
+    pipe(tb, F.reduce(faba, a)),
   );
 };
 
@@ -1282,9 +1152,8 @@ export const assertFoldable: AssertFoldable = async <T, A, B>(
  **************************************************************************************************/
 
 type AssertExtend = {
-  <T, L extends 1, A, B, C>(
+  <A, B, C, T, L extends TC.LS = 1>(
     A: TC.Extend<T, L>,
-    name: string,
     values: {
       ta: $<T, [A]>;
       fab: (a: A) => B;
@@ -1292,10 +1161,9 @@ type AssertExtend = {
       ftab: (ta: $<T, [A]>) => B;
       ftbc: (tb: $<T, [B]>) => C;
     },
-  ): Promise<void>;
-  <T, L extends 2, E, A, B, C>(
+  ): void;
+  <E, A, B, C, T, L extends TC.LS = 2>(
     A: TC.Extend<T, L>,
-    name: string,
     values: {
       ta: $<T, [E, A]>;
       fab: (a: A) => B;
@@ -1303,10 +1171,9 @@ type AssertExtend = {
       ftab: (ta: $<T, [E, A]>) => B;
       ftbc: (tb: $<T, [E, B]>) => C;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, E, A, B, C>(
+  ): void;
+  <R, E, A, B, C, T, L extends TC.LS = 3>(
     A: TC.Extend<T, L>,
-    name: string,
     values: {
       ta: $<T, [R, E, A]>;
       fab: (a: A) => B;
@@ -1314,10 +1181,9 @@ type AssertExtend = {
       ftab: (ta: $<T, [R, E, A]>) => B;
       ftbc: (tb: $<T, [R, E, B]>) => C;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, E, A, B, C>(
+  ): void;
+  <S, R, E, A, B, C, T, L extends TC.LS = 4>(
     A: TC.Extend<T, L>,
-    name: string,
     values: {
       ta: $<T, [S, R, E, A]>;
       fab: (a: A) => B;
@@ -1325,12 +1191,11 @@ type AssertExtend = {
       ftab: (ta: $<T, [S, R, E, A]>) => B;
       ftbc: (tb: $<T, [S, R, E, B]>) => C;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertExtend: AssertExtend = async <T, A, B, C>(
+export const assertExtend: AssertExtend = <T, A, B, C>(
   E: TC.Extend<T>,
-  name: string,
   { ta, fab, fbc, ftab, ftbc }: {
     ta: $<T, [A]>;
     fab: (a: A) => B;
@@ -1338,16 +1203,15 @@ export const assertExtend: AssertExtend = async <T, A, B, C>(
     ftab: (ta: $<T, [A]>) => B;
     ftbc: (tb: $<T, [B]>) => C;
   },
-): Promise<void> => {
+): void => {
   // Associativity: E.extend(f, E.extend(g, w)) ≡ E.extend(_w => f(E.extend(g, _w)), w)
-  await assertRunEquals(
-    E.extend(ftbc, E.extend(ftab, ta)),
-    E.extend((a) => ftbc(E.extend(ftab, a)), ta),
-    `${name} : Extend Associativity`,
+  assertEquals(
+    pipe(ta, E.extend(ftab), E.extend(ftbc)),
+    pipe(ta, E.extend((a) => ftbc(pipe(a, E.extend(ftab))))),
   );
 
   // Assert Functor
-  await assertFunctor(E, name, { ta, fab, fbc });
+  assertFunctor(E, { ta, fab, fbc });
 };
 
 /***************************************************************************************************
@@ -1355,9 +1219,8 @@ export const assertExtend: AssertExtend = async <T, A, B, C>(
  **************************************************************************************************/
 
 type AssertComonad = {
-  <T, L extends 1, A, B, C>(
+  <A, B, C, T, L extends TC.LS = 1>(
     A: TC.Comonad<T, L>,
-    name: string,
     values: {
       ta: $<T, [A]>;
       fab: (a: A) => B;
@@ -1365,10 +1228,9 @@ type AssertComonad = {
       ftab: (ta: $<T, [A]>) => B;
       ftbc: (tb: $<T, [B]>) => C;
     },
-  ): Promise<void>;
-  <T, L extends 2, E, A, B, C>(
+  ): void;
+  <E, A, B, C, T, L extends TC.LS = 2>(
     A: TC.Comonad<T, L>,
-    name: string,
     values: {
       ta: $<T, [E, A]>;
       fab: (a: A) => B;
@@ -1376,10 +1238,9 @@ type AssertComonad = {
       ftab: (ta: $<T, [E, A]>) => B;
       ftbc: (tb: $<T, [E, B]>) => C;
     },
-  ): Promise<void>;
-  <T, L extends 3, R, E, A, B, C>(
+  ): void;
+  <R, E, A, B, C, T, L extends TC.LS = 3>(
     A: TC.Comonad<T, L>,
-    name: string,
     values: {
       ta: $<T, [R, E, A]>;
       fab: (a: A) => B;
@@ -1387,10 +1248,9 @@ type AssertComonad = {
       ftab: (ta: $<T, [R, E, A]>) => B;
       ftbc: (tb: $<T, [R, E, B]>) => C;
     },
-  ): Promise<void>;
-  <T, L extends 4, S, R, E, A, B, C>(
+  ): void;
+  <S, R, E, A, B, C, T, L extends TC.LS = 4>(
     A: TC.Comonad<T, L>,
-    name: string,
     values: {
       ta: $<T, [S, R, E, A]>;
       fab: (a: A) => B;
@@ -1398,12 +1258,11 @@ type AssertComonad = {
       ftab: (ta: $<T, [S, R, E, A]>) => B;
       ftbc: (tb: $<T, [S, R, E, B]>) => C;
     },
-  ): Promise<void>;
+  ): void;
 };
 
-export const assertComonad: AssertComonad = async <T, A, B, C>(
+export const assertComonad: AssertComonad = <T, A, B, C>(
   C: TC.Comonad<T>,
-  name: string,
   { ta, fab, fbc, ftab, ftbc }: {
     ta: $<T, [A]>;
     fab: (a: A) => B;
@@ -1411,23 +1270,21 @@ export const assertComonad: AssertComonad = async <T, A, B, C>(
     ftab: (ta: $<T, [A]>) => B;
     ftbc: (tb: $<T, [B]>) => C;
   },
-): Promise<void> => {
+): void => {
   // Left identity: C.extend(C.extract, w) ≡ w
-  await assertRunEquals(
-    C.extend(C.extract, ta),
+  assertEquals(
+    pipe(ta, C.extend(C.extract)),
     ta,
-    `${name} : Comonad Left Identity`,
   );
 
   // Right identity: C.extract(C.extend(f, w)) ≡ f(w)
-  await assertRunEquals(
-    C.extract(C.extend(ftab, ta)),
+  assertEquals(
+    C.extract(pipe(ta, C.extend(ftab))),
     ftab(ta),
-    `${name} : Comonad Right Identity`,
   );
 
   // Assert Extend
-  await assertExtend(C, name, { ta, fab, fbc, ftab, ftbc });
+  assertExtend(C, { ta, fab, fbc, ftab, ftbc });
 };
 
 /***************************************************************************************************

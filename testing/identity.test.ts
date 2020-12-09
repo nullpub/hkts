@@ -10,10 +10,9 @@ const fromString = (s: string) => I.of(s.length);
 
 Deno.test({
   name: "Identity Modules",
-  async fn() {
-    await assertMonad(
+  fn() {
+    assertMonad(
       I.Monad,
-      "Identity",
       {
         a: 1,
         ta: I.of(1),

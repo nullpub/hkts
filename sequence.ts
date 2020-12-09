@@ -70,8 +70,8 @@ export const createSequenceTuple: CreateSequenceTuple = <T>(A: Apply<T>) =>
   ): SequenceTuple<T, R> => {
     const [head, ...tail] = r;
     return tail.reduce(
-      A.ap as any,
-      A.map(loopTuple(r.length) as any, head),
+      (acc, cur) => A.ap(acc)(cur) as any,
+      A.map(loopTuple(r.length) as any)(head),
     ) as any;
   };
 
@@ -125,7 +125,7 @@ export const createSequenceStruct: CreateSequenceStruct = <T>(A: Apply<T>) =>
     const [head, ...tail] = keys;
 
     return tail.reduce(
-      (f: any, key) => A.ap(f, r[key]),
-      A.map(loopRecord(keys) as any, r[head]),
+      (f: any, key) => A.ap<any, any>(f)(r[key] as any),
+      A.map<any, any>(loopRecord(keys) as any)(r[head] as any),
     );
   };

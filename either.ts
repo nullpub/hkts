@@ -13,7 +13,7 @@ import type {
 
 import * as O from "./option.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-import { isNotNil, pipe } from "./fns.ts";
+import { identity, isNotNil, pipe } from "./fns.ts";
 import * as D from "./derivations.ts";
 
 /***************************************************************************************************
@@ -40,8 +40,8 @@ export const right = <E = never, A = never>(right: A): Either<E, A> => ({
   right,
 });
 
-export const fromNullable = <E>(e: E) =>
-  <A>(a: A): Either<E, NonNullable<A>> => (isNotNil(a) ? right(a) : left(e));
+export const fromNullable = <E>(e: Lazy<E>) =>
+  <A>(a: A): Either<E, NonNullable<A>> => (isNotNil(a) ? right(a) : left(e()));
 
 export const tryCatch = <E, A>(
   f: Lazy<A>,
@@ -149,7 +149,7 @@ export const getOrd = <E, A>(
       if (isLeft(y)) {
         return OE.lte(x.left, y.left);
       }
-      return false;
+      return true;
     }
 
     if (isLeft(y)) {
@@ -160,77 +160,59 @@ export const getOrd = <E, A>(
 });
 
 export const getSemigroup = <E, A>(
-  SE: TC.Semigroup<E>,
   SA: TC.Semigroup<A>,
 ): TC.Semigroup<Either<E, A>> => ({
-  concat: (x, y) => {
-    if (isLeft(x)) {
-      if (isLeft(y)) {
-        return left(SE.concat(x.left, y.left));
-      }
-      return y;
-    }
-
-    if (isLeft(y)) {
-      return x;
-    }
-    return right(SA.concat(x.right, y.right));
-  },
+  concat: (x, y) =>
+    isLeft(x) ? x : isLeft(y) ? y : right(SA.concat(x.right, y.right)),
 });
 
 export const getMonoid = <E, A>(
-  ME: TC.Monoid<E>,
   MA: TC.Monoid<A>,
 ): TC.Monoid<Either<E, A>> => ({
-  ...getSemigroup(ME, MA),
+  ...getSemigroup(MA),
   empty: () => right(MA.empty()),
-});
-
-/**
- * @todo Run this through a truth table to check that the law holds since empty is
- * right(MA.empty()). It's likely I'll need to create right/left semigroup, monoid,
- * etc instances or research how this is done elsewhere. I think maybe we focus on
- * a RightSemigroup, RightMonoidd, and RightGroup and fix E.
- */
-export const getGroup = <E, A>(
-  GE: TC.Group<E>,
-  GA: TC.Group<A>,
-): TC.Group<Either<E, A>> => ({
-  ...getMonoid(GE, GA),
-  invert: (ta) =>
-    isLeft(ta) ? left(GE.invert(ta.left)) : right(GA.invert(ta.right)),
 });
 
 export const getRightMonad = <E>(
   S: TC.Semigroup<E>,
 ): TC.Monad<Either<Fix<E>, _0>> => ({
   of: right,
-  ap: (tfab, ta) =>
-    isLeft(tfab)
-      ? (isLeft(ta) ? left(S.concat(tfab.left, ta.left)) : tfab)
-      : (isLeft(ta) ? ta : right(tfab.right(ta.right))),
-  map: (fab, ta) => isLeft(ta) ? ta : right(fab(ta.right)),
+  ap: (tfab) =>
+    (ta) =>
+      isLeft(tfab)
+        ? (isLeft(ta) ? left(S.concat(tfab.left, ta.left)) : tfab)
+        : (isLeft(ta) ? ta : right(tfab.right(ta.right))),
+  map: (fab) => (ta) => isLeft(ta) ? ta : right(fab(ta.right)),
   join: (tta) => isLeft(tta) ? tta : tta.right,
-  chain: (fatb, ta) => isLeft(ta) ? ta : fatb(ta.right),
+  chain: (fatb) => (ta) => isLeft(ta) ? ta : fatb(ta.right),
 });
 
 /***************************************************************************************************
  * @section Modules
  **************************************************************************************************/
 
-export const Functor: TC.Functor<Either<_0, _1>, 2> = {
-  map: (fab, ta) => isLeft(ta) ? ta : right(fab(ta.right)),
+export const Monad: TC.Monad<Either<_0, _1>, 2> = {
+  of: right,
+  ap: (tfab) =>
+    (ta) => isLeft(ta) ? ta : isLeft(tfab) ? tfab : right(tfab.right(ta.right)),
+  map: (fab) => (ta) => isLeft(ta) ? ta : right(fab(ta.right)),
+  join: (tta) => isLeft(tta) ? tta : tta.right,
+  chain: (fatb) => (ta) => (isRight(ta) ? fatb(ta.right) : ta),
 };
 
-export const Bifunctor = D.createBifunctor<Either<_0, _1>>({
-  bimap: (fab, fcd, tac) =>
-    isLeft(tac) ? left(fab(tac.left)) : right(fcd(tac.right)),
-});
+export const Functor: TC.Functor<Either<_0, _1>, 2> = Monad;
 
-export const Monad = D.createMonad<Either<_0, _1>, 2>({
-  of: right,
-  chain: (fatb, ta) => (isRight(ta) ? fatb(ta.right) : ta),
-});
+export const Applicative: TC.Applicative<Either<_0, _1>, 2> = Monad;
+
+export const Apply: TC.Apply<Either<_0, _1>, 2> = Monad;
+
+export const Chain: TC.Chain<Either<_0, _1>, 2> = Monad;
+
+export const Bifunctor: TC.Bifunctor<Either<_0, _1>, 2> = {
+  bimap: (fab, fcd) =>
+    (tac) => isLeft(tac) ? left(fab(tac.left)) : right(fcd(tac.right)),
+  mapLeft: (fef) => Bifunctor.bimap(fef, identity),
+};
 
 export const MonadThrow: TC.MonadThrow<Either<_0, _1>, 2> = ({
   ...Monad,
@@ -238,90 +220,37 @@ export const MonadThrow: TC.MonadThrow<Either<_0, _1>, 2> = ({
 });
 
 export const Alt: TC.Alt<Either<_0, _1>, 2> = {
-  map: Functor.map,
-  alt: (ta, tb) => isLeft(ta) ? tb : ta,
-};
-
-export const Applicative: TC.Applicative<Either<_0, _1>, 2> = {
-  of: Monad.of,
-  ap: Monad.ap,
-  map: Functor.map,
-};
-
-export const Apply: TC.Apply<Either<_0, _1>, 2> = {
-  ap: Monad.ap,
-  map: Functor.map,
-};
-
-export const Chain: TC.Chain<Either<_0, _1>, 2> = {
-  ap: Monad.ap,
-  map: Functor.map,
-  chain: Monad.chain,
+  map: Monad.map,
+  alt: (tb) => (ta) => isLeft(ta) ? tb : ta,
 };
 
 export const Extend: TC.Extend<Either<_0, _1>, 2> = {
-  map: Functor.map,
-  extend: (ftab, ta) => right(ftab(ta)),
+  map: Monad.map,
+  extend: (ftab) => (ta) => right(ftab(ta)),
 };
 
 export const Foldable: TC.Foldable<Either<_0, _1>, 2> = {
-  reduce: (faba, a, tb) => (isRight(tb) ? faba(a, tb.right) : a),
+  reduce: (faba, a) => (tb) => (isRight(tb) ? faba(a, tb.right) : a),
 };
 
 export const Traversable: TC.Traversable<Either<_0, _1>, 2> = {
-  map: Functor.map,
+  map: Monad.map,
   reduce: Foldable.reduce,
-  traverse: <U, A, B, E>(
-    F: TC.Applicative<U>,
-    faub: (a: A) => $<U, [B]>,
-    ta: Either<E, A>,
-  ) => isLeft(ta) ? F.of(left(ta.left)) : F.map(right, faub(ta.right)),
+  traverse: <U>(A: TC.Applicative<U>) =>
+    <E, A, B>(faub: (a: A) => $<U, [B]>) =>
+      (ta: Either<E, A>) =>
+        isLeft(ta) ? A.of(left(ta.left)) : A.map(right)(faub(ta.right)),
 };
-
-/***************************************************************************************************
- * @section Transformers
- **************************************************************************************************/
-
-// deno-fmt-ignore
-type ComposeEitherMonad = {
-  <T, L extends 1>(M: TC.Monad<T, L>): TC.Monad<$<T, [Either<_0, _1>]>, 2>;
-  <T, L extends 2>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, Either<_1, _2>]>, 3>;
-  <T, L extends 3>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, _1, Either<_2, _3>]>, 4>;
-  <T, L extends 4>(M: TC.Monad<T, L>): unknown;
-};
-
-/**
- * This is an experimental interface. Ideally, the substitution type would handle this
- * a bit better so we wouldn't have to do unsafe coercion.
- * @experimental
- */
-export const composeMonad: ComposeEitherMonad = <T>(M: TC.Monad<T>) =>
-  D.createMonad<$<T, [Either<_0, _1>]>, 2>({
-    of: <E, A>(a: A) =>
-      (M.of(right(a)) as unknown) as $<$<T, [Either<_0, _1>]>, [E, A]>,
-    chain: <E, A, B>(
-      fatb: (a: A) => $<$<T, [Either<_0, _1>]>, [E, B]>,
-      ta: $<$<T, [Either<_0, _1>]>, [E, A]>,
-    ) =>
-      (M.chain(
-        (e: Either<E, A>): $<T, [unknown]> =>
-          ((isLeft(e) ? M.of(left(e.left)) : fatb(e.right)) as unknown) as $<
-            T,
-            [unknown]
-          >,
-        ta as $<T, [Either<E, A>]>,
-      ) as unknown) as $<$<T, [Either<_0, _1>]>, [E, B]>,
-  });
 
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = Monad;
 
-export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
+export const { reduce, traverse } = Traversable;
 
-export const { bimap, mapLeft } = D.createPipeableBifunctor(Bifunctor);
+export const { bimap, mapLeft } = Bifunctor;
 
 /***************************************************************************************************
  * @section Sequence

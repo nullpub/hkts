@@ -115,7 +115,7 @@ const capitalizedUserCities = capitalizeCities(users); // All city entries will 
 A fairly cohesive validation, parsing, and schema generating library.
 
 ```ts
-import * as J from "https://deno.land/x/hkts/json_schema.ts";
+import * as J from "https://deno.land/x/jsonschema/json_schema.ts";
 import * as D from "https://deno.land/x/hkts/decoder.ts";
 import * as G from "https://deno.land/x/hkts/guard.ts";
 

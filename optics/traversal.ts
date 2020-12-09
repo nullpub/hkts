@@ -1,15 +1,14 @@
-import type * as TC from "./type_classes.ts";
-import type { $, _0, _1, Fn, Predicate, Refinement } from "./types.ts";
-import type { Either } from "./either.ts";
-import type { Option } from "./option.ts";
+import type * as TC from "../type_classes.ts";
+import type { $, _0, _1, Fn, Predicate, Refinement } from "../types.ts";
+import type { Either } from "../either.ts";
+import type { Option } from "../option.ts";
 
-import * as A from "./array.ts";
-import * as I from "./identity.ts";
-import * as O from "./option.ts";
-import * as E from "./either.ts";
-import * as C from "./const.ts";
-import { createTraversal } from "./derivations.ts";
-import { flow, identity, pipe } from "./fns.ts";
+import * as A from "../array.ts";
+import * as I from "../identity.ts";
+import * as O from "../option.ts";
+import * as E from "../either.ts";
+import * as C from "../const.ts";
+import { flow, identity, pipe } from "../fns.ts";
 
 import { atRecord } from "./at.ts";
 import { indexArray, indexRecord } from "./index.ts";
@@ -22,6 +21,7 @@ import {
   prop as lensProp,
   props as lensProps,
 } from "./lens.ts";
+import { createTraversal } from "./shared.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -69,13 +69,14 @@ export const Category: TC.Category<Traversal<_0, _1>> = {
   id: () => ({
     getModify: () => identity,
   }),
-  compose: (tij, tjk) => ({
-    getModify: (F) => {
-      const fij = tij.getModify(F);
-      const fjk = tjk.getModify(F);
-      return (f) => fij(fjk(f));
-    },
-  }),
+  compose: (jk) =>
+    (ij) => ({
+      getModify: (F) => {
+        const fij = ij.getModify(F);
+        const fjk = jk.getModify(F);
+        return (f) => fij(fjk(f));
+      },
+    }),
 };
 
 /***************************************************************************************************
@@ -102,9 +103,11 @@ export const composeOptional = flow(optionalAsTraversal, compose);
  * @section Pipeables
  **************************************************************************************************/
 
-export const modify = <A>(f: (a: A) => A) => <S>(sa: Traversal<S, A>) => (
-  s: S
-): S => sa.getModify(I.Applicative)(f)(s);
+export const modify = <A>(f: (a: A) => A) =>
+  <S>(sa: Traversal<S, A>) =>
+    (
+      s: S,
+    ): S => sa.getModify(I.Applicative)(f)(s);
 
 export const set = <A>(a: A): (<S>(sa: Traversal<S, A>) => (s: S) => S) => {
   return modify(() => a);
@@ -112,7 +115,7 @@ export const set = <A>(a: A): (<S>(sa: Traversal<S, A>) => (s: S) => S) => {
 
 type FilterFn = {
   <A, B extends A>(refinement: Refinement<A, B>): <S>(
-    sa: Traversal<S, A>
+    sa: Traversal<S, A>,
   ) => Traversal<S, B>;
   <A>(predicate: Predicate<A>): <S>(sa: Traversal<S, A>) => Traversal<S, A>;
 };
@@ -121,7 +124,7 @@ export const filter: FilterFn = <A>(predicate: Predicate<A>) =>
   pipe(fromPredicate(predicate), composePrism);
 
 export const prop = <A, P extends keyof A>(
-  prop: P
+  prop: P,
 ): (<S>(sa: Traversal<S, A>) => Traversal<S, A[P]>) =>
   pipe(lensId<A>(), lensProp(prop), composeLens);
 
@@ -130,17 +133,20 @@ export const props = <A, P extends keyof A>(
 ): (<S>(sa: Traversal<S, A>) => Traversal<S, { [K in P]: A[K] }>) =>
   pipe(lensId<A>(), lensProps(...props), composeLens);
 
-export const index = (i: number) => <S, A>(
-  sa: Traversal<S, ReadonlyArray<A>>
-): Traversal<S, A> => composeOptional(indexArray<A>().index(i))(sa);
+export const index = (i: number) =>
+  <S, A>(
+    sa: Traversal<S, ReadonlyArray<A>>,
+  ): Traversal<S, A> => composeOptional(indexArray<A>().index(i))(sa);
 
-export const key = (key: string) => <S, A>(
-  sa: Traversal<S, Readonly<Record<string, A>>>
-): Traversal<S, A> => composeOptional(indexRecord<A>().index(key))(sa);
+export const key = (key: string) =>
+  <S, A>(
+    sa: Traversal<S, Readonly<Record<string, A>>>,
+  ): Traversal<S, A> => composeOptional(indexRecord<A>().index(key))(sa);
 
-export const atKey = (key: string) => <S, A>(
-  sa: Traversal<S, Readonly<Record<string, A>>>
-): Traversal<S, Option<A>> => composeLens(atRecord<A>().at(key))(sa);
+export const atKey = (key: string) =>
+  <S, A>(
+    sa: Traversal<S, Readonly<Record<string, A>>>,
+  ): Traversal<S, Option<A>> => composeLens(atRecord<A>().at(key))(sa);
 
 // deno-fmt-ignore
 type TraverseFn = {
@@ -158,41 +164,45 @@ type TraverseFn = {
   ) => Traversal<S, A>;
 };
 
-export const traverse: TraverseFn = <T>(T: TC.Traversable<T>) => <S, A>(
-  sa: Traversal<S, $<T, [A]>>
-): Traversal<S, A> => compose(createTraversal(T)<A>())(sa);
+export const traverse: TraverseFn = <T>(T: TC.Traversable<T>) =>
+  <S, A>(
+    sa: Traversal<S, $<T, [A]>>,
+  ): Traversal<S, A> => compose(createTraversal(T)<A>())(sa);
 
-export const foldMap = <M>(M: TC.Monoid<M>) => <A>(f: (a: A) => M) => <S>(
-  sa: Traversal<S, A>
-): ((s: S) => M) => sa.getModify(C.getApplicative(M))((a) => C.make(f(a)));
+export const foldMap = <M>(M: TC.Monoid<M>) =>
+  <A>(f: (a: A) => M) =>
+    <S>(
+      sa: Traversal<S, A>,
+    ): ((s: S) => M) => sa.getModify(C.getApplicative(M))((a) => C.make(f(a)));
 
 export const fold = <A>(
-  M: TC.Monoid<A>
+  M: TC.Monoid<A>,
 ): (<S>(sa: Traversal<S, A>) => (s: S) => A) => foldMap(M)(identity);
 
-export const getAll = <S>(s: S) => <A>(sa: Traversal<S, A>): ReadonlyArray<A> =>
-  foldMap(A.getMonoid<A>())((a: A) => [a])(sa)(s);
+export const getAll = <S>(s: S) =>
+  <A>(sa: Traversal<S, A>): ReadonlyArray<A> =>
+    foldMap(A.getMonoid<A>())((a: A) => [a])(sa)(s);
 
 /***************************************************************************************************
  * @section Pipeable Over ADT
  **************************************************************************************************/
 
 export const some: <S, A>(
-  soa: Traversal<S, Option<A>>
+  soa: Traversal<S, Option<A>>,
 ) => Traversal<S, A> = composePrism({
   getOption: identity,
   reverseGet: O.some,
 });
 
 export const right: <S, E, A>(
-  sea: Traversal<S, Either<E, A>>
+  sea: Traversal<S, Either<E, A>>,
 ) => Traversal<S, A> = composePrism({
   getOption: E.getRight,
   reverseGet: E.right,
 });
 
 export const left: <S, E, A>(
-  sea: Traversal<S, Either<E, A>>
+  sea: Traversal<S, Either<E, A>>,
 ) => Traversal<S, E> = composePrism({
   getOption: E.getLeft,
   reverseGet: E.left,

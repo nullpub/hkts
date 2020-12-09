@@ -1,16 +1,18 @@
-import type * as TC from "./type_classes.ts";
-import type { $, _0, _1, Fn } from "./types.ts";
-import type { Either } from "./either.ts";
-import type { Option } from "./option.ts";
+import type * as TC from "../type_classes.ts";
+import type { $, _0, _1, Fn } from "../types.ts";
+import type { Either } from "../either.ts";
+import type { Option } from "../option.ts";
+
 import type { Lens } from "./lens.ts";
 import type { Optional } from "./optional.ts";
 import type { Prism } from "./prism.ts";
 import type { Traversal } from "./traversal.ts";
 
-import * as O from "./option.ts";
-import * as E from "./either.ts";
-import { createTraversal } from "./derivations.ts";
-import { constant, flow, identity } from "./fns.ts";
+import * as O from "../option.ts";
+import * as E from "../either.ts";
+import { constant, flow, identity } from "../fns.ts";
+
+import { createTraversal } from "./shared.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -18,17 +20,12 @@ import { constant, flow, identity } from "./fns.ts";
 
 export type Iso<S, A> = {
   readonly get: (s: S) => A;
-  readonly reverseGet: (b: A) => S;
+  readonly reverseGet: (s: A) => S;
 };
 
 /***************************************************************************************************
  * @section Constructors
  **************************************************************************************************/
-
-export const id = <S>(): Iso<S, S> => ({
-  get: identity,
-  reverseGet: identity,
-});
 
 export const make = <A, B>(
   get: (a: A) => B,
@@ -43,11 +40,15 @@ export const make = <A, B>(
  **************************************************************************************************/
 
 export const Category: TC.Category<Iso<_0, _1>> = {
-  id,
-  compose: (ij, jk) => ({
-    get: flow(ij.get, jk.get),
-    reverseGet: flow(jk.reverseGet, ij.reverseGet),
+  id: () => ({
+    get: identity,
+    reverseGet: identity,
   }),
+  compose: (jk) =>
+    (ij) => ({
+      get: flow(ij.get, jk.get),
+      reverseGet: flow(jk.reverseGet, ij.reverseGet),
+    }),
 };
 
 /***************************************************************************************************
@@ -72,44 +73,48 @@ export const asOptional = <S, A>(sa: Iso<S, A>): Optional<S, A> => ({
 export const asTraversal = <S, A>(sa: Iso<S, A>): Traversal<S, A> => ({
   getModify: <T>({ map }: TC.Applicative<T>) =>
     (f: Fn<[A], $<T, [A]>>) =>
-      (s: S) => map((a: A) => sa.reverseGet(a), f(sa.get(s))),
+      (
+        s: S,
+      ) => map((a: A) => sa.reverseGet(a))(f(sa.get(s))),
 });
 
 /***************************************************************************************************
  * @section Pipeable Compose
  **************************************************************************************************/
 
-export const compose = <A, B>(ab: Iso<A, B>) =>
-  <S>(sa: Iso<S, A>): Iso<S, B> => Category.compose(sa, ab);
+export const { id, compose } = Category;
 
 export const composeLens = <A, B>(ab: Lens<A, B>) =>
-  <S>(sa: Iso<S, A>): Lens<S, B> => ({
+  <S>(
+    sa: Iso<S, A>,
+  ): Lens<S, B> => ({
     get: flow(sa.get, ab.get),
-    set: (b) =>
-      flow(
-        sa.get,
-        ab.set(b),
-        sa.reverseGet,
-      ),
+    set: (b) => flow(sa.get, ab.set(b), sa.reverseGet),
   });
 
 export const composePrism = <A, B>(ab: Prism<A, B>) =>
-  <S>(sa: Iso<S, A>): Prism<S, B> => ({
+  <S>(
+    sa: Iso<S, A>,
+  ): Prism<S, B> => ({
     getOption: flow(sa.get, ab.getOption),
     reverseGet: flow(ab.reverseGet, sa.reverseGet),
   });
 
 export const composeOptional = <A, B>(ab: Optional<A, B>) =>
-  <S>(sa: Iso<S, A>): Optional<S, B> => ({
+  <S>(
+    sa: Iso<S, A>,
+  ): Optional<S, B> => ({
     getOption: flow(sa.get, ab.getOption),
     set: (b) => flow(sa.get, ab.set(b), sa.reverseGet),
   });
 
 export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
-  <S>(sa: Iso<S, A>): Traversal<S, B> => ({
+  <S>(
+    sa: Iso<S, A>,
+  ): Traversal<S, B> => ({
     getModify: <T>(A: TC.Applicative<T>) =>
       (f: Fn<[B], $<T, [B]>>) =>
-        (s: S) => A.map(sa.reverseGet, ab.getModify(A)(f)(sa.get(s))),
+        (s: S) => A.map(sa.reverseGet)(ab.getModify(A)(f)(sa.get(s))),
   });
 
 /***************************************************************************************************
@@ -119,11 +124,10 @@ export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
 export const modify = <A>(f: (a: A) => A) =>
   <S>(sa: Iso<S, A>) => (s: S): S => sa.reverseGet(f(sa.get(s)));
 
-export const map = <A, B>(
-  ab: (a: A) => B,
-  ba: (b: B) => A,
-) =>
-  <S>(sa: Iso<S, A>): Iso<S, B> => ({
+export const map = <A, B>(ab: (a: A) => B, ba: (b: B) => A) =>
+  <S>(
+    sa: Iso<S, A>,
+  ): Iso<S, B> => ({
     get: flow(sa.get, ab),
     reverseGet: flow(ba, sa.reverseGet),
   });
@@ -134,8 +138,9 @@ export const reverse = <S, A>(sa: Iso<S, A>): Iso<A, S> => ({
 });
 
 export const traverse = <T>(T: TC.Traversable<T>) =>
-  <S, A>(sa: Iso<S, $<T, [A]>>): Traversal<S, A> =>
-    composeTraversal(createTraversal(T)<A>())(sa);
+  <S, A>(
+    sa: Iso<S, $<T, [A]>>,
+  ): Traversal<S, A> => composeTraversal(createTraversal(T)<A>())(sa);
 
 /***************************************************************************************************
  * @section Pipeable Over ADT
@@ -148,14 +153,16 @@ export const some: <S, A>(soa: Iso<S, Option<A>>) => Prism<S, A> = composePrism(
   },
 );
 
-export const right: <S, E, A>(sea: Iso<S, Either<E, A>>) => Prism<S, A> =
-  composePrism({
-    getOption: E.getRight,
-    reverseGet: E.right,
-  });
+export const right: <S, E, A>(
+  sea: Iso<S, Either<E, A>>,
+) => Prism<S, A> = composePrism({
+  getOption: E.getRight,
+  reverseGet: E.right,
+});
 
-export const left: <S, E, A>(sea: Iso<S, Either<E, A>>) => Prism<S, E> =
-  composePrism({
-    getOption: E.getLeft,
-    reverseGet: E.left,
-  });
+export const left: <S, E, A>(
+  sea: Iso<S, Either<E, A>>,
+) => Prism<S, E> = composePrism({
+  getOption: E.getLeft,
+  reverseGet: E.left,
+});

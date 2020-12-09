@@ -1,7 +1,6 @@
 import type * as TC from "./type_classes.ts";
 import type { _, Lazy } from "./types.ts";
 
-import { createMonad, createPipeableMonad } from "./derivations.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
@@ -39,27 +38,28 @@ export const tryCatch = <A>(fa: Lazy<A>, onError: (e: unknown) => A): Task<A> =>
  * @section Modules
  **************************************************************************************************/
 
-export const Monad = createMonad<Task<_>>({
+export const Monad: TC.Monad<Task<_>> = {
   of: (a) => () => Promise.resolve(a),
-  chain: (fatb, ta) => () => ta().then((a) => fatb(a)()),
-});
-
-export const Applicative: TC.Applicative<Task<_>> = {
-  of: Monad.of,
-  ap: Monad.ap,
-  map: Monad.map,
+  ap: (tfab) =>
+    (ta) => () => Promise.all([tfab(), ta()]).then(([fab, a]) => fab(a)),
+  map: (fab) => (ta) => () => ta().then(fab),
+  join: (tta) => () => tta().then((f) => f()),
+  chain: (fatb) => (ta) => () => ta().then((a) => fatb(a)()),
 };
 
-export const Apply: TC.Apply<Task<_>> = {
-  ap: Monad.ap,
-  map: Monad.map,
-};
+export const Functor: TC.Functor<Task<_>> = Monad;
+
+export const Applicative: TC.Applicative<Task<_>> = Monad;
+
+export const Apply: TC.Apply<Task<_>> = Monad;
+
+export const Chain: TC.Chain<Task<_>> = Monad;
 
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = Monad;
 
 /***************************************************************************************************
  * @section Sequence

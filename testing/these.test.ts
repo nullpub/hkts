@@ -43,7 +43,7 @@ Deno.test({
 
 Deno.test({
   name: "These Module",
-  async fn() {
+  fn() {
     const Monad = T.getRightMonad({ concat: add });
 
     const toString = (n: number): string => n.toString();
@@ -52,7 +52,7 @@ Deno.test({
     const fromString = (s: string) => Monad.of(s.length);
 
     // Test Laws
-    await assertMonad(Monad, "These", {
+    assertMonad(Monad, {
       a: 1,
       ta: Monad.of(1),
       fab: toString,
@@ -65,14 +65,14 @@ Deno.test({
 
     // Foldable
     const { reduce } = T.Foldable;
-    assertEquals(reduce(add, 0, T.right(1)), 1);
-    assertEquals(reduce(add, 0, T.left(1)), 0);
-    assertEquals(reduce(add, 0, T.both(1, 2)), 2);
+    assertEquals(reduce(add, 0)(T.right(1)), 1);
+    assertEquals(reduce(add, 0)(T.left(1)), 0);
+    assertEquals(reduce(add, 0)(T.both(1, 2)), 2);
 
     // Traversable
     const { traverse } = T.Traversable;
     assertEquals(
-      traverse(O.Applicative, (a) => O.some(1), T.left(1)),
+      traverse(O.Applicative)((a) => O.some(1))(T.left(1)),
       O.some(T.left(1)),
     );
   },

@@ -1,9 +1,9 @@
 import type { Optional } from "./optional.ts";
 
-import * as A from "./array.ts";
-import * as O from "./option.ts";
-import * as R from "./record.ts";
-import { isNil, pipe } from "./fns.ts";
+import * as A from "../array.ts";
+import * as O from "../option.ts";
+import * as R from "../record.ts";
+import { isNil, pipe } from "../fns.ts";
 
 /***************************************************************************************************
  * @section Models
@@ -40,6 +40,6 @@ export const indexRecord = <A = never>(): Index<
 > => ({
   index: (k) => ({
     getOption: (r) => O.fromNullable(r[k]),
-    set: (a) => (r) => r[k] === a || isNil(r[k]) ? r : R.insertAt(k, a)(r),
+    set: (a) => (r) => (r[k] === a || isNil(r[k]) ? r : R.insertAt(k, a)(r)),
   }),
 });

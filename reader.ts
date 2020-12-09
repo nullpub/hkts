@@ -1,9 +1,8 @@
 import type * as TC from "./type_classes.ts";
 import type { _0, _1 } from "./types.ts";
 
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { constant, identity } from "./fns.ts";
-import * as D from "./derivations.ts";
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -23,27 +22,33 @@ export const asks: <R, A>(f: (r: R) => A) => Reader<R, A> = identity;
  * @section Modules
  **************************************************************************************************/
 
-export const Monad = D.createMonad<Reader<_0, _1>, 2>({
+export const Monad: TC.Monad<Reader<_0, _1>, 2> = {
   of: constant,
-  chain: (fatb, ta) => (r) => fatb(ta(r))(r),
-});
-
-export const Applicative: TC.Applicative<Reader<_0, _1>, 2> = {
-  of: constant,
-  ap: Monad.ap,
-  map: Monad.map,
+  ap: (tfab) =>
+    (ta) =>
+      (r) => {
+        const fab = tfab(r);
+        const a = ta(r);
+        return fab(a);
+      },
+  map: (fab) => (ta) => (r) => fab(ta(r)),
+  join: (tta) => (r) => tta(r)(r),
+  chain: (fatb) => (ta) => (r) => fatb(ta(r))(r),
 };
 
-export const Apply: TC.Apply<Reader<_0, _1>, 2> = {
-  ap: Monad.ap,
-  map: Monad.map,
-};
+export const Functor: TC.Functor<Reader<_0, _1>, 2> = Monad;
+
+export const Applicative: TC.Applicative<Reader<_0, _1>, 2> = Monad;
+
+export const Apply: TC.Apply<Reader<_0, _1>, 2> = Monad;
+
+export const Chain: TC.Chain<Reader<_0, _1>, 2> = Monad;
 
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = Monad;
 
 /***************************************************************************************************
  * @section Utilities

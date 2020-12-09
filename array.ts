@@ -1,8 +1,8 @@
 import type * as TC from "./type_classes.ts";
-import type { $, _ } from "./types.ts";
+import type { $, _, Fn, Predicate } from "./types.ts";
 
-import * as D from "./derivations.ts";
 import * as O from "./option.ts";
+import { pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
@@ -56,6 +56,67 @@ export const _concat = <A>(
   return result;
 };
 
+export const _flatten = <A>(aas: readonly (readonly A[])[]): readonly A[] => {
+  if (aas.length === 0) {
+    return (aas as unknown) as readonly A[];
+  }
+
+  const result: A[] = [];
+
+  for (let i = 0; i < aas.length; i++) {
+    const as = aas[i];
+    if (as.length > 0) {
+      for (let j = 0; j < as.length; j++) {
+        result.push(as[j]);
+      }
+    }
+  }
+
+  return result;
+};
+
+export const _chain = <A, B>(fatb: Fn<[A], readonly B[]>) =>
+  (ta: readonly A[]) => {
+    if (ta.length === 0) {
+      return [];
+    }
+
+    const result: B[] = [];
+
+    for (let i = 0; i < ta.length; i++) {
+      const bs = fatb(ta[i]);
+
+      if (bs.length > 0) {
+        for (let j = 0; j < bs.length; j++) {
+          result.push(bs[j]);
+        }
+      }
+    }
+
+    return result;
+  };
+
+export const _filter = <A>(predicate: Predicate<A>) =>
+  (as: readonly A[]): readonly A[] => {
+    if (as.length === 0) {
+      return as;
+    }
+
+    const result: A[] = Array(as.length);
+    let l = 0;
+
+    for (let i = 0; i < as.length; i++) {
+      const a = as[i];
+      if (predicate(a)) {
+        result[l] = a;
+        l++;
+      }
+    }
+
+    result.length = l;
+    return result;
+  };
+
 export const _isOutOfBounds = <A>(i: number, as: readonly A[]): boolean =>
   i < 0 || i >= as.length;
 
@@ -92,6 +153,11 @@ export const _unsafeDeleteAt = <A>(
   return xs;
 };
 
+export const _unsafePush = <A>(as: A[], a: A): A[] => {
+  as.push(a);
+  return as;
+};
+
 /***************************************************************************************************
  * @section Constructors
  **************************************************************************************************/
@@ -109,65 +175,47 @@ export const Monoid: TC.Monoid<ReadonlyArray<_>> = {
   concat: _concat,
 };
 
-export const Functor: TC.Functor<ReadonlyArray<_>> = {
-  map: (fab, ta) => _map(ta, (a) => fab(a)),
-};
-
 export const Monad: TC.Monad<ReadonlyArray<_>> = {
   of: (a) => [a],
-  ap: (tfab, ta) => Monad.chain((f) => Monad.map(f, ta), tfab),
-  map: (fab, ta) => _map(ta, (a) => fab(a)),
-  join: (tta) => tta.flat(1),
-  chain: (fatb, ta) =>
-    // deno-lint-ignore no-explicit-any
-    _reduce(ta, (bs, a) => _concat(bs, fatb(a)), [] as readonly any[]),
+  ap: (tfab) => (ta) => pipe(tfab, Monad.chain((fab) => _map(ta, fab))),
+  map: (fab) => (ta) => _map(ta, fab),
+  join: _flatten,
+  chain: _chain,
 };
 
-export const Apply: TC.Apply<ReadonlyArray<_>> = {
-  ap: Monad.ap,
-  map: Functor.map,
-};
+export const Functor: TC.Functor<ReadonlyArray<_>> = Monad;
 
-export const Applicative: TC.Applicative<ReadonlyArray<_>> = {
-  of: Monad.of,
-  ap: Monad.ap,
-  map: Functor.map,
-};
+export const Apply: TC.Apply<ReadonlyArray<_>> = Monad;
+
+export const Applicative: TC.Applicative<ReadonlyArray<_>> = Monad;
+
+export const Chain: TC.Chain<ReadonlyArray<_>> = Monad;
 
 export const Alt: TC.Alt<ReadonlyArray<_>> = {
-  alt: (ta, tb) => ta.length === 0 ? tb : ta,
-  map: Functor.map,
+  alt: (tb) => (ta) => tb.length === 0 ? ta : tb,
+  map: Monad.map,
 };
 
 export const Filterable: TC.Filterable<ReadonlyArray<_>> = {
-  filter: (predicate, ta) => ta.filter(predicate),
+  filter: _filter,
 };
 
 export const IndexedFoldable: TC.IndexedFoldable<ReadonlyArray<_>> = {
-  reduce: (faba, a, tb) => _reduce(tb, faba, a),
+  reduce: (faba, a) => (tb) => _reduce(tb, faba, a),
 };
 
 export const IndexedTraversable: TC.IndexedTraversable<ReadonlyArray<_>> = {
   map: Monad.map,
   reduce: IndexedFoldable.reduce,
-  traverse: <U, A, B>(
-    A: TC.Applicative<U>,
-    faub: (a: A, i: number) => $<U, [B]>,
-    ta: readonly A[],
-  ) =>
-    IndexedFoldable.reduce(
-      (fbs, a, i) =>
-        A.ap(
-          A.map((bs) =>
-            (b: B) => {
-              bs.push(b);
-              return bs;
-            }, fbs),
-          faub(a, i),
-        ),
-      A.of([] as B[]),
-      ta,
-    ),
+  traverse: <U>(A: TC.Applicative<U>) =>
+    <A, B>(faub: Fn<[A, number], $<U, [B]>>) =>
+      IndexedFoldable.reduce(
+        (fbs, a: A, i) =>
+          A.ap(A.map((bs: B[]) => (b: B) => _unsafePush(bs, b))(fbs))(
+            faub(a, i),
+          ),
+        A.of([] as B[]),
+      ),
 };
 
 export const Foldable: TC.Foldable<ReadonlyArray<_>> = IndexedFoldable;
@@ -222,21 +270,16 @@ export const getMonoid = <A = never>(): TC.Monoid<readonly A[]> => ({
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = Monad;
 
-export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
+export const { reduce, traverse } = Traversable;
+
+export const { filter } = Filterable;
 
 export const {
   traverse: indexedTraverse,
   reduce: indexedReduce,
-  map: indexedMap,
-}: TC.IndexedTraversableP<ReadonlyArray<_>> = {
-  map: (fab) => (ta) => _map(ta, fab),
-  reduce: (faba, a) => (tb) => _reduce(tb, faba, a),
-  traverse: <U>(A: TC.Applicative<U>) =>
-    <A, B>(faUb: (a: A, i: number) => $<U, [B]>) =>
-      (ta: readonly A[]) => IndexedTraversable.traverse(A, faUb, ta),
-};
+}: TC.IndexedTraversable<ReadonlyArray<_>> = IndexedTraversable;
 
 export const lookup = (i: number) =>
   <A>(as: readonly A[]): O.Option<A> =>
@@ -244,7 +287,7 @@ export const lookup = (i: number) =>
 
 export const insertAt = <A>(i: number, a: A) =>
   (as: readonly A[]): O.Option<readonly A[]> =>
-    _isOutOfBounds(i, as) ? O.none : O.some(_unsafeInsertAt(i, a, as));
+    i < 0 || i > as.length ? O.none : O.some(_unsafeInsertAt(i, a, as));
 
 export const updateAt = <A>(i: number, a: A) =>
   (as: readonly A[]): O.Option<readonly A[]> =>

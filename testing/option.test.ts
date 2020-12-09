@@ -3,9 +3,7 @@ import { assertMonad } from "./assert.ts";
 
 import * as O from "../option.ts";
 
-const add = (a: number, b: number) => a + b;
 const addOne = (n: number): number => n + 1;
-const chainOne = (n: number): O.Option<number> => n !== 1 ? O.some(n) : O.none;
 
 Deno.test({
   name: "Option Constructors",
@@ -41,10 +39,9 @@ const fromString = (s: string) => s.length === 0 ? O.none : O.of(s.length);
 
 Deno.test({
   name: "Option Modules",
-  async fn() {
-    await assertMonad(
+  fn() {
+    assertMonad(
       O.Monad,
-      "Option",
       {
         a: 1,
         ta: O.of(1),

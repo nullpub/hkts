@@ -1,8 +1,6 @@
 import type * as TC from "./type_classes.ts";
-import type { $ } from "./types.ts";
-import type { Traversal } from "./traversal.ts";
 
-import { identity } from "./fns.ts";
+import { flow, identity, pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Module Derivations
@@ -11,164 +9,29 @@ import { identity } from "./fns.ts";
 /**
  * Derive Monad module from of and chain
  */
+
+type SomeMonad<T, L extends TC.LS> =
+  & Pick<TC.Monad<T, L>, "of" | "chain">
+  & Partial<Pick<TC.Monad<T, L>, "map">>;
+
 type CreateMonad = {
-  <T>(M: Pick<TC.Monad<T>, "of" | "chain">): TC.Monad<T>;
-  <T, L extends 1>(M: Pick<TC.Monad<T, L>, "of" | "chain">): TC.Monad<T, L>;
-  <T, L extends 2>(M: Pick<TC.Monad<T, L>, "of" | "chain">): TC.Monad<T, L>;
-  <T, L extends 3>(M: Pick<TC.Monad<T, L>, "of" | "chain">): TC.Monad<T, L>;
-  <T, L extends 4>(M: Pick<TC.Monad<T, L>, "of" | "chain">): TC.Monad<T, L>;
+  <T>(M: SomeMonad<T, 1>): TC.Monad<T>;
+  <T, L extends 1>(M: SomeMonad<T, L>): TC.Monad<T, L>;
+  <T, L extends 2>(M: SomeMonad<T, L>): TC.Monad<T, L>;
+  <T, L extends 3>(M: SomeMonad<T, L>): TC.Monad<T, L>;
+  <T, L extends 4>(M: SomeMonad<T, L>): TC.Monad<T, L>;
 };
 
-export const createMonad: CreateMonad = <T>({
-  of,
-  chain,
-}: Pick<TC.Monad<T>, "of" | "chain">): TC.Monad<T> => {
-  const map: TC.FunctorFn<T, 1> = (fab, ta) => chain((a) => of(fab(a)), ta);
+export const createMonad: CreateMonad = <T>(
+  { of, map: _map, chain }: SomeMonad<T, 1>,
+): TC.Monad<T> => {
+  const map: TC.FunctorFn<T, 1> = _map ?? ((fab) => chain(flow(fab, of)));
 
   return {
     of,
+    ap: (tfab) => (ta) => pipe(tfab, chain((fab) => map(fab)(ta))),
     map,
     chain,
-    join: (tta) => chain(identity, tta),
-    ap: (tfab, ta) => chain((f) => map(f, ta), tfab),
+    join: chain(identity),
   };
 };
-
-/**
- * Derive Bifunctor module from bimap
- */
-type CreateBifunctor = {
-  <T>(M: Pick<TC.Bifunctor<T>, "bimap">): TC.Bifunctor<T>;
-  <T, L extends 1>(M: Pick<TC.Bifunctor<T, L>, "bimap">): TC.Bifunctor<T, L>;
-  <T, L extends 2>(M: Pick<TC.Bifunctor<T, L>, "bimap">): TC.Bifunctor<T, L>;
-  <T, L extends 3>(M: Pick<TC.Bifunctor<T, L>, "bimap">): TC.Bifunctor<T, L>;
-  <T, L extends 4>(M: Pick<TC.Bifunctor<T, L>, "bimap">): TC.Bifunctor<T, L>;
-};
-
-export const createBifunctor: CreateBifunctor = <T>({
-  bimap,
-}: Pick<TC.Bifunctor<T>, "bimap">): TC.Bifunctor<T> => ({
-  bimap,
-  mapLeft: (fef, tea) => bimap(fef, identity, tea),
-});
-
-/***************************************************************************************************
- * @section Pipeable Module Derivations
- **************************************************************************************************/
-
-/**
- * Derive Pipeable Monad from Monad.
- */
-type CreatePipeableMonad = {
-  <T>(M: TC.Monad<T>): TC.MonadP<T>;
-  <T, L extends 1>(M: TC.Monad<T>): TC.MonadP<T, L>;
-  <T, L extends 2>(M: TC.Monad<T, L>): TC.MonadP<T, L>;
-  <T, L extends 3>(M: TC.Monad<T, L>): TC.MonadP<T, L>;
-  <T, L extends 4>(M: TC.Monad<T, L>): TC.MonadP<T, L>;
-};
-
-export const createPipeableMonad: CreatePipeableMonad = <T>(
-  M: TC.Monad<T>,
-): TC.MonadP<T> => ({
-  of: M.of,
-  join: M.join,
-  map: (fab) => (ta) => M.map(fab, ta),
-  chain: (fatb) => (ta) => M.chain(fatb, ta),
-  ap: (tfab) => (ta) => M.ap(tfab, ta),
-});
-
-/**
- * Derive Pipeable Traversable from Traversable.
- */
-type CreatePipeableTraversable = {
-  <T>(M: TC.Traversable<T>): TC.TraversableP<T>;
-  <T, L extends 1>(M: TC.Traversable<T, L>): TC.TraversableP<T, L>;
-  <T, L extends 2>(M: TC.Traversable<T, L>): TC.TraversableP<T, L>;
-  <T, L extends 3>(M: TC.Traversable<T, L>): TC.TraversableP<T, L>;
-  <T, L extends 4>(M: TC.Traversable<T, L>): TC.TraversableP<T, L>;
-};
-
-export const createPipeableTraversable: CreatePipeableTraversable = <T>(
-  T: TC.Traversable<T>,
-): TC.TraversableP<T> => ({
-  map: (fab) => (ta) => T.map(fab, ta),
-  reduce: (faba, a) => (tb) => T.reduce(faba, a, tb),
-  traverse: <U>(A: TC.Applicative<U>) =>
-    <A, B>(faub: (a: A) => $<U, [B]>) =>
-      (ta: $<T, [A]>) => T.traverse(A, faub, ta),
-});
-
-/**
- * Derive Pipeable IndexedTraversable from IndexedTraversable.
- */
-type CreatePipeableIndexedTraversable = {
-  <T, I>(M: TC.IndexedTraversable<T>): TC.IndexedTraversableP<T, 1, I>;
-  <T, L extends 1, I>(
-    M: TC.IndexedTraversable<T, L, I>,
-  ): TC.IndexedTraversableP<T, L, I>;
-  <T, L extends 2, I>(
-    M: TC.IndexedTraversable<T, L, I>,
-  ): TC.IndexedTraversableP<T, L, I>;
-  <T, L extends 3, I>(
-    M: TC.IndexedTraversable<T, L, I>,
-  ): TC.IndexedTraversableP<T, L, I>;
-  <T, L extends 4, I>(
-    M: TC.IndexedTraversable<T, L, I>,
-  ): TC.IndexedTraversableP<T, L, I>;
-};
-
-export const createPipeableIndexedTraversable:
-  CreatePipeableIndexedTraversable = <T>(
-    T: TC.IndexedTraversable<T>,
-  ): TC.IndexedTraversableP<T> => ({
-    map: (fab) => (ta) => T.map(fab, ta),
-    reduce: (faba, a) => (tb) => T.reduce(faba, a, tb),
-    traverse: <U>(A: TC.Applicative<U>) =>
-      <A, B>(faub: (a: A, i: number) => $<U, [B]>) =>
-        (ta: $<T, [A]>) => T.traverse(A, faub, ta),
-  });
-
-/**
- * Derive Pipeable Bifunctor from Bifunctor.
- */
-type CreatePipeableBifunctor = {
-  <T, L extends 1>(
-    M: TC.Bifunctor<T, L>,
-  ): TC.BifunctorP<T, L>;
-  <T, L extends 2>(
-    M: TC.Bifunctor<T, L>,
-  ): TC.BifunctorP<T, L>;
-  <T, L extends 3>(
-    M: TC.Bifunctor<T, L>,
-  ): TC.BifunctorP<T, L>;
-  <T, L extends 4>(
-    M: TC.Bifunctor<T, L>,
-  ): TC.BifunctorP<T, L>;
-};
-
-export const createPipeableBifunctor: CreatePipeableBifunctor = <T>({
-  bimap,
-  mapLeft,
-}: TC.Bifunctor<T>): TC.BifunctorP<T> => ({
-  bimap: (fab, fcd) => (tac) => bimap(fab, fcd, tac),
-  mapLeft: (fef) => (tac) => mapLeft(fef, tac),
-});
-
-/**
- * Derive Traversal from Traversable
- */
-
-// deno-fmt-ignore
-type FromTraversableFn = {
-  <T, L extends 1>(T: TC.Traversable<T, L>): <A>() => Traversal<$<T, [A]>, A>;
-  <T, L extends 2>(T: TC.Traversable<T, L>): <E, A>() => Traversal<$<T, [E, A]>, A>;
-  <T, L extends 3>(T: TC.Traversable<T, L>): <R, E, A>() => Traversal<$<T, [R, E, A]>, A>;
-  <T, L extends 4>(T: TC.Traversable<T, L>): <S, R, E, A>() => Traversal<$<T, [S, R, E, A]>, A>;
-};
-
-export const createTraversal: FromTraversableFn = <T>(T: TC.Traversable<T>) =>
-  <A>(): Traversal<$<T, [A]>, A> => ({
-    getModify: <U>(A: TC.Applicative<U>) => {
-      return (f: (a: A) => $<U, [A]>) => (s: $<T, [A]>) => T.traverse(A, f, s);
-    },
-  });
