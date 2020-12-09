@@ -2,8 +2,7 @@ import type * as TC from "./type_classes.ts";
 import type { $, _, _0, _1, _2, _3, Lazy, Predicate } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-import { constant, isNotNil } from "./fns.ts";
-import * as D from "./derivations.ts";
+import { isNotNil } from "./fns.ts";
 
 /***************************************************************************************************
  * Types
@@ -229,112 +228,79 @@ export const getGroup = <A>(G: TC.Group<A>): TC.Group<Option<A>> => ({
  * Modules
  **************************************************************************************************/
 
-export const Functor: TC.Functor<Option<_>> = {
-  map: (fab, ta) => isNone(ta) ? ta : some(fab(ta.value)),
+export const Monad: TC.Monad<Option<_>> = {
+  of: some,
+  ap: (tfab) =>
+    (ta) => isNone(tfab) || isNone(ta) ? none : some(tfab.value(ta.value)),
+  map: (fab) => (ta) => isNone(ta) ? none : some(fab(ta.value)),
+  join: (tta) => isNone(tta) ? tta : tta.value,
+  chain: (fatb) => (ta) => (isSome(ta) ? fatb(ta.value) : ta),
 };
 
-export const Monad = D.createMonad<Option<_>>({
-  of: some,
-  chain: (fatb, ta) => (isSome(ta) ? fatb(ta.value) : ta),
-});
+export const MonadThrow: TC.MonadThrow<Option<_>> = {
+  ...Monad,
+  throwError: constNone,
+};
+
+export const Functor: TC.Functor<Option<_>> = Monad;
+
+export const Applicative: TC.Applicative<Option<_>> = Monad;
+
+export const Apply: TC.Apply<Option<_>> = Monad;
+
+export const Chain: TC.Chain<Option<_>> = Monad;
 
 export const Alt: TC.Alt<Option<_>> = {
-  alt: (a, b) => (isSome(a) ? a : b),
-  map: Functor.map,
-};
-
-export const Applicative: TC.Applicative<Option<_>> = {
-  of: some,
-  ap: Monad.ap,
-  map: Functor.map,
-};
-
-export const Apply: TC.Apply<Option<_>> = {
-  ap: Monad.ap,
-  map: Functor.map,
+  map: Monad.map,
+  alt: (tb) => (ta) => (isNone(ta) ? tb : ta),
 };
 
 export const Alternative: TC.Alternative<Option<_>> = {
-  of: some,
+  of: Monad.of,
   ap: Monad.ap,
-  map: Functor.map,
-  zero: constNone,
+  map: Monad.map,
   alt: Alt.alt,
-};
-
-export const Chain: TC.Chain<Option<_>> = {
-  ap: Monad.ap,
-  map: Functor.map,
-  chain: Monad.chain,
+  zero: constNone,
 };
 
 export const Extends: TC.Extend<Option<_>> = {
-  map: Functor.map,
-  extend: (ftab, ta) => some(ftab(ta)),
+  map: Monad.map,
+  extend: (ftab) => (ta) => some(ftab(ta)),
 };
 
 export const Filterable: TC.Filterable<Option<_>> = {
-  filter: (predicate, ta) => isNone(ta) ? ta : predicate(ta.value) ? ta : none,
+  filter: (predicate) =>
+    (ta) => isNone(ta) ? ta : predicate(ta.value) ? ta : none,
 };
 
 export const Foldable: TC.Foldable<Option<_>> = {
-  reduce: (faba, a, tb) => (isSome(tb) ? faba(a, tb.value) : a),
+  reduce: (faba, a) => (tb) => (isSome(tb) ? faba(a, tb.value) : a),
 };
 
 export const Plus: TC.Plus<Option<_>> = {
   alt: Alt.alt,
-  map: Functor.map,
+  map: Monad.map,
   zero: constNone,
 };
 
 export const Traversable: TC.Traversable<Option<_>> = {
   map: Functor.map,
   reduce: Foldable.reduce,
-  traverse: <U, A, B>(
-    F: TC.Applicative<U>,
-    faub: (a: A) => $<U, [B]>,
-    ta: Option<A>,
-  ) => isNone(ta) ? F.of(none) : F.map(some, faub(ta.value)),
+  traverse: <U>(A: TC.Applicative<U>) =>
+    <A, B>(faub: (a: A) => $<U, [B]>) =>
+      (ta: Option<A>) => isNone(ta) ? A.of(none) : A.map(some)(faub(ta.value)),
 };
-
-/***************************************************************************************************
- * Transformers
- **************************************************************************************************/
-
-// deno-fmt-ignore
-type ComposeOptionMonad = {
-  <T, L extends 1>(M: TC.Monad<T, L>): TC.Monad<$<T, [Option<_0>]>, L>;
-  <T, L extends 2>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, Option<_1>]>, L>;
-  <T, L extends 3>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, _1, Option<_2>]>, L>;
-  <T, L extends 4>(M: TC.Monad<T, L>): TC.Monad<$<T, [_0, _1, _2, Option<_3>]>, L>;
-};
-
-/**
- * This is an experimental interface. Ideally, the substitution type would handle this
- * a bit better so we wouldn't have to do unsafe coercion.
- * @experimental
- */
-export const composeMonad: ComposeOptionMonad = <T>(M: TC.Monad<T>) =>
-  D.createMonad<$<T, [Option<_>]>>({
-    of: <A>(a: A) => (M.of(some(a)) as unknown) as $<$<T, [Option<_<0>>]>, [A]>,
-    chain: <A, B>(
-      fatb: (a: A) => $<$<T, [Option<_<0>>]>, [B]>,
-      ta: $<$<T, [Option<_<0>>]>, [A]>,
-    ) =>
-      M.chain(
-        (a: Option<A>) =>
-          ((isNone(a) ? M.of(a) : fatb(a.value)) as unknown) as $<T, [unknown]>,
-        ta as $<T, [Option<A>]>,
-      ) as $<$<T, [Option<_<0>>]>, [B]>,
-  });
 
 /***************************************************************************************************
  * Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = Monad;
 
-export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
+export const { reduce, traverse } = Traversable;
+
+export const exists = <A>(predicate: Predicate<A>) =>
+  (ta: Option<A>): boolean => isSome(ta) && predicate(ta.value);
 
 /***************************************************************************************************
  * Sequence

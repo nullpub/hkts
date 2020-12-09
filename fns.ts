@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-explicit-any
+
 import type { Fn, Lazy, Nil, UnknownFn } from "./types.ts";
 
 /***************************************************************************************************
@@ -25,6 +27,9 @@ export const identity = <A>(a: A): A => a;
 
 export const flip = <A, B, C>(f: Fn<[A], Fn<[B], C>>): Fn<[B], Fn<[A], C>> =>
   (b) => (a) => f(a)(b);
+
+export const swap = <A, B, C>(fn: Fn<[A, B], C>): Fn<[B, A], C> =>
+  (b, a) => fn(a, b);
 
 export const compose = <A, B>(fab: Fn<[A], B>) =>
   <C>(fbc: Fn<[B], C>): Fn<[A], C> => (a) => fbc(fab(a));
@@ -57,6 +62,14 @@ export const intersect = <A, B>(a: A, b: B): A & B => {
 };
 
 export const hasOwnProperty = Object.prototype.hasOwnProperty;
+
+export const apply = <AS extends unknown[], B>(...as: AS) =>
+  (fn: Fn<AS, B>): B => fn(...as);
+
+export const call = <AS extends unknown[], B>(fn: Fn<AS, B>) =>
+  (...as: AS) => fn(...as);
+
+export const apply1 = <A, B>(a: A, fn: Fn<[A], B>): B => fn(a);
 
 /***************************************************************************************************
  * @section Pipe
@@ -176,7 +189,7 @@ export type PipeFn = {
 };
 
 export const pipe: PipeFn = (a: unknown, ...fns: UnknownFn[]): unknown =>
-  fns.reduce((val, fn) => fn(val), a);
+  fns.reduce(apply1, a);
 
 /***************************************************************************************************
  * @section Flow
@@ -250,8 +263,7 @@ type FlowFn = {
 
 export const flow: FlowFn = <AS extends unknown[], B>(
   a: (...as: AS) => B,
-  ...fns: UnknownFn[]
+  ...fns: Fn<[any], any>[]
 ): (...as: AS) => unknown => {
-  return (...args: AS): unknown =>
-    fns.reduce((b: unknown, f) => f(b), a(...args));
+  return (...args: AS): unknown => fns.reduce(apply1, a(...args));
 };

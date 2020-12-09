@@ -1,7 +1,7 @@
-import type { $, _, Fix, NonEmptyRecord } from "./types.ts";
-import type { LS } from "./type_classes.ts";
+import type { $, _, NonEmptyRecord } from "../types.ts";
+import type { LS } from "../type_classes.ts";
 
-import { memoize } from "./fns.ts";
+import { memoize } from "../fns.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -54,31 +54,31 @@ export type NullableSchemable<T, L extends LS> = {
 
 export type TypeSchemable<T, L extends LS> = {
   1: <A>(
-    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [A[K]]> }>
+    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [A[K]]> }>,
   ) => $<T, [{ [K in keyof A]: A[K] }]>;
   2: <E, A>(
-    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [E, A[K]]> }>
+    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [E, A[K]]> }>,
   ) => $<T, [E, { [K in keyof A]: A[K] }]>;
   3: <R, E, A>(
-    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [R, E, A[K]]> }>
+    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [R, E, A[K]]> }>,
   ) => $<T, [R, E, { [K in keyof A]: A[K] }]>;
   4: <S, R, E, A>(
-    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [S, R, E, A[K]]> }>
+    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [S, R, E, A[K]]> }>,
   ) => $<T, [S, R, E, { [K in keyof A]: A[K] }]>;
 }[L];
 
 export type PartialSchemable<T, L extends LS> = {
   1: <A>(
-    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [A[K]]> }>
+    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [A[K]]> }>,
   ) => $<T, [Partial<{ [K in keyof A]: A[K] }>]>;
   2: <E, A>(
-    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [E, A[K]]> }>
+    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [E, A[K]]> }>,
   ) => $<T, [E, Partial<{ [K in keyof A]: A[K] }>]>;
   3: <R, E, A>(
-    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [R, E, A[K]]> }>
+    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [R, E, A[K]]> }>,
   ) => $<T, [R, E, Partial<{ [K in keyof A]: A[K] }>]>;
   4: <S, R, E, A>(
-    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [S, R, E, A[K]]> }>
+    properties: NonEmptyRecord<{ [K in keyof A]: $<T, [S, R, E, A[K]]> }>,
   ) => $<T, [S, R, E, Partial<{ [K in keyof A]: A[K] }>]>;
 }[L];
 
@@ -87,7 +87,7 @@ export type RecordSchemable<T, L extends LS> = {
   2: <E, A>(codomain: $<T, [E, A]>) => $<T, [E, Record<string, A>]>;
   3: <R, E, A>(codomain: $<T, [R, E, A]>) => $<T, [R, E, Record<string, A>]>;
   4: <S, R, E, A>(
-    codomain: $<T, [S, R, E, A]>
+    codomain: $<T, [S, R, E, A]>,
   ) => $<T, [S, R, E, Record<string, A>]>;
 }[L];
 
@@ -96,7 +96,7 @@ export type ArraySchemable<T, L extends LS> = {
   2: <E, A>(item: $<T, [E, A]>) => $<T, [E, ReadonlyArray<A>]>;
   3: <R, E, A>(item: $<T, [R, E, A]>) => $<T, [R, E, ReadonlyArray<A>]>;
   4: <S, R, E, A>(
-    item: $<T, [S, R, E, A]>
+    item: $<T, [S, R, E, A]>,
   ) => $<T, [S, R, E, ReadonlyArray<A>]>;
 }[L];
 
@@ -120,11 +120,11 @@ export type IntersectSchemable<T, L extends LS> = {
   2: <E, A, B>(a: $<T, [E, A]>, b: $<T, [E, B]>) => $<T, [E, A & B]>;
   3: <R, E, A, B>(
     a: $<T, [R, E, A]>,
-    b: $<T, [R, E, B]>
+    b: $<T, [R, E, B]>,
   ) => $<T, [R, E, A & B]>;
   4: <S, R, E, A, B>(
     a: $<T, [S, R, E, A]>,
-    b: $<T, [S, R, E, B]>
+    b: $<T, [S, R, E, B]>,
   ) => $<T, [S, R, E, A & B]>;
 }[L];
 
@@ -133,25 +133,25 @@ export type SumSchemable<T, L extends LS> = {
     tag: U,
     members: NonEmptyRecord<
       { [K in keyof A]: $<T, [A[K] & { [K in U]: string }]> }
-    >
+    >,
   ) => $<T, [A[keyof A]]>;
   2: <U extends string, E, A>(
     tag: U,
     members: NonEmptyRecord<
       { [K in keyof A]: $<T, [E, A[K] & { [K in U]: string }]> }
-    >
+    >,
   ) => $<T, [E, A[keyof A]]>;
   3: <U extends string, R, E, A>(
     tag: U,
     members: NonEmptyRecord<
       { [K in keyof A]: $<T, [R, E, A[K] & { [K in U]: string }]> }
-    >
+    >,
   ) => $<T, [R, E, A[keyof A]]>;
   4: <U extends string, S, R, E, A>(
     tag: U,
     members: NonEmptyRecord<
       { [K in keyof A]: $<T, [S, R, E, A[K] & { [K in U]: string }]> }
-    >
+    >,
   ) => $<T, [S, R, E, A[keyof A]]>;
 }[L];
 
@@ -161,7 +161,7 @@ export type LazySchemable<T, L extends LS> = {
   3: <R, E, A>(id: string, f: () => $<T, [R, E, A]>) => $<T, [R, E, A]>;
   4: <S, R, E, A>(
     id: string,
-    f: () => $<T, [S, R, E, A]>
+    f: () => $<T, [S, R, E, A]>,
   ) => $<T, [S, R, E, A]>;
 }[L];
 

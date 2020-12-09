@@ -69,20 +69,14 @@ export interface Fix<T> {
  *     // RecordInstance = <A, B>(fab: (a: A) => B, ta: { value: A }): { value: B }
  **************************************************************************************************/
 
-export type $<T, S extends any[]> = T extends Fix<infer U>
-  ? U
-  : T extends _<infer N>
-  ? S[N]
-  : T extends any[]
-  ? { [K in keyof T]: $<T[K], S> }
-  : T extends Promise<infer I>
-  ? Promise<$<I, S>>
-  : T extends Refinement<infer A, infer B>
-  ? Refinement<$<A, S>, $<B, S>>
-  : T extends (...x: infer I) => infer O
-  ? (...x: $<I, S>) => $<O, S>
-  : T extends object
-  ? { [K in keyof T]: $<T[K], S> }
-  : T extends undefined | null | boolean | string | number
-  ? T
+export type $<T, S extends any[]> = T extends Fix<infer U> ? U
+  : T extends _<infer N> ? S[N]
+  : T extends any[] ? { [K in keyof T]: $<T[K], S> }
+  : T extends Promise<infer I> ? Promise<$<I, S>>
+  : T extends Refinement<infer A, infer B> ? Refinement<$<A, S>, $<B, S>>
+  : T extends (...x: infer I) => infer O ? (...x: $<I, S>) => $<O, S>
+  : T extends Set<infer I> ? Set<$<I, S>>
+  : T extends Map<infer K, infer A> ? Map<$<K, S>, $<A, S>>
+  : T extends object ? { [K in keyof T]: $<T[K], S> }
+  : T extends undefined | null | boolean | string | number ? T
   : T;

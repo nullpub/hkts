@@ -2,8 +2,7 @@ import type * as TC from "./type_classes.ts";
 import type { $, _ } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-import { constant } from "./fns.ts";
-import * as D from "./derivations.ts";
+import { constant, flow } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -15,54 +14,43 @@ export type IO<A> = () => A;
  * @section Modules
  **************************************************************************************************/
 
-export const Functor: TC.Functor<IO<_>> = {
-  map: (fab, ta) => () => fab(ta()),
-};
-
-export const Monad = D.createMonad<IO<_>>({
+export const Monad: TC.Monad<IO<_>> = {
   of: constant,
-  chain: (fatb, ta) => fatb(ta()),
-});
+  ap: (tfab) => (ta) => () => tfab()(ta()),
+  map: (fab) => (ta) => () => fab(ta()),
+  join: (tta) => tta(),
+  chain: (fatb) => (ta) => fatb(ta()),
+};
 
 export const Alt: TC.Alt<IO<_>> = {
-  alt: (a, _) => a,
-  map: Functor.map,
+  alt: constant,
+  map: Monad.map,
 };
 
-export const Applicative: TC.Applicative<IO<_>> = {
-  of: constant,
-  ap: Monad.ap,
-  map: Functor.map,
-};
+export const Functor: TC.Functor<IO<_>> = Monad;
 
-export const Apply: TC.Apply<IO<_>> = {
-  ap: Monad.ap,
-  map: Functor.map,
-};
+export const Applicative: TC.Applicative<IO<_>> = Monad;
 
-export const Chain: TC.Chain<IO<_>> = {
-  ap: Monad.ap,
-  map: Functor.map,
-  chain: Monad.chain,
-};
+export const Apply: TC.Apply<IO<_>> = Monad;
+
+export const Chain: TC.Chain<IO<_>> = Monad;
 
 export const Extends: TC.Extend<IO<_>> = {
-  map: Functor.map,
-  extend: (ftab, ta) => () => ftab(ta),
+  map: Monad.map,
+  extend: (ftab) => (ta) => () => ftab(ta),
 };
 
 export const Foldable: TC.Foldable<IO<_>> = {
-  reduce: (faba, a, tb) => faba(a, tb()),
+  reduce: (faba, a) => (tb) => faba(a, tb()),
 };
 
-export const Traversable: TC.Traversable<IO<_>> = {
-  map: Functor.map,
+export const Traversable: TC.Traversable<IO<_>, 1> = {
+  map: Monad.map,
   reduce: Foldable.reduce,
-  traverse: <U, A, B>(
-    F: TC.Applicative<U>,
-    faub: (a: A) => $<U, [B]>,
-    ta: IO<A>,
-  ) => F.map((ta) => () => faub(ta()), F.of(ta)),
+  traverse: <U>(A: TC.Applicative<U>) =>
+    <A, B>(faub: (a: A) => $<U, [B]>) =>
+      (ta: $<IO<_>, [A]>) =>
+        A.map((ta: $<IO<_>, [A]>) => flow(ta, faub))(A.of(ta)),
 };
 
 /***************************************************************************************************
@@ -82,9 +70,9 @@ export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<IO<A>> => ({
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = Monad;
 
-export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
+export const { reduce, traverse } = Traversable;
 
 /***************************************************************************************************
  * @section Sequenec

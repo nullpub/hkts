@@ -1,9 +1,8 @@
 import type * as TC from "./type_classes.ts";
 import type { $, _ } from "./types.ts";
 
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import * as A from "./array.ts";
-import * as D from "./derivations.ts";
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { identity, pipe } from "./fns.ts";
 
 /***************************************************************************************************
@@ -62,67 +61,71 @@ export const getShow = <A>(S: TC.Show<A>): TC.Show<Tree<A>> => {
  * @section Modules
  **************************************************************************************************/
 
-export const Functor: TC.Functor<Tree<_>> = {
-  map: (fab, ta) => ({
-    value: fab(ta.value),
-    forest: ta.forest.map((t) => Functor.map(fab, t)),
-  }),
-};
-
-export const Monad: TC.Monad<Tree<_>> = ({
+export const Monad: TC.Monad<Tree<_>> = {
   of: make,
-  ap: (tfab, ta) => Monad.chain((f) => Monad.map(f, ta), tfab),
-  map: Functor.map,
-  join: (tta) => Monad.chain(identity, tta),
-  chain: (fatb, ta) => {
-    const { value, forest } = fatb(ta.value);
-    return {
-      value,
-      forest: _concat(forest, ta.forest.map((t) => Monad.chain(fatb, t))),
-    };
-  },
-});
-
-export const Apply: TC.Apply<Tree<_>> = {
-  ap: Monad.ap,
-  map: Monad.map,
+  ap: (tfab) => (ta) => pipe(tfab, Monad.chain((fab) => Monad.map(fab)(ta))),
+  map: (fab) =>
+    (ta) => ({
+      value: fab(ta.value),
+      forest: ta.forest.map(Monad.map(fab)),
+    }),
+  join: (tta) => pipe(tta, Monad.chain(identity)),
+  chain: (fatb) =>
+    (ta) => {
+      const { value, forest } = fatb(ta.value);
+      return {
+        value,
+        forest: _concat(forest, ta.forest.map(Monad.chain(fatb))),
+      };
+    },
 };
+
+export const Functor: TC.Functor<Tree<_>> = Monad;
+
+export const Applicative: TC.Applicative<Tree<_>> = Monad;
+
+export const Apply: TC.Apply<Tree<_>> = Monad;
+
+export const Chain: TC.Chain<Tree<_>> = Monad;
 
 export const Traversable: TC.Traversable<Tree<_>> = {
-  map: Functor.map,
-  reduce: (faba, b, ta) => {
-    let r = faba(b, ta.value);
-    const len = ta.forest.length;
-    for (let i = 0; i < len; i++) {
-      r = Traversable.reduce(faba, r, ta.forest[i]);
-    }
-    return r;
-  },
-  traverse: <U, A, B>(
-    F: TC.Applicative<U>,
-    faub: (a: A) => $<U, [B]>,
-    ta: Tree<A>,
-  ) => {
-    const traverseF = A.traverse(F);
-    const out = <A, B>(f: (a: A) => $<U, [B]>) =>
-      (ta: Tree<A>): $<U, [Tree<B>]> =>
-        F.ap(
-          F.map((value: B) =>
-            (forest: Forest<B>) => ({
-              value,
-              forest,
-            }), f(ta.value)),
-          pipe(ta.forest, traverseF(out(f))),
-        );
-    return out(faub)(ta);
-  },
+  map: Monad.map,
+  reduce: (faba, b) =>
+    (ta) => {
+      let r = faba(b, ta.value);
+      const len = ta.forest.length;
+      for (let i = 0; i < len; i++) {
+        r = Traversable.reduce(faba, r)(ta.forest[i]);
+      }
+      return r;
+    },
+  traverse: <U>(AP: TC.Applicative<U>) =>
+    <A, B>(faub: (a: A) => $<U, [B]>) =>
+      (ta: Tree<A>) => {
+        const traverseF = A.traverse(AP);
+        const out = <A, B>(f: (a: A) => $<U, [B]>) =>
+          (ta: Tree<A>): $<U, [Tree<B>]> =>
+            AP.ap(
+              AP.map((value: B) =>
+                (forest: Forest<B>) => ({
+                  value,
+                  forest,
+                })
+              )(f(ta.value)),
+            )(
+              pipe(ta.forest, traverseF(out(f))),
+            );
+        return out(faub)(ta);
+      },
 };
 
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = Monad;
+
+export const { reduce, traverse } = Traversable;
 
 export const drawForest = (forest: Forest<string>): string =>
   _draw("\n", forest);

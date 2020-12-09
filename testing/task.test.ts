@@ -1,7 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.77.0/testing/asserts.ts";
 
 import * as T from "../task.ts";
-import { assertMonad } from "./assert.ts";
 
 Deno.test({
   name: "Task Constructors",
@@ -17,20 +16,6 @@ const fromString = (s: string) => T.of(s.length);
 
 Deno.test({
   name: "Task Modules",
-  async fn() {
-    await assertMonad(
-      T.Monad,
-      "Task",
-      {
-        a: 1,
-        ta: T.of(1),
-        fab: toString,
-        fbc: toLength,
-        tfab: T.of(toString),
-        tfbc: T.of(toLength),
-        fatb: fromNumber,
-        fbtc: fromString,
-      },
-    );
+  fn() {
   },
 });

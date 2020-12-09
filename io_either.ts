@@ -1,6 +1,6 @@
 import type * as TC from "./type_classes.ts";
 import type { _, _0, _1, Fix, Lazy } from "./types.ts";
-import { constant, pipe } from "./fns.ts";
+import { constant, flow, pipe } from "./fns.ts";
 
 import * as E from "./either.ts";
 import * as I from "./io.ts";
@@ -48,16 +48,37 @@ export const orElse = <E, A, M>(onLeft: (e: E) => IOEither<M, A>) =>
  * @section Modules
  **************************************************************************************************/
 
-export const Functor: TC.Functor<IOEither<_0, _1>, 2> = {
-  map: (fab, ta) => pipe(ta, I.map(E.map(fab))),
+export const Monad: TC.Monad<IOEither<_0, _1>, 2> = {
+  of: right,
+  ap: (tfab) =>
+    (ta) =>
+      () => {
+        const efab = tfab();
+        const ea = ta();
+        return E.isLeft(efab)
+          ? efab
+          : E.isLeft(ea)
+          ? ea
+          : E.right(efab.right(ea.right));
+      },
+  map: (fab) => (ta) => () => pipe(ta(), E.map(fab)),
+  join: (tta) => () => pipe(tta(), E.chain((ta) => ta())),
+  chain: (fatb) =>
+    (ta) => () => pipe(ta(), (a) => E.isLeft(a) ? a : fatb(a.right)()),
 };
+
+export const Functor: TC.Functor<IOEither<_0, _1>, 2> = Monad;
+
+export const Applicative: TC.Applicative<IOEither<_0, _1>, 2> = Monad;
+
+export const Apply: TC.Apply<IOEither<_0, _1>, 2> = Monad;
+
+export const Chain: TC.Chain<IOEither<_0, _1>, 2> = Monad;
 
 export const Bifunctor: TC.Bifunctor<IOEither<_0, _1>> = {
-  bimap: (fab, fcd, tac) => pipe(tac, I.map(E.bimap(fab, fcd))),
-  mapLeft: (fef, tea) => pipe(tea, I.map(E.mapLeft(fef))),
+  bimap: (fab, fcd) => I.map(E.bimap(fab, fcd)),
+  mapLeft: (fef) => I.map(E.mapLeft(fef)),
 };
-
-export const Monad = E.composeMonad(I.Monad);
 
 export const MonadThrow: TC.MonadThrow<IOEither<_0, _1>, 2> = {
   ...Monad,
@@ -66,37 +87,21 @@ export const MonadThrow: TC.MonadThrow<IOEither<_0, _1>, 2> = {
 
 export const Alt: TC.Alt<IOEither<_0, _1>, 2> = ({
   map: Monad.map,
-  alt: (ta, tb) => pipe(ta(), E.fold(constant(tb), right)),
+  alt: (tb) => (ta) => () => pipe(ta(), (a) => E.isLeft(a) ? tb() : a),
 });
-
-export const Applicative: TC.Applicative<IOEither<_0, _1>, 2> = {
-  of: Monad.of,
-  ap: Monad.ap,
-  map: Functor.map,
-};
-
-export const Apply: TC.Apply<IOEither<_0, _1>, 2> = {
-  ap: Monad.ap,
-  map: Functor.map,
-};
-
-export const Chain: TC.Chain<IOEither<_0, _1>, 2> = {
-  ap: Monad.ap,
-  map: Functor.map,
-  chain: Monad.chain,
-};
 
 export const Extends: TC.Extend<IOEither<_0, _1>, 2> = {
   map: Functor.map,
-  extend: (tfab, ta) => right(tfab(ta)),
+  extend: (tfab) => flow(tfab, right),
 };
 
 export const Foldable: TC.Foldable<IOEither<_0, _1>, 2> = {
-  reduce: (faba, a, tb) =>
-    pipe(
-      tb(),
-      E.fold(() => a, (b) => faba(a, b)),
-    ),
+  reduce: (faba, a) =>
+    (tb) =>
+      pipe(
+        tb(),
+        E.fold(() => a, (b) => faba(a, b)),
+      ),
 };
 
 /***************************************************************************************************
@@ -110,7 +115,7 @@ export const getRightMonad = <E>(
 
   return ({
     of: right,
-    ap: (tfab, ta) => pipe(ap(tfab(), ta()), constant),
+    ap: (tfab) => (ta) => pipe(ap(tfab())(ta()), constant),
     map: Monad.map,
     join: Monad.join,
     chain: Monad.chain,
@@ -121,9 +126,9 @@ export const getRightMonad = <E>(
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = Monad;
 
-export const { bimap, mapLeft } = D.createPipeableBifunctor(Bifunctor);
+export const { bimap, mapLeft } = Bifunctor;
 
 /***************************************************************************************************
  * @section Sequence

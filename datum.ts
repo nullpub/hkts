@@ -2,22 +2,38 @@ import type * as TC from "./type_classes.ts";
 import type { $, _, Lazy } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-import { identity, isNotNil } from "./fns.ts";
+import { identity, isNotNil, pipe } from "./fns.ts";
 import * as D from "./derivations.ts";
 
 /***************************************************************************************************
  * @section Types
  **************************************************************************************************/
 
-export type Initial = { tag: "Initial" };
-export type Pending = { tag: "Pending" };
-export type Refresh<A> = { tag: "Refresh"; value: A };
-export type Replete<A> = { tag: "Replete"; value: A };
+export interface Initial {
+  tag: "Initial";
+}
 
-export type None = Initial | Pending;
-export type Some<A> = Refresh<A> | Replete<A>;
+export interface Pending {
+  tag: "Pending";
+}
+
+export interface Refresh<A> {
+  tag: "Refresh";
+  value: A;
+}
+
+export interface Replete<A> {
+  tag: "Replete";
+  value: A;
+}
 
 export type Datum<A> = Initial | Pending | Refresh<A> | Replete<A>;
+
+export type None = Initial | Pending;
+
+export type Some<A> = Refresh<A> | Replete<A>;
+
+export type Loading<A> = Pending | Refresh<A>;
 
 /***************************************************************************************************
  * @section Constructors
@@ -25,11 +41,11 @@ export type Datum<A> = Initial | Pending | Refresh<A> | Replete<A>;
 
 export const initial: Initial = { tag: "Initial" };
 export const pending: Pending = { tag: "Pending" };
-export const refresh = <D>(value: D): Refresh<D> => ({ tag: "Refresh", value });
-export const replete = <D>(value: D): Replete<D> => ({ tag: "Replete", value });
+export const refresh = <D>(value: D): Datum<D> => ({ tag: "Refresh", value });
+export const replete = <D>(value: D): Datum<D> => ({ tag: "Replete", value });
 
-export const constInitial = () => initial;
-export const constPending = () => pending;
+export const constInitial = <A = never>(): Datum<A> => initial;
+export const constPending = <A = never>(): Datum<A> => pending;
 
 export const fromNullable = <A>(a: A): Datum<NonNullable<A>> =>
   isNotNil(a) ? replete(a) : initial;
@@ -43,20 +59,40 @@ export const tryCatch = <A>(f: Lazy<A>): Datum<A> => {
 };
 
 /***************************************************************************************************
+ * @section Combinators
+ **************************************************************************************************/
+
+export const toLoading = <A>(ta: Datum<A>): Datum<A> =>
+  pipe(
+    ta,
+    fold(
+      constPending,
+      constPending,
+      refresh,
+      refresh,
+    ),
+  );
+
+/***************************************************************************************************
  * @section Guards
  **************************************************************************************************/
 
-export const isInitial = <A>(m: Datum<A>): m is Initial => m.tag === "Initial";
-export const isPending = <A>(m: Datum<A>): m is Pending => m.tag === "Pending";
-export const isRefresh = <A>(m: Datum<A>): m is Refresh<A> =>
-  m.tag === "Refresh";
-export const isReplete = <A>(m: Datum<A>): m is Replete<A> =>
-  m.tag === "Replete";
+export const isInitial = <A>(ta: Datum<A>): ta is Initial =>
+  ta.tag === "Initial";
+export const isPending = <A>(ta: Datum<A>): ta is Pending =>
+  ta.tag === "Pending";
+export const isRefresh = <A>(ta: Datum<A>): ta is Refresh<A> =>
+  ta.tag === "Refresh";
+export const isReplete = <A>(ta: Datum<A>): ta is Replete<A> =>
+  ta.tag === "Replete";
 
-export const isNone = <A>(m: Datum<A>): m is None =>
-  isInitial(m) || isPending(m);
-export const isSome = <A>(m: Datum<A>): m is Some<A> =>
-  isRefresh(m) || isReplete(m);
+export const isNone = <A>(ta: Datum<A>): ta is None =>
+  isInitial(ta) || isPending(ta);
+export const isSome = <A>(ta: Datum<A>): ta is Some<A> =>
+  isRefresh(ta) || isReplete(ta);
+
+export const isLoading = <A>(ta: Datum<A>): ta is Loading<A> =>
+  isPending(ta) || isRefresh(ta);
 
 /***************************************************************************************************
  * @section Destructors
@@ -65,8 +101,8 @@ export const isSome = <A>(m: Datum<A>): m is Some<A> =>
 export const fold = <A, B>(
   onInitial: () => B,
   onPending: () => B,
-  onRefresh: (a: A) => B,
   onReplete: (a: A) => B,
+  onRefresh: (a: A) => B,
 ) =>
   (ma: Datum<A>): B => {
     switch (ma.tag) {
@@ -85,15 +121,6 @@ export const getOrElse = <A>(onNone: Lazy<A>) =>
   fold<A, A>(onNone, onNone, identity, identity);
 
 /***************************************************************************************************
- * @section Combinators
- **************************************************************************************************/
-
-export const mapNullable = <A, B>(f: (a: A) => B | null | undefined) =>
-  (
-    ma: Datum<A>,
-  ): Datum<B> => (isNone(ma) ? initial : fromNullable(f(ma.value)));
-
-/***************************************************************************************************
  * @section Module Getters
  **************************************************************************************************/
 
@@ -101,14 +128,14 @@ export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Datum<A>> => ({
   show: fold(
     () => `Initial`,
     () => `Pending`,
-    (a) => `Refresh(${show(a)})`,
     (a) => `Replete(${show(a)})`,
+    (a) => `Refresh(${show(a)})`,
   ),
 });
 
-export const getSemigroup = <A>({
-  concat,
-}: TC.Semigroup<A>): TC.Semigroup<Datum<A>> => ({
+export const getSemigroup = <A>(
+  S: TC.Semigroup<A>,
+): TC.Semigroup<Datum<A>> => ({
   concat: (mx, my) => {
     if (isNone(my)) {
       return mx;
@@ -116,72 +143,136 @@ export const getSemigroup = <A>({
       return my;
     } else {
       if (isRefresh(my) || isRefresh(mx)) {
-        return refresh(concat(mx.value, my.value));
+        return refresh(S.concat(mx.value, my.value));
       } else {
-        return replete(concat(mx.value, my.value));
+        return replete(S.concat(mx.value, my.value));
       }
     }
   },
 });
+
+export const getMonoid = <A>(S: TC.Semigroup<A>): TC.Monoid<Datum<A>> => ({
+  ...getSemigroup(S),
+  empty: () => initial,
+});
+
+export const getSetoid = <A>(S: TC.Setoid<A>): TC.Setoid<Datum<A>> => ({
+  equals: (a, b) =>
+    a === b ||
+    (a.tag === b.tag &&
+      (isSome(a) && isSome(b) ? S.equals(a.value, b.value) : true)),
+});
+
+export const getOrd = <A>(O: TC.Ord<A>): TC.Ord<Datum<A>> => {
+  const { equals } = getSetoid(O);
+  return {
+    equals,
+    lte: (ta, tb) =>
+      pipe(
+        ta,
+        fold(
+          () => isInitial(tb),
+          () => isNone(tb),
+          (a) =>
+            pipe(
+              tb,
+              fold(
+                () => false,
+                () => false,
+                (b) => O.lte(a, b),
+                () => true,
+              ),
+            ),
+          (a) =>
+            pipe(
+              tb,
+              fold(
+                () => false,
+                () => false,
+                () => false,
+                (b) => O.lte(a, b),
+              ),
+            ),
+        ),
+      ),
+  };
+};
 
 /***************************************************************************************************
  * @section Modules
  **************************************************************************************************/
 
 export const Functor: TC.Functor<Datum<_>> = {
-  map: (fab, ta) =>
-    isRefresh(ta)
-      ? refresh(fab(ta.value))
-      : isReplete(ta)
-      ? replete(fab(ta.value))
-      : ta,
+  map: (fab) =>
+    (ta) =>
+      isRefresh(ta)
+        ? refresh(fab(ta.value))
+        : isReplete(ta)
+        ? replete(fab(ta.value))
+        : ta,
 };
 
-export const Monad = D.createMonad<Datum<_>>({
+export const Monad: TC.Monad<Datum<_>> = {
   of: replete,
-  chain: (fatb, ta) => (isSome(ta) ? fatb(ta.value) : ta),
-});
-
-export const Applicative: TC.Applicative<Datum<_>> = {
-  of: replete,
-  ap: Monad.ap,
+  ap: (tfab) =>
+    (ta) => {
+      if (isSome(tfab) && isSome(ta)) {
+        const result = tfab.value(ta.value);
+        if (isLoading(tfab) || isLoading(ta)) {
+          return refresh(result);
+        }
+        return replete(result);
+      }
+      return isLoading(tfab) || isLoading(ta) ? pending : initial;
+    },
   map: Functor.map,
+  join: fold(
+    constInitial,
+    constPending,
+    identity,
+    toLoading,
+  ),
+  chain: (fatb) => (ta) => (isSome(ta) ? fatb(ta.value) : ta),
 };
 
-export const Apply: TC.Apply<Datum<_>> = {
-  ap: Monad.ap,
-  map: Functor.map,
-};
+export const Applicative: TC.Applicative<Datum<_>> = Monad;
+
+export const Apply: TC.Apply<Datum<_>> = Monad;
 
 export const Alternative: TC.Alternative<Datum<_>> = {
   of: replete,
   ap: Monad.ap,
   map: Functor.map,
   zero: constInitial,
-  alt: (a, b) => (isSome(a) ? a : b),
+  alt: (tb) => (ta) => (isSome(ta) ? ta : tb),
 };
 
 export const Foldable: TC.Foldable<Datum<_>> = {
-  reduce: (faba, a, tb) => (isSome(tb) ? faba(a, tb.value) : a),
+  reduce: (faba, a) => (tb) => (isSome(tb) ? faba(a, tb.value) : a),
 };
 
 export const Traversable: TC.Traversable<Datum<_>> = {
   map: Functor.map,
   reduce: Foldable.reduce,
-  traverse: <U, A, B>(
-    F: TC.Applicative<U>,
-    faub: (a: A) => $<U, [B]>,
-    ta: Datum<A>,
-  ) => isNone(ta) ? F.of(initial) : F.map(replete, faub(ta.value)),
+  traverse: <U>(A: TC.Applicative<U>) =>
+    <A, B>(faub: (a: A) => $<U, [B]>) =>
+      (
+        ta: Datum<A>,
+      ) =>
+        isNone(ta)
+          ? A.of(ta)
+          : A.map((b) => isRefresh(ta) ? refresh(b) : replete(b))(
+            faub(ta.value),
+          ),
 };
 
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = D.createPipeableMonad(Monad);
+export const { of, ap, map, join, chain } = Monad;
 
-export const { reduce, traverse } = D.createPipeableTraversable(Traversable);
+export const { reduce, traverse } = Traversable;
 
 /***************************************************************************************************
  * @section Sequence

@@ -1,7 +1,7 @@
 import type { Lens } from "./lens.ts";
 
-import * as O from "./option.ts";
-import * as R from "./record.ts";
+import * as O from "../option.ts";
+import * as R from "../record.ts";
 
 /***************************************************************************************************
  * @section Models

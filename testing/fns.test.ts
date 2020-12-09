@@ -7,7 +7,7 @@ const a = {};
 const add = (a: number) => (b: number) => a + b;
 const addOne = add(1);
 const addTwo = add(2);
-const addOneMap = curry2(O.Monad.map)(addOne);
+const addOneMap = O.map(addOne);
 
 Deno.test("Fn identity", () => {
   assertEquals(identity(a), a);
