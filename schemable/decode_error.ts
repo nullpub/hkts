@@ -1,5 +1,5 @@
-import type { Semigroup } from "./type_classes.ts";
-import { Free, getFreeSemigroup } from "./semigroup.ts";
+import type { Semigroup } from "../type_classes.ts";
+import { Free, getFreeSemigroup } from "../semigroup.ts";
 
 /***************************************************************************************************
  * @section DecodeError
@@ -74,7 +74,7 @@ export const leaf = <E>(actual: unknown, error: E): DecodeError<E> => ({
 export const key = <E>(
   key: string,
   kind: Kind,
-  errors: Free<DecodeError<E>>
+  errors: Free<DecodeError<E>>,
 ): DecodeError<E> => ({
   tag: "Key",
   key,
@@ -85,7 +85,7 @@ export const key = <E>(
 export const index = <E>(
   index: number,
   kind: Kind,
-  errors: Free<DecodeError<E>>
+  errors: Free<DecodeError<E>>,
 ): DecodeError<E> => ({
   tag: "Index",
   index,
@@ -95,7 +95,7 @@ export const index = <E>(
 
 export const member = <E>(
   index: number,
-  errors: Free<DecodeError<E>>
+  errors: Free<DecodeError<E>>,
 ): DecodeError<E> => ({
   tag: "Member",
   index,
@@ -104,7 +104,7 @@ export const member = <E>(
 
 export const lazy = <E>(
   id: string,
-  errors: Free<DecodeError<E>>
+  errors: Free<DecodeError<E>>,
 ): DecodeError<E> => ({
   tag: "Lazy",
   id,
@@ -113,7 +113,7 @@ export const lazy = <E>(
 
 export const wrap = <E>(
   error: E,
-  errors: Free<DecodeError<E>>
+  errors: Free<DecodeError<E>>,
 ): DecodeError<E> => ({
   tag: "Wrap",
   error,

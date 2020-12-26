@@ -13,7 +13,6 @@ import { flow, identity, pipe } from "../fns.ts";
 import { atRecord } from "./at.ts";
 import { indexArray, indexRecord } from "./index.ts";
 import { id as lensId, prop as lensProp, props as lensProps } from "./lens.ts";
-import { createTraversal } from "./shared.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -70,7 +69,7 @@ export const asOptional = <S, A>(sa: Prism<S, A>): Optional<S, A> => ({
 });
 
 export const asTraversal = <S, A>(sa: Prism<S, A>): Traversal<S, A> => ({
-  getModify: <T>(F: TC.Applicative<T>) =>
+  traverse: <T>(F: TC.Applicative<T>) =>
     (f: Fn<[A], $<T, [A]>>) =>
       (s: S) =>
         pipe(
@@ -133,13 +132,13 @@ export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
   <S>(
     sa: Prism<S, A>,
   ): Traversal<S, B> => ({
-    getModify: <T>(A: TC.Applicative<T>) =>
+    traverse: <T>(A: TC.Applicative<T>) =>
       (f: Fn<[B], $<T, [B]>>) =>
         (s: S) =>
           pipe(
             sa.getOption(s),
             O.fold(
-              (a) => pipe(ab.getModify(A)(f)(a), A.map(sa.reverseGet)),
+              (a) => pipe(ab.traverse(A)(f)(a), A.map(sa.reverseGet)),
               () => A.of(s),
             ),
           ),
@@ -167,9 +166,13 @@ export const filter: FilterFn = <A>(predicate: Predicate<A>) =>
 export const traverse = <T>(T: TC.Traversable<T>) =>
   <S, A>(
     sa: Prism<S, $<T, [A]>>,
-  ): Traversal<S, A> => composeTraversal(createTraversal(T)<A>())(sa);
+  ): Traversal<S, A> =>
+    pipe(
+      sa,
+      composeTraversal(T as Traversal<$<T, [A]>, A>),
+    );
 
-export const getModifyOption = <S, A>(sa: Prism<S, A>) =>
+export const traverseOption = <S, A>(sa: Prism<S, A>) =>
   (
     faa: (a: A) => A,
   ) =>
@@ -188,7 +191,7 @@ export const modify = <S, A>(sa: Prism<S, A>) =>
       s: S,
     ): S =>
       pipe(
-        getModifyOption(sa)(f)(s),
+        traverseOption(sa)(f)(s),
         O.getOrElse(() => s),
       );
 

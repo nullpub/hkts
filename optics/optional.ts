@@ -56,7 +56,7 @@ export const Category: TC.Category<Optional<_0, _1>> = {
  **************************************************************************************************/
 
 export const asTraversal = <S, A>(sa: Optional<S, A>): Traversal<S, A> => ({
-  getModify: <T>(F: TC.Applicative<T>) =>
+  traverse: <T>(F: TC.Applicative<T>) =>
     (f: Fn<[A], $<T, [A]>>) =>
       (s: S) =>
         pipe(
@@ -114,13 +114,13 @@ export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
   <S>(
     sa: Optional<S, A>,
   ): Traversal<S, B> => ({
-    getModify: <T>(A: TC.Applicative<T>) =>
+    traverse: <T>(A: TC.Applicative<T>) =>
       (f: Fn<[B], $<T, [B]>>) =>
         (s: S) =>
           pipe(
             sa.getOption(s),
             O.fold(
-              (a) => pipe(ab.getModify(A)(f)(a), A.map((a) => sa.set(a)(s))),
+              (a) => pipe(ab.traverse(A)(f)(a), A.map((a) => sa.set(a)(s))),
               () => A.of(s),
             ),
           ),

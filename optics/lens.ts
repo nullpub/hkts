@@ -15,7 +15,6 @@ import { constant, flow, identity, pipe } from "../fns.ts";
 
 import { atRecord } from "./at.ts";
 import { indexArray, indexRecord } from "./index.ts";
-import { createTraversal } from "./shared.ts";
 
 /***************************************************************************************************
  * @section Models
@@ -56,7 +55,7 @@ export const asOptional = <S, A>(sa: Lens<S, A>): Optional<S, A> => ({
 });
 
 export const asTraversal = <S, A>(sa: Lens<S, A>): Traversal<S, A> => ({
-  getModify: <T>(A: TC.Applicative<T>) =>
+  traverse: <T>(A: TC.Applicative<T>) =>
     (f: Fn<[A], $<T, [A]>>) =>
       (s: S) => pipe(f(sa.get(s)), A.map((a) => sa.set(a)(s))),
 });
@@ -113,10 +112,10 @@ export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
   <S>(
     sa: Lens<S, A>,
   ): Traversal<S, B> => ({
-    getModify: <T>(A: TC.Applicative<T>) =>
+    traverse: <T>(A: TC.Applicative<T>) =>
       (f: Fn<[B], $<T, [B]>>) =>
         (s: S) =>
-          pipe(ab.getModify(A)(f)(sa.get(s)), A.map((a: A) => sa.set(a)(s))),
+          pipe(ab.traverse(A)(f)(sa.get(s)), A.map((a: A) => sa.set(a)(s))),
   });
 
 /***************************************************************************************************
@@ -151,7 +150,11 @@ export const modify = <A>(f: (a: A) => A) =>
 export const traverse = <T>(T: TC.Traversable<T>) =>
   <S, A>(
     sa: Lens<S, $<T, [A]>>,
-  ): Traversal<S, A> => composeTraversal(createTraversal(T)<A>())(sa);
+  ): Traversal<S, A> =>
+    pipe(
+      sa,
+      composeTraversal(T as Traversal<$<T, [A]>, A>),
+    );
 
 export const prop = <A, P extends keyof A>(prop: P) =>
   <S>(

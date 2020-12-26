@@ -5,7 +5,6 @@ import * as E from "../either.ts";
 import * as T from "../tree.ts";
 import * as A from "../array.ts";
 import * as R from "../record.ts";
-import * as DE from "../decode_error.ts";
 import { Free } from "../semigroup.ts";
 import { createSequenceTuple } from "../sequence.ts";
 import {
@@ -16,6 +15,7 @@ import {
   pipe,
 } from "../fns.ts";
 
+import * as DE from "./decode_error.ts";
 import * as S from "./schemable.ts";
 import * as G from "./guard.ts";
 

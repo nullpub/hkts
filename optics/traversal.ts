@@ -21,14 +21,13 @@ import {
   prop as lensProp,
   props as lensProps,
 } from "./lens.ts";
-import { createTraversal } from "./shared.ts";
 
 /***************************************************************************************************
  * @section Types
  **************************************************************************************************/
 
 // deno-fmt-ignore
-export type GetModifyFn<S, A> = {
+export type traverseFn<S, A> = {
   <T, L extends 1>(A: TC.Applicative<T, L>): (
     f: (a: A) => $<T, [A]>
   ) => (s: S) => $<T, [S]>;
@@ -44,7 +43,7 @@ export type GetModifyFn<S, A> = {
 };
 
 export type Traversal<S, A> = {
-  readonly getModify: GetModifyFn<S, A>;
+  readonly traverse: traverseFn<S, A>;
 };
 
 export type From<T> = T extends Traversal<infer S, infer _> ? S : never;
@@ -55,7 +54,16 @@ export type To<T> = T extends Traversal<infer _, infer A> ? A : never;
  * @section Constructors
  **************************************************************************************************/
 
-export const fromTraversable = createTraversal;
+// deno-fmt-ignore
+type FromTraversableFn = {
+  <T, L extends 1>(T: TC.Traversable<T, L>): <A>() => Traversal<$<T, [A]>, A>;
+  <T, L extends 2>(T: TC.Traversable<T, L>): <E, A>() => Traversal<$<T, [E, A]>, A>;
+  <T, L extends 3>(T: TC.Traversable<T, L>): <R, E, A>() => Traversal<$<T, [R, E, A]>, A>;
+  <T, L extends 4>(T: TC.Traversable<T, L>): <S, R, E, A>() => Traversal<$<T, [S, R, E, A]>, A>;
+  };
+
+export const fromTraversable: FromTraversableFn = <T>(T: TC.Traversable<T>) =>
+  <A>(): Traversal<$<T, [A]>, A> => T;
 
 /***************************************************************************************************
  * @section Modules
@@ -63,13 +71,13 @@ export const fromTraversable = createTraversal;
 
 export const Category: TC.Category<Traversal<_0, _1>> = {
   id: () => ({
-    getModify: () => identity,
+    traverse: () => identity,
   }),
   compose: (jk) =>
     (ij) => ({
-      getModify: (F) => {
-        const fij = ij.getModify(F);
-        const fjk = jk.getModify(F);
+      traverse: (F) => {
+        const fij = ij.traverse(F);
+        const fjk = jk.traverse(F);
         return (f) => fij(fjk(f));
       },
     }),
@@ -85,7 +93,7 @@ export const id: <A>() => Traversal<A, A> = Category.id;
 export const compose = <A, B>(ab: Traversal<A, B>) => <S>(
   sa: Traversal<S, A>
 ): Traversal<S, B> => ({
-  getModify: pipe(sa, Category.compose(ab)).getModify
+  traverse: pipe(sa, Category.compose(ab)).traverse
 });
 
 export const composeIso = flow(isoAsTraversal, compose);
@@ -101,7 +109,7 @@ export const composeOptional = flow(optionalAsTraversal, compose);
  **************************************************************************************************/
 
 export const modify = <A>(f: (a: A) => A) =>
-  <S>(sa: Traversal<S, A>) => sa.getModify(I.Applicative)(f);
+  <S>(sa: Traversal<S, A>) => sa.traverse(I.Applicative)(f);
 
 export const set = <A>(a: A): (<S>(sa: Traversal<S, A>) => (s: S) => S) => {
   return modify(() => a);
@@ -161,13 +169,17 @@ type TraverseFn = {
 export const traverse: TraverseFn = <T>(T: TC.Traversable<T>) =>
   <S, A>(
     sa: Traversal<S, $<T, [A]>>,
-  ): Traversal<S, A> => pipe(sa, compose({ getModify: T.traverse } as any));
+  ): Traversal<S, A> =>
+    pipe(
+      sa,
+      compose(T as Traversal<$<T, [A]>, A>),
+    );
 
 export const foldMap = <M>(M: TC.Monoid<M>) =>
   <A>(f: (a: A) => M) =>
     <S>(
       sa: Traversal<S, A>,
-    ): ((s: S) => M) => sa.getModify(C.getApplicative(M))((a) => C.make(f(a)));
+    ): ((s: S) => M) => sa.traverse(C.getApplicative(M))((a) => C.make(f(a)));
 
 export const fold = <A>(
   M: TC.Monoid<A>,

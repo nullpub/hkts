@@ -10,9 +10,7 @@ import type { Traversal } from "./traversal.ts";
 
 import * as O from "../option.ts";
 import * as E from "../either.ts";
-import { constant, flow, identity } from "../fns.ts";
-
-import { createTraversal } from "./shared.ts";
+import { constant, flow, identity, pipe } from "../fns.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -71,7 +69,7 @@ export const asOptional = <S, A>(sa: Iso<S, A>): Optional<S, A> => ({
 });
 
 export const asTraversal = <S, A>(sa: Iso<S, A>): Traversal<S, A> => ({
-  getModify: <T>({ map }: TC.Applicative<T>) =>
+  traverse: <T>({ map }: TC.Applicative<T>) =>
     (f: Fn<[A], $<T, [A]>>) =>
       (
         s: S,
@@ -112,9 +110,9 @@ export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
   <S>(
     sa: Iso<S, A>,
   ): Traversal<S, B> => ({
-    getModify: <T>(A: TC.Applicative<T>) =>
+    traverse: <T>(A: TC.Applicative<T>) =>
       (f: Fn<[B], $<T, [B]>>) =>
-        (s: S) => A.map(sa.reverseGet)(ab.getModify(A)(f)(sa.get(s))),
+        (s: S) => A.map(sa.reverseGet)(ab.traverse(A)(f)(sa.get(s))),
   });
 
 /***************************************************************************************************
@@ -140,7 +138,11 @@ export const reverse = <S, A>(sa: Iso<S, A>): Iso<A, S> => ({
 export const traverse = <T>(T: TC.Traversable<T>) =>
   <S, A>(
     sa: Iso<S, $<T, [A]>>,
-  ): Traversal<S, A> => composeTraversal(createTraversal(T)<A>())(sa);
+  ): Traversal<S, A> =>
+    pipe(
+      sa,
+      composeTraversal(T as Traversal<$<T, [A]>, A>),
+    );
 
 /***************************************************************************************************
  * @section Pipeable Over ADT

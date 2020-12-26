@@ -6,6 +6,7 @@ import type {
   _2,
   _3,
   Fix,
+  Fn,
   Lazy,
   Predicate,
   Refinement,
@@ -53,6 +54,18 @@ export const tryCatch = <E, A>(
     return left(onError(e));
   }
 };
+
+export const tryCatchWrap = <E, A, AS extends unknown[]>(
+  fn: Fn<AS, A>,
+  onError: (e: unknown) => E,
+): Fn<AS, Either<E, A>> =>
+  (...as: AS) => {
+    try {
+      return right(fn(...as));
+    } catch (e) {
+      return left(onError(e));
+    }
+  };
 
 export const fromPredicate: {
   <E, A, B extends A>(refinement: Refinement<A, B>, onFalse: (a: A) => E): (
