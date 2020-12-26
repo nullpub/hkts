@@ -33,6 +33,19 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Features
 
+* major structural changes ([e0ca2b6](https://github.com/nullpub/hkts/commit/e0ca2b6a4cf65318e085b268abfcefcbee2ddd42))
+* optics cleanup and examples ([7237b40](https://github.com/nullpub/hkts/commit/7237b40722b9f40e834984328e083396d8e2a285))
+
+
+### Bug Fixes
+
+* found error in array traverse aand fixed it ([7d4042c](https://github.com/nullpub/hkts/commit/7d4042c91b4f4f818c33ec83978d0c981c7f80da))
+
+### [0.0.42](https://github.com/nullpub/hkts/compare/v0.0.41...v0.0.42) (2020-12-26)
+
+
+### Features
+
 * major structural changes ([c0067f0](https://github.com/nullpub/hkts/commit/c0067f0b26f15d5e120d7e76d171a53e6302c2d0))
 
 ### [0.0.41](https://github.com/nullpub/hkts/compare/v0.0.40...v0.0.41) (2020-12-02)
