@@ -209,13 +209,16 @@ export const IndexedTraversable: TC.IndexedTraversable<ReadonlyArray<_>> = {
   reduce: IndexedFoldable.reduce,
   traverse: <U>(A: TC.Applicative<U>) =>
     <A, B>(faub: Fn<[A, number], $<U, [B]>>) =>
-      IndexedFoldable.reduce(
-        (fbs, a: A, i) =>
-          A.ap(A.map((bs: B[]) => (b: B) => _unsafePush(bs, b))(fbs))(
-            faub(a, i),
-          ),
-        A.of([] as B[]),
-      ),
+      (ta: ReadonlyArray<A>) =>
+        _reduce(
+          ta,
+          (fbs, a, i) =>
+            pipe(
+              faub(a, i),
+              A.ap(pipe(fbs, A.map((bs: B[]) => (b: B) => [...bs, b]))),
+            ),
+          A.of([] as B[]),
+        ),
 };
 
 export const Foldable: TC.Foldable<ReadonlyArray<_>> = IndexedFoldable;

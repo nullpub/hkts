@@ -55,10 +55,6 @@ export type To<T> = T extends Traversal<infer _, infer A> ? A : never;
  * @section Constructors
  **************************************************************************************************/
 
-export const id = <S>(): Traversal<S, S> => ({
-  getModify: <T>(_: TC.Applicative<T>) => <A>(f: (a: A) => $<T, [A]>) => f,
-});
-
 export const fromTraversable = createTraversal;
 
 /***************************************************************************************************
@@ -83,12 +79,13 @@ export const Category: TC.Category<Traversal<_0, _1>> = {
  * @section Pipeable Compose
  **************************************************************************************************/
 
+export const id: <A>() => Traversal<A, A> = Category.id;
+
 // deno-fmt-ignore
 export const compose = <A, B>(ab: Traversal<A, B>) => <S>(
   sa: Traversal<S, A>
 ): Traversal<S, B> => ({
-  getModify: <T>(F: TC.Applicative<T>) => (f: Fn<[B], $<T, [B]>>) =>
-    sa.getModify(F)(ab.getModify(F)(f)),
+  getModify: pipe(sa, Category.compose(ab)).getModify
 });
 
 export const composeIso = flow(isoAsTraversal, compose);
@@ -104,10 +101,7 @@ export const composeOptional = flow(optionalAsTraversal, compose);
  **************************************************************************************************/
 
 export const modify = <A>(f: (a: A) => A) =>
-  <S>(sa: Traversal<S, A>) =>
-    (
-      s: S,
-    ): S => sa.getModify(I.Applicative)(f)(s);
+  <S>(sa: Traversal<S, A>) => sa.getModify(I.Applicative)(f);
 
 export const set = <A>(a: A): (<S>(sa: Traversal<S, A>) => (s: S) => S) => {
   return modify(() => a);
@@ -167,7 +161,7 @@ type TraverseFn = {
 export const traverse: TraverseFn = <T>(T: TC.Traversable<T>) =>
   <S, A>(
     sa: Traversal<S, $<T, [A]>>,
-  ): Traversal<S, A> => compose(createTraversal(T)<A>())(sa);
+  ): Traversal<S, A> => pipe(sa, compose({ getModify: T.traverse } as any));
 
 export const foldMap = <M>(M: TC.Monoid<M>) =>
   <A>(f: (a: A) => M) =>
@@ -179,9 +173,8 @@ export const fold = <A>(
   M: TC.Monoid<A>,
 ): (<S>(sa: Traversal<S, A>) => (s: S) => A) => foldMap(M)(identity);
 
-export const getAll = <S>(s: S) =>
-  <A>(sa: Traversal<S, A>): ReadonlyArray<A> =>
-    foldMap(A.getMonoid<A>())((a: A) => [a])(sa)(s);
+export const getAll = <S, A>(sa: Traversal<S, A>) =>
+  (s: S): ReadonlyArray<A> => foldMap(A.getMonoid<A>())((a: A) => [a])(sa)(s);
 
 /***************************************************************************************************
  * @section Pipeable Over ADT
