@@ -102,7 +102,7 @@ export const getRightMonad = <F>(
   return {
     of: right,
     ap: (tfab) => (ta) => (r) => M.ap(tfab(r))(ta(r)),
-    map: (fab) => (ta) => (r) => M.map(fab)(ta(r)),
+    map: (fab) => (ta) => flow(ta, M.map(fab)),
     join: (tta) =>
       (r) =>
         pipe(
@@ -126,6 +126,10 @@ export const getRightMonad = <F>(
 export const { of, ap, map, join, chain } = Monad;
 
 export const { bimap, mapLeft } = Bifunctor;
+
+export const compose = <E, B, C>(rbc: ReaderEither<B, E, C>) =>
+  <A>(rab: ReaderEither<A, E, B>): ReaderEither<A, E, C> =>
+    flow(rab, E.chain(rbc));
 
 /***************************************************************************************************
  * @section Sequence

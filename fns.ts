@@ -31,8 +31,8 @@ export const flip = <A, B, C>(f: Fn<[A], Fn<[B], C>>): Fn<[B], Fn<[A], C>> =>
 export const swap = <A, B, C>(fn: Fn<[A, B], C>): Fn<[B, A], C> =>
   (b, a) => fn(a, b);
 
-export const compose = <A, B>(fab: Fn<[A], B>) =>
-  <C>(fbc: Fn<[B], C>): Fn<[A], C> => (a) => fbc(fab(a));
+export const compose = <B, C>(fbc: Fn<[B], C>) =>
+  <A>(fab: Fn<[A], B>): Fn<[A], C> => (a) => fbc(fab(a));
 
 export const constant = <A>(a: A): Lazy<A> => () => a;
 

@@ -18,6 +18,10 @@ export interface Predicate<A> {
   (a: A): boolean;
 }
 
+export interface Guard<A> {
+  (a: unknown): a is A;
+}
+
 export interface Refinement<A, B extends A> {
   (a: A): a is B;
 }

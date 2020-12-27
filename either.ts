@@ -172,17 +172,24 @@ export const getOrd = <E, A>(
   },
 });
 
-export const getSemigroup = <E, A>(
+export const getLeftSemigroup = <E, A>(
+  SE: TC.Semigroup<E>,
+): TC.Semigroup<Either<E, A>> => ({
+  concat: (x, y) =>
+    isRight(x) ? x : isRight(y) ? y : left(SE.concat(x.left, y.left)),
+});
+
+export const getRightSemigroup = <E, A>(
   SA: TC.Semigroup<A>,
 ): TC.Semigroup<Either<E, A>> => ({
   concat: (x, y) =>
     isLeft(x) ? x : isLeft(y) ? y : right(SA.concat(x.right, y.right)),
 });
 
-export const getMonoid = <E, A>(
+export const getRightMonoid = <E, A>(
   MA: TC.Monoid<A>,
 ): TC.Monoid<Either<E, A>> => ({
-  ...getSemigroup(MA),
+  ...getRightSemigroup(MA),
   empty: () => right(MA.empty()),
 });
 
