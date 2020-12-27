@@ -51,7 +51,7 @@ export const Monad: TC.Monad<State<_0, _1>, 2> = {
     (ta) =>
       (s1) => {
         const [a, s2] = ta(s1);
-        return fatb(a)(s2);
+        return fatb(a)(s2 as any);
       },
 };
 

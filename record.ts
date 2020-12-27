@@ -189,11 +189,12 @@ export const pick = <R, K extends keyof R>(...props: [K, K, ...K[]]) =>
   (
     record: R,
   ): Pick<R, K> => {
-    const output: { [Key in keyof R]?: R[Key] } = {};
+    const output: Partial<Pick<R, K>> = {};
+
     for (const k of props) {
       output[k] = record[k];
     }
-    return record;
+    return output as Pick<R, K>;
   };
 
 export const keys = <P extends Record<string, unknown>>(p: P): keyof P[] =>

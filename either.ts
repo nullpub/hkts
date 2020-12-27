@@ -14,7 +14,7 @@ import type {
 
 import * as O from "./option.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-import { identity, isNotNil, pipe } from "./fns.ts";
+import { constant, identity, isNotNil, pipe } from "./fns.ts";
 import * as D from "./derivations.ts";
 
 /***************************************************************************************************
@@ -271,6 +271,9 @@ export const { of, ap, map, join, chain } = Monad;
 export const { reduce, traverse } = Traversable;
 
 export const { bimap, mapLeft } = Bifunctor;
+
+export const widen: <F>() => <E, A>(ta: Either<E, A>) => Either<E | F, A> =
+  constant(identity);
 
 /***************************************************************************************************
  * @section Sequence

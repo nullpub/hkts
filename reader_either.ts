@@ -3,7 +3,7 @@ import type { _0, _1, _2, _3, Fix, Lazy } from "./types.ts";
 
 import * as E from "./either.ts";
 import * as R from "./reader.ts";
-import { flow, identity, pipe } from "./fns.ts";
+import { constant, flow, identity, pipe } from "./fns.ts";
 import { createMonad } from "./derivations.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
@@ -130,6 +130,10 @@ export const { bimap, mapLeft } = Bifunctor;
 export const compose = <E, B, C>(rbc: ReaderEither<B, E, C>) =>
   <A>(rab: ReaderEither<A, E, B>): ReaderEither<A, E, C> =>
     flow(rab, E.chain(rbc));
+
+export const widen: <F>() => <R, E, A>(
+  ta: ReaderEither<R, E, A>,
+) => ReaderEither<R, E | F, A> = constant(identity);
 
 /***************************************************************************************************
  * @section Sequence

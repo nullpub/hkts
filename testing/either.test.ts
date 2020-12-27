@@ -205,7 +205,7 @@ Deno.test({
 
     GetSemigroupCases.forEach(({ concat, args }) => {
       Test.assertSemigroup(
-        E.getSemigroup({ concat }),
+        E.getRightSemigroup({ concat }),
         args,
       );
     });
@@ -257,7 +257,7 @@ Deno.test({
 
     GetMonoidCases.forEach(({ concat, empty, args }) => {
       Test.assertMonoid(
-        E.getMonoid({ concat, empty }),
+        E.getRightMonoid({ concat, empty }),
         args,
       );
     });

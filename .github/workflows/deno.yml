@@ -32,8 +32,5 @@ jobs:
         with:
           deno-version: ${{ matrix.deno }}
 
-      - name: Run Deno Lint
-        run: deno lint --unstable
-
       - name: Run Deno Tests
         run: deno test -A --unstable

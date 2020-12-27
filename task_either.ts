@@ -3,7 +3,7 @@ import type { $, _0, _1, _2, _3, Fix, Lazy } from "./types.ts";
 
 import * as E from "./either.ts";
 import * as T from "./task.ts";
-import { identity, pipe } from "./fns.ts";
+import { constant, identity, pipe } from "./fns.ts";
 import { createMonad } from "./derivations.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
@@ -108,6 +108,10 @@ export const getRightMonad = <E>(
 export const { of, ap, map, join, chain } = Monad;
 
 export const { bimap, mapLeft } = Bifunctor;
+
+export const widen: <F>() => <E, A>(
+  ta: TaskEither<E, A>,
+) => TaskEither<E | F, A> = constant(identity);
 
 /***************************************************************************************************
  * @section Sequence
