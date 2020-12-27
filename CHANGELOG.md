@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.44](https://github.com/nullpub/hkts/compare/v0.0.43...v0.0.44) (2020-12-27)
+
+
+### Features
+
+* minor either and reader_either changes ([af0850d](https://github.com/nullpub/hkts/commit/af0850d286ef7ee9be78532f28fb981e8a671f82))
+
 ### [0.0.43](https://github.com/nullpub/hkts/compare/v0.0.41...v0.0.43) (2020-12-26)
 
 
