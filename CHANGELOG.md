@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.45](https://github.com/nullpub/hkts/compare/v0.0.44...v0.0.45) (2020-12-27)
+
+
+### Features
+
+* add widen types and fix record bug ([d40a680](https://github.com/nullpub/hkts/commit/d40a68084bfdc880fed4b001b6f694236700da9b))
+
 ### [0.0.44](https://github.com/nullpub/hkts/compare/v0.0.43...v0.0.44) (2020-12-27)
 
 
