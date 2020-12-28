@@ -206,6 +206,56 @@ export const getUnionMonoid = <A>(S: TC.Setoid<A>): TC.Monoid<Set<A>> => {
   });
 };
 
+/**
+ * @deprecated
+ */
+export const getMonad = <B>(S: TC.Setoid<B>) => {
+  const isElementOf = elem(S);
+
+  const Monad = {
+    of: (a: B) => new Set([a]),
+    ap: <A>(tfab: Set<Fn<[A], B>>, ta: Set<A>) =>
+      Monad.chain((f) => Monad.map(f, ta), tfab),
+    map: <A>(fab: Fn<[A], B>, ta: Set<A>): Set<B> => {
+      const tb = new Set<B>();
+      const isIn = isElementOf(tb);
+      for (const a of ta.values()) {
+        const b = fab(a);
+        if (!isIn(b)) {
+          tb.add(b);
+        }
+      }
+      return tb;
+    },
+    join: (tta: Set<Set<B>>): Set<B> => {
+      const out = new Set<B>();
+      const isIn = isElementOf(out);
+      for (const ta of tta) {
+        for (const a of ta) {
+          if (!isIn(a)) {
+            out.add(a);
+          }
+        }
+      }
+      return out;
+    },
+    chain: <A>(fatb: Fn<[A], Set<B>>, ta: Set<A>): Set<B> => {
+      const tb = new Set<B>();
+      const isIn = isElementOf(tb);
+      for (const a of ta) {
+        for (const b of fatb(a)) {
+          if (!isIn(b)) {
+            tb.add(b);
+          }
+        }
+      }
+      return tb;
+    },
+  };
+
+  return Monad;
+};
+
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
