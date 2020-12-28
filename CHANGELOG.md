@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.46](https://github.com/nullpub/hkts/compare/v0.0.45...v0.0.46) (2020-12-28)
+
+
+### Features
+
+* added more set.ts features ([233ca17](https://github.com/nullpub/hkts/commit/233ca170210470b88496757c4dc76b1a5346c48a))
+
 ### [0.0.45](https://github.com/nullpub/hkts/compare/v0.0.44...v0.0.45) (2020-12-27)
 
 
