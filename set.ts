@@ -1,8 +1,10 @@
 import type * as TC from "./type_classes.ts";
-import type { _, Fn, Predicate } from "./types.ts";
+import type { $, _, Fn, Predicate } from "./types.ts";
 
-import { fromEquals } from "./setoid.ts";
+import { pipe } from "./fns.ts";
 import { _reduce } from "./array.ts";
+import { fromEquals } from "./setoid.ts";
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
  * @section Constructors
@@ -19,8 +21,7 @@ export const empty = <A = never>(): Set<A> => zero;
 export const elem = <A>(S: TC.Setoid<A>) =>
   (set: Set<A>) =>
     (a: A): boolean => {
-      const values = set.values();
-      for (const b of values) {
+      for (const b of set) {
         if (S.equals(a, b)) {
           return true;
         }
@@ -88,9 +89,56 @@ export const intersection = <A>(S: TC.Setoid<A>) =>
       return out;
     };
 
+export const compact = <A>(S: TC.Setoid<A>) =>
+  (ta: Set<A>): Set<A> => {
+    const out = new Set<A>();
+    const isIn = elem(S)(out);
+    for (const a of ta) {
+      if (!isIn(a)) {
+        out.add(a);
+      }
+    }
+    return out;
+  };
+
+export const join = <A>(tta: Set<Set<A>>): Set<A> => {
+  const out = new Set<A>();
+  for (const ta of tta) {
+    for (const a of ta) {
+      out.add(a);
+    }
+  }
+  return out;
+};
+
 /***************************************************************************************************
  * @section Modules
  **************************************************************************************************/
+
+export const Functor: TC.Functor<Set<_>> = {
+  map: <A, B>(fab: (a: A) => B) =>
+    (ta: Set<A>): Set<B> => {
+      const out = new Set<B>();
+      for (const a of ta) {
+        out.add(fab(a));
+      }
+      return out;
+    },
+};
+
+export const Apply: TC.Apply<Set<_>> = {
+  map: Functor.map,
+  ap: <A, B>(tfab: Set<(a: A) => B>) =>
+    (ta: Set<A>): Set<B> => {
+      const out = new Set<B>();
+      for (const fab of tfab) {
+        for (const a of ta) {
+          out.add(fab(a));
+        }
+      }
+      return out;
+    },
+};
 
 export const Filterable: TC.Filterable<Set<_>> = {
   filter: <A>(predicate: Predicate<A>) =>
@@ -108,6 +156,33 @@ export const Filterable: TC.Filterable<Set<_>> = {
 export const Foldable: TC.Foldable<Set<_>> = {
   reduce: <A, B>(faba: Fn<[A, B], A>, a: A) =>
     (tb: Set<B>): A => _reduce(Array.from(tb), faba, a),
+};
+
+export const Traversable: TC.Traversable<Set<_>> = {
+  map: Functor.map,
+  reduce: Foldable.reduce,
+  traverse: <U>(A: TC.Applicative<U>) =>
+    <A, B>(faub: (a: A) => $<U, [B]>) =>
+      (ta: Set<A>): $<U, [Set<B>]> =>
+        pipe(
+          ta,
+          Foldable.reduce(
+            (fbs, a) =>
+              pipe(
+                faub(a),
+                A.ap(pipe(
+                  fbs,
+                  A.map((bs) =>
+                    (b: B) => {
+                      bs.add(b);
+                      return bs;
+                    }
+                  ),
+                )),
+              ),
+            A.of(new Set<B>()),
+          ),
+        ),
 };
 
 /***************************************************************************************************
@@ -131,55 +206,16 @@ export const getUnionMonoid = <A>(S: TC.Setoid<A>): TC.Monoid<Set<A>> => {
   });
 };
 
-export const getMonad = <B>(S: TC.Setoid<B>) => {
-  const isElementOf = elem(S);
-
-  const Monad = {
-    of: (a: B) => new Set([a]),
-    ap: <A>(tfab: Set<Fn<[A], B>>, ta: Set<A>) =>
-      Monad.chain((f) => Monad.map(f, ta), tfab),
-    map: <A>(fab: Fn<[A], B>, ta: Set<A>): Set<B> => {
-      const tb = new Set<B>();
-      const isIn = isElementOf(tb);
-      for (const a of ta.values()) {
-        const b = fab(a);
-        if (!isIn(b)) {
-          tb.add(b);
-        }
-      }
-      return tb;
-    },
-    join: (tta: Set<Set<B>>): Set<B> => {
-      const out = new Set<B>();
-      const isIn = isElementOf(out);
-      for (const ta of tta) {
-        for (const a of ta) {
-          if (!isIn(a)) {
-            out.add(a);
-          }
-        }
-      }
-      return out;
-    },
-    chain: <A>(fatb: Fn<[A], Set<B>>, ta: Set<A>): Set<B> => {
-      const tb = new Set<B>();
-      const isIn = isElementOf(tb);
-      for (const a of ta) {
-        for (const b of fatb(a)) {
-          if (!isIn(b)) {
-            tb.add(b);
-          }
-        }
-      }
-      return tb;
-    },
-  };
-
-  return Monad;
-};
-
 /***************************************************************************************************
  * @section Pipeables
  **************************************************************************************************/
 
 export const of = <A>(a: A): Set<A> => new Set([a]);
+
+export const { filter } = Filterable;
+
+export const { map, reduce, traverse } = Traversable;
+
+export const sequenceStruct = createSequenceStruct(Apply);
+
+export const sequenceTuple = createSequenceTuple(Apply);
