@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.47](https://github.com/nullpub/hkts/compare/v0.0.46...v0.0.47) (2020-12-28)
+
+
+### Bug Fixes
+
+* add getMonad to set.ts because graph.ts uses it ([d59651a](https://github.com/nullpub/hkts/commit/d59651a88c3b44f8f71d5f466b88f56bca0631b9))
+
 ### [0.0.46](https://github.com/nullpub/hkts/compare/v0.0.45...v0.0.46) (2020-12-28)
 
 
