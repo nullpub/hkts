@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.48](https://github.com/nullpub/hkts/compare/v0.0.47...v0.0.48) (2021-01-30)
+
+
+### Features
+
+* add unknown escape hatch to schemable ([d0f454f](https://github.com/nullpub/hkts/commit/d0f454f0e68f7c51bfa47df79e78827b805f4da6))
+
 ### [0.0.47](https://github.com/nullpub/hkts/compare/v0.0.46...v0.0.47) (2020-12-28)
 
 
