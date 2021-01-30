@@ -13,6 +13,13 @@ export type Literal = string | number | boolean | null;
  * @section Schemables
  **************************************************************************************************/
 
+export type UnknownSchemable<T, L extends LS> = {
+  1: () => $<T, [unknown]>;
+  2: <E>() => $<T, [E, unknown]>;
+  3: <R, E>() => $<T, [R, E, unknown]>;
+  4: <S, R, E>() => $<T, [S, R, E, unknown]>;
+}[L];
+
 export type LiteralSchemable<T, L extends LS> = {
   1: <A extends [Literal, ...Literal[]]>(...s: A) => $<T, [A[number]]>;
   2: <E, A extends [Literal, ...Literal[]]>(...s: A) => $<T, [E, A[number]]>;
@@ -170,6 +177,7 @@ export type LazySchemable<T, L extends LS> = {
  **************************************************************************************************/
 
 export type Schemable<T, L extends LS = 1> = {
+  readonly unknown: UnknownSchemable<T, L>;
   readonly literal: LiteralSchemable<T, L>;
   readonly string: StringSchemable<T, L>;
   readonly number: NumberSchemable<T, L>;

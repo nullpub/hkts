@@ -26,6 +26,8 @@ export const refineUnknown: <A>(
  * @section Guard Schemables
  **************************************************************************************************/
 
+export const unknown = (u: unknown): u is unknown => true;
+
 export const literal = <A extends readonly [S.Literal, ...S.Literal[]]>(
   ...values: A
 ): Guard<unknown, A[number]> =>
@@ -170,6 +172,7 @@ export const sum = <T extends string, A>(
  **************************************************************************************************/
 
 export const Schemable: S.Schemable<Guard<unknown, _>> = {
+  unknown: () => unknown,
   literal,
   string: () => string,
   number: () => number,

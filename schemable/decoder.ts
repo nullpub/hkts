@@ -165,6 +165,8 @@ export const undefinable = <I, A>(
  * @section Schemables
  **************************************************************************************************/
 
+export const unknown = fromGuard(G.unknown, "unknown");
+
 export const literal = <A extends readonly [S.Literal, ...S.Literal[]]>(
   ...values: A
 ): Decoder<unknown, A[number]> => {
@@ -361,6 +363,7 @@ export const lazy = <I, A>(
  **************************************************************************************************/
 
 export const Schemable: S.Schemable<Decoder<unknown, _>> = {
+  unknown: () => unknown,
   literal,
   string: () => string,
   number: () => number,

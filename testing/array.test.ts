@@ -190,6 +190,15 @@ Deno.test({
         faba: (a: number, b: number) => a + b,
       },
     );
+
+    Test.assertMonoid<readonly any[]>(
+      A.Monoid,
+      {
+        a: [1],
+        b: [2],
+        c: [3],
+      },
+    );
   },
 });
 

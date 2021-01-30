@@ -35,11 +35,7 @@ export type Connect<A> = {
   readonly to: Graph<A>;
 };
 
-export type Graph<A> =
-  | Empty
-  | Vertex<A>
-  | Overlay<A>
-  | Connect<A>;
+export type Graph<A> = Empty | Vertex<A> | Overlay<A> | Connect<A>;
 
 export type AdjacencyMap<A> = Map<A, Set<A>>;
 
@@ -51,8 +47,8 @@ export const fold = <A, B>(
   onEmpty: () => B,
   onVertex: (a: A) => B,
   onOverlay: (left: B, right: B) => B,
-  onConnect: (from: B, to: B) => B,
-): (g: Graph<A>) => B => {
+  onConnect: (from: B, to: B) => B
+): ((g: Graph<A>) => B) => {
   const go = (g: Graph<A>): B => {
     switch (g.tag) {
       case "Empty":
@@ -73,7 +69,7 @@ export const fold = <A, B>(
  * @section Constructors
  **************************************************************************************************/
 
-export const zero: Graph<never> = ({ tag: "Empty" });
+export const zero: Graph<never> = { tag: "Empty" };
 
 export const empty = <A = never>(): Graph<A> => zero;
 
@@ -138,7 +134,7 @@ const getInstanceHelpers = memoize(<A>(SA: TC.Setoid<A>) => {
     S.empty,
     S.of,
     (a, b) => setUnion(a)(b),
-    (a, b) => setUnion(a)(b),
+    (a, b) => setUnion(a)(b)
   );
 
   const edgeSet = (g: Graph<A>): Set<[A, A]> => {
@@ -150,10 +146,7 @@ const getInstanceHelpers = memoize(<A>(SA: TC.Setoid<A>) => {
         return setTupleUnion(edgeSet(g.left))(edgeSet(g.right));
       case "Connect":
         return setTupleUnion(setTupleUnion(edgeSet(g.from))(edgeSet(g.to)))(
-          chainS(
-            (x) => mapS((y) => [x, y], vertexSet(g.to)),
-            vertexSet(g.from),
-          ),
+          chainS((x) => mapS((y) => [x, y], vertexSet(g.to)), vertexSet(g.from))
         );
     }
   };
@@ -164,7 +157,7 @@ const getInstanceHelpers = memoize(<A>(SA: TC.Setoid<A>) => {
     } else {
       return and(
         setSetoid.equals(vertexSet(x), vertexSet(y)),
-        setTupleSetoid.equals(edgeSet(x), edgeSet(y)),
+        setTupleSetoid.equals(edgeSet(x), edgeSet(y))
       );
     }
   });
@@ -192,23 +185,15 @@ const getInstanceHelpers = memoize(<A>(SA: TC.Setoid<A>) => {
 
 export const Monad = D.createMonad<Graph<_>>({
   of: vertex,
-  map: (fab) =>
-    flow(
-      fold(
-        empty,
-        flow(fab, vertex),
-        overlay,
-        connect,
-      ),
-    ),
+  map: (fab) => flow(fold(empty, flow(fab, vertex), overlay, connect)),
   chain: (fatb) =>
     flow(
       fold(
         empty,
         flow(fatb, fold(empty, vertex, overlay, connect)),
         overlay,
-        connect,
-      ),
+        connect
+      )
     ),
 });
 
@@ -225,7 +210,7 @@ export const getSetoid = <A>(SA: TC.Setoid<A>): TC.Setoid<Graph<A>> =>
 
 export const getShow = <A>(
   SA: TC.Setoid<A>,
-  SH: TC.Show<A>,
+  SH: TC.Show<A>
 ): TC.Show<Graph<A>> => {
   const _toAdjacencyMap = toAdjacencyMap(SA);
   const _set = S.getShow(SH);
@@ -255,59 +240,68 @@ export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
 
-export const hasVertex = <A>(SA: TC.Setoid<A>) =>
-  (vertex: A) =>
-    (graph: Graph<A>): boolean =>
-      pipe(
-        graph,
-        fold(constFalse, (a) => SA.equals(vertex, a), or, or),
-      );
+export const hasVertex = <A>(SA: TC.Setoid<A>) => (vertex: A) => (
+  graph: Graph<A>
+): boolean =>
+  pipe(
+    graph,
+    fold(constFalse, (a) => SA.equals(vertex, a), or, or)
+  );
 
-export const hasEdge = <A>(SA: TC.Setoid<A>) =>
-  (edgeFrom: A, edgeTo: A) =>
-    (g: Graph<A>): boolean => {
-      const f = pipe(
-        g,
-        fold(
-          () => (n: number) => n,
-          (a) =>
-            (n) =>
-              n === 0
-                ? (SA.equals(edgeFrom, a) ? 1 : 0)
-                : SA.equals(edgeTo, a)
-                ? 2
-                : 1,
-          (left, right) =>
-            (n) => {
-              const hold = left(n);
-              return hold === 0
-                ? right(n)
-                : hold === 1
-                ? right(n) === 2 ? 2 : 1
-                : 2;
-            },
-          (from, to) =>
-            (n: number) => {
-              const res = from(n);
-              return res === 2 ? 2 : to(res);
-            },
-        ),
-      );
+export const hasEdge = <A>(SA: TC.Setoid<A>) => (edgeFrom: A, edgeTo: A) => (
+  g: Graph<A>
+): boolean => {
+  const f = pipe(
+    g,
+    fold(
+      () => (n: number) => n,
+      (a) => (n) =>
+        n === 0
+          ? SA.equals(edgeFrom, a)
+            ? 1
+            : 0
+          : SA.equals(edgeTo, a)
+          ? 2
+          : 1,
+      (left, right) => (n) => {
+        const hold = left(n);
+        return hold === 0
+          ? right(n)
+          : hold === 1
+          ? right(n) === 2
+            ? 2
+            : 1
+          : 2;
+      },
+      (from, to) => (n: number) => {
+        const res = from(n);
+        return res === 2 ? 2 : to(res);
+      }
+    )
+  );
 
-      return f(0) === 2;
-    };
+  return f(0) === 2;
+};
 
-export const induce = <A>(predicate: Predicate<A>) =>
-  (ta: Graph<A>): Graph<A> =>
-    pipe(ta, chain((a: A) => predicate(a) ? vertex(a) : empty()));
+export const induce = <A>(predicate: Predicate<A>) => (
+  ta: Graph<A>
+): Graph<A> =>
+  pipe(
+    ta,
+    chain((a: A) => (predicate(a) ? vertex(a) : empty()))
+  );
 
-export const removeVertex = <A>(SA: TC.Setoid<A>) =>
-  (v: A): (g: Graph<A>) => Graph<A> => induce((a) => !SA.equals(v, a));
+export const removeVertex = <A>(SA: TC.Setoid<A>) => (
+  v: A
+): ((g: Graph<A>) => Graph<A>) => induce((a) => !SA.equals(v, a));
 
-export const splitVertex = <A>(SA: TC.Setoid<A>) =>
-  (a: A, as: A[]) =>
-    (ta: Graph<A>): Graph<A> =>
-      pipe(ta, chain((v) => SA.equals(a, v) ? vertices(as) : vertex(v)));
+export const splitVertex = <A>(SA: TC.Setoid<A>) => (a: A, as: A[]) => (
+  ta: Graph<A>
+): Graph<A> =>
+  pipe(
+    ta,
+    chain((v) => (SA.equals(a, v) ? vertices(as) : vertex(v)))
+  );
 
 export const isEmpty = <A>(g: Graph<A>): boolean =>
   fold(constTrue, constFalse, and, and)(g);
@@ -319,7 +313,9 @@ export const transpose = <A>(g: Graph<A>): Graph<A> =>
   pipe(g, fold(empty, vertex, overlay, swap(connect)));
 
 const _simple = <A>(SA: TC.Setoid<A>) => {
-  const { graphSetoid: { equals } } = getInstanceHelpers(SA);
+  const {
+    graphSetoid: { equals },
+  } = getInstanceHelpers(SA);
   return (op: Fn<[Graph<A>, Graph<A>], Graph<A>>) => {
     return (a: Graph<A>, b: Graph<A>): Graph<A> => {
       const c = op(a, b);
@@ -353,7 +349,7 @@ export const toAdjacencyMap = <A>(SA: TC.Setoid<A>) => {
         productEdges.set(key, new Set(y.keys()));
       }
       return foldMonoid(monoidMap)([x, y, productEdges]);
-    },
+    }
   );
 };
 
@@ -363,6 +359,6 @@ export const isSubgraph = <A>(SA: TC.Setoid<A>) => {
   const submap = M.isSubmap(SA, subsetSetoid);
   const adjacenctMap = toAdjacencyMap(SA);
 
-  return (parent: Graph<A>) =>
-    (sub: Graph<A>): boolean => submap(adjacenctMap(sub))(adjacenctMap(parent));
+  return (parent: Graph<A>) => (sub: Graph<A>): boolean =>
+    submap(adjacenctMap(sub))(adjacenctMap(parent));
 };

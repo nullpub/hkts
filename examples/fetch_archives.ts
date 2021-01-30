@@ -7,16 +7,16 @@ import * as T from "../optics/traversal.ts";
 import { flow, pipe } from "../fns.ts";
 
 // Let's start by defining some error types and making some constructors
-type FetchError = { type: "FetchError"; message: string };
-const fetchError = (message: string): FetchError => ({
+type FetchError = { type: "FetchError"; error: unknown };
+const fetchError = (error: unknown): FetchError => ({
   type: "FetchError",
-  message,
+  error,
 });
 
-type DecodeError = { type: "DecodeError"; message: string };
-const decodeError = (message: string): DecodeError => ({
+type DecodeError = { type: "DecodeError"; error: string };
+const decodeError = (error: string): DecodeError => ({
   type: "DecodeError",
-  message,
+  error,
 });
 
 /**
@@ -58,7 +58,7 @@ const fromDecode = <A>(decoder: D.Decoder<unknown, A>) =>
       decoder, // The decoder
       E.mapLeft((e) => decodeError(D.draw(e))), // Take any decoder errors and wrap them up
       TE.fromEither, // Since a decoder returns a plain "Either" we wrap it in a Task to make a TaskEither
-      TE.widen<FetchError>(), // This hack is necessary so we can have different error types in the flow
+      TE.widen<FetchError>(), // This is necessary so we can have different error types in the flow
     )),
   );
 
