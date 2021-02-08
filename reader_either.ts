@@ -3,8 +3,8 @@ import type { _0, _1, _2, _3, Fix, Lazy } from "./types.ts";
 
 import * as E from "./either.ts";
 import * as R from "./reader.ts";
-import { constant, flow, identity, pipe } from "./fns.ts";
-import { createMonad } from "./derivations.ts";
+import { createDo } from "./derivations.ts";
+import { apply, constant, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
@@ -55,19 +55,35 @@ export const orElse = <S, E, A, M>(onLeft: (e: E) => ReaderEither<S, M, A>) =>
  * @section Modules
  **************************************************************************************************/
 
-export const Monad = createMonad<ReaderEither<_0, _1, _2>, 3>({
-  of: right,
-  map: (fab) => R.map(E.map(fab)),
+export const Functor: TC.Functor<ReaderEither<_0, _1, _2>, 3> = {
+  map: (fab) => (ta) => flow(ta, E.map(fab)),
+};
+
+export const Apply: TC.Apply<ReaderEither<_0, _1, _2>, 3> = {
+  ap: (tfab) =>
+    (ta) => (r) => pipe(tfab(r), E.chain((fab) => pipe(ta(r), E.map(fab)))),
+  map: Functor.map,
+};
+
+export const Applicative: TC.Applicative<ReaderEither<_0, _1, _2>, 3> = {
+  of: flow(E.right, constant),
+  ap: Apply.ap,
+  map: Functor.map,
+};
+
+export const Chain: TC.Chain<ReaderEither<_0, _1, _2>, 3> = {
+  ap: Apply.ap,
+  map: Functor.map,
   chain: (fatb) => R.chain(E.fold(left, fatb)),
-});
+};
 
-export const Functor: TC.Functor<ReaderEither<_0, _1, _2>, 3> = Monad;
-
-export const Applicative: TC.Applicative<ReaderEither<_0, _1, _2>, 3> = Monad;
-
-export const Apply: TC.Apply<ReaderEither<_0, _1, _2>, 3> = Monad;
-
-export const Chain: TC.Chain<ReaderEither<_0, _1, _2>, 3> = Monad;
+export const Monad: TC.Monad<ReaderEither<_0, _1, _2>, 3> = {
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: Chain.chain(identity),
+  chain: Chain.chain,
+};
 
 export const Bifunctor: TC.Bifunctor<ReaderEither<_0, _1, _2>, 3> = {
   bimap: (fab, fcd) => (tac) => flow(tac, E.bimap(fab, fcd)),
@@ -75,7 +91,11 @@ export const Bifunctor: TC.Bifunctor<ReaderEither<_0, _1, _2>, 3> = {
 };
 
 export const MonadThrow: TC.MonadThrow<ReaderEither<_0, _1, _2>, 3> = {
-  ...Monad,
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: Monad.join,
+  chain: Chain.chain,
   throwError: left,
 };
 
@@ -101,20 +121,26 @@ export const getRightMonad = <F>(
 
   return {
     of: right,
-    ap: (tfab) => (ta) => (r) => M.ap(tfab(r))(ta(r)),
+    ap: (tfab) =>
+      (ta) =>
+        (r) =>
+          pipe(
+            ta(r),
+            M.ap(tfab(r)),
+          ),
     map: (fab) => (ta) => flow(ta, M.map(fab)),
     join: (tta) =>
       (r) =>
         pipe(
           tta(r),
-          E.chain((f) => f(r)),
+          M.chain(apply(r)),
         ),
     chain: (fatb) =>
       (ta) =>
         (r) =>
           pipe(
             ta(r),
-            E.chain((a) => fatb(a)(r)),
+            M.chain(flow(fatb, apply(r))),
           ),
   };
 };
@@ -123,9 +149,11 @@ export const getRightMonad = <F>(
  * @section Pipeables
  **************************************************************************************************/
 
-export const { of, ap, map, join, chain } = Monad;
+export const { of, ap, map, join, chain, throwError } = MonadThrow;
 
 export const { bimap, mapLeft } = Bifunctor;
+
+export const { alt } = Alt;
 
 export const compose = <E, B, C>(rbc: ReaderEither<B, E, C>) =>
   <A>(rab: ReaderEither<A, E, B>): ReaderEither<A, E, C> =>
@@ -142,3 +170,9 @@ export const widen: <F>() => <R, E, A>(
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
+
+/***************************************************************************************************
+ * Do
+ **************************************************************************************************/
+
+export const { Do, bind, bindTo } = createDo(Monad);

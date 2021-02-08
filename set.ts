@@ -127,7 +127,6 @@ export const Functor: TC.Functor<Set<_>> = {
 };
 
 export const Apply: TC.Apply<Set<_>> = {
-  map: Functor.map,
   ap: <A, B>(tfab: Set<(a: A) => B>) =>
     (ta: Set<A>): Set<B> => {
       const out = new Set<B>();
@@ -138,6 +137,7 @@ export const Apply: TC.Apply<Set<_>> = {
       }
       return out;
     },
+  map: Functor.map,
 };
 
 export const Filterable: TC.Filterable<Set<_>> = {

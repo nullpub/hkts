@@ -1,7 +1,8 @@
 import type * as TC from "./type_classes.ts";
 import type { _0, _1 } from "./types.ts";
 
-import { constant, identity } from "./fns.ts";
+import { createDo } from "./derivations.ts";
+import { constant, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
@@ -22,27 +23,34 @@ export const asks: <R, A>(f: (r: R) => A) => Reader<R, A> = identity;
  * @section Modules
  **************************************************************************************************/
 
-export const Monad: TC.Monad<Reader<_0, _1>, 2> = {
+export const Functor: TC.Functor<Reader<_0, _1>, 2> = {
+  map: (fab) => (ta) => flow(ta, fab),
+};
+
+export const Apply: TC.Apply<Reader<_0, _1>, 2> = {
+  ap: (tfab) => (ta) => (r) => pipe(ta(r), tfab(r)),
+  map: Functor.map,
+};
+
+export const Applicative: TC.Applicative<Reader<_0, _1>, 2> = {
   of: constant,
-  ap: (tfab) =>
-    (ta) =>
-      (r) => {
-        const fab = tfab(r);
-        const a = ta(r);
-        return fab(a);
-      },
-  map: (fab) => (ta) => (r) => fab(ta(r)),
-  join: (tta) => (r) => tta(r)(r),
+  ap: Apply.ap,
+  map: Functor.map,
+};
+
+export const Chain: TC.Chain<Reader<_0, _1>, 2> = {
+  ap: Apply.ap,
+  map: Functor.map,
   chain: (fatb) => (ta) => (r) => fatb(ta(r))(r),
 };
 
-export const Functor: TC.Functor<Reader<_0, _1>, 2> = Monad;
-
-export const Applicative: TC.Applicative<Reader<_0, _1>, 2> = Monad;
-
-export const Apply: TC.Apply<Reader<_0, _1>, 2> = Monad;
-
-export const Chain: TC.Chain<Reader<_0, _1>, 2> = Monad;
+export const Monad: TC.Monad<Reader<_0, _1>, 2> = {
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: (tta) => (r) => tta(r)(r),
+  chain: Chain.chain,
+};
 
 /***************************************************************************************************
  * @section Pipeables
@@ -51,9 +59,15 @@ export const Chain: TC.Chain<Reader<_0, _1>, 2> = Monad;
 export const { of, ap, map, join, chain } = Monad;
 
 /***************************************************************************************************
- * @section Utilities
+ * @section Sequence
  **************************************************************************************************/
 
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
+
+/***************************************************************************************************
+ * Do
+ **************************************************************************************************/
+
+export const { Do, bind, bindTo } = createDo(Monad);

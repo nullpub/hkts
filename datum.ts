@@ -3,29 +3,29 @@ import type { $, _, Lazy } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { identity, isNotNil, pipe } from "./fns.ts";
-import * as D from "./derivations.ts";
+import { createDo } from "./derivations.ts";
 
 /***************************************************************************************************
  * @section Types
  **************************************************************************************************/
 
-export interface Initial {
-  tag: "Initial";
-}
+export type Initial = {
+  readonly tag: "Initial";
+};
 
-export interface Pending {
-  tag: "Pending";
-}
+export type Pending = {
+  readonly tag: "Pending";
+};
 
-export interface Refresh<A> {
-  tag: "Refresh";
-  value: A;
-}
+export type Refresh<A> = {
+  readonly tag: "Refresh";
+  readonly value: A;
+};
 
-export interface Replete<A> {
-  tag: "Replete";
-  value: A;
-}
+export type Replete<A> = {
+  readonly tag: "Replete";
+  readonly value: A;
+};
 
 export type Datum<A> = Initial | Pending | Refresh<A> | Replete<A>;
 
@@ -40,11 +40,15 @@ export type Loading<A> = Pending | Refresh<A>;
  **************************************************************************************************/
 
 export const initial: Initial = { tag: "Initial" };
+
 export const pending: Pending = { tag: "Pending" };
+
 export const refresh = <D>(value: D): Datum<D> => ({ tag: "Refresh", value });
+
 export const replete = <D>(value: D): Datum<D> => ({ tag: "Replete", value });
 
 export const constInitial = <A = never>(): Datum<A> => initial;
+
 export const constPending = <A = never>(): Datum<A> => pending;
 
 export const fromNullable = <A>(a: A): Datum<NonNullable<A>> =>
@@ -79,15 +83,19 @@ export const toLoading = <A>(ta: Datum<A>): Datum<A> =>
 
 export const isInitial = <A>(ta: Datum<A>): ta is Initial =>
   ta.tag === "Initial";
+
 export const isPending = <A>(ta: Datum<A>): ta is Pending =>
   ta.tag === "Pending";
+
 export const isRefresh = <A>(ta: Datum<A>): ta is Refresh<A> =>
   ta.tag === "Refresh";
+
 export const isReplete = <A>(ta: Datum<A>): ta is Replete<A> =>
   ta.tag === "Replete";
 
 export const isNone = <A>(ta: Datum<A>): ta is None =>
   isInitial(ta) || isPending(ta);
+
 export const isSome = <A>(ta: Datum<A>): ta is Some<A> =>
   isRefresh(ta) || isReplete(ta);
 
@@ -212,8 +220,7 @@ export const Functor: TC.Functor<Datum<_>> = {
         : ta,
 };
 
-export const Monad: TC.Monad<Datum<_>> = {
-  of: replete,
+export const Apply: TC.Apply<Datum<_>> = {
   ap: (tfab) =>
     (ta) => {
       if (isSome(tfab) && isSome(ta)) {
@@ -226,21 +233,35 @@ export const Monad: TC.Monad<Datum<_>> = {
       return isLoading(tfab) || isLoading(ta) ? pending : initial;
     },
   map: Functor.map,
+};
+
+export const Applicative: TC.Applicative<Datum<_>> = {
+  of: replete,
+  ap: Apply.ap,
+  map: Functor.map,
+};
+
+export const Chain: TC.Chain<Datum<_>> = {
+  ap: Apply.ap,
+  map: Functor.map,
+  chain: (fatb) => (ta) => (isSome(ta) ? fatb(ta.value) : ta),
+};
+
+export const Monad: TC.Monad<Datum<_>> = {
+  of: replete,
+  ap: Apply.ap,
+  map: Functor.map,
   join: fold(
     constInitial,
     constPending,
     identity,
     toLoading,
   ),
-  chain: (fatb) => (ta) => (isSome(ta) ? fatb(ta.value) : ta),
+  chain: Chain.chain,
 };
 
-export const Applicative: TC.Applicative<Datum<_>> = Monad;
-
-export const Apply: TC.Apply<Datum<_>> = Monad;
-
 export const Alternative: TC.Alternative<Datum<_>> = {
-  of: replete,
+  of: Applicative.of,
   ap: Monad.ap,
   map: Functor.map,
   zero: constInitial,
@@ -281,3 +302,9 @@ export const { reduce, traverse } = Traversable;
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
+
+/***************************************************************************************************
+ * Do Notation
+ **************************************************************************************************/
+
+export const { Do, bind, bindTo } = createDo(Monad);

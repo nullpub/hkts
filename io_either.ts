@@ -1,11 +1,11 @@
 import type * as TC from "./type_classes.ts";
 import type { _, _0, _1, Fix, Lazy } from "./types.ts";
-import { constant, flow, pipe } from "./fns.ts";
 
 import * as E from "./either.ts";
 import * as I from "./io.ts";
 import * as S from "./sequence.ts";
-import * as D from "./derivations.ts";
+import { createDo } from "./derivations.ts";
+import { apply, constant, flow, identity, pipe } from "./fns.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -48,46 +48,60 @@ export const orElse = <E, A, M>(onLeft: (e: E) => IOEither<M, A>) =>
  * @section Modules
  **************************************************************************************************/
 
-export const Monad: TC.Monad<IOEither<_0, _1>, 2> = {
-  of: right,
-  ap: (tfab) =>
-    (ta) =>
-      () => {
-        const efab = tfab();
-        const ea = ta();
-        return E.isLeft(efab)
-          ? efab
-          : E.isLeft(ea)
-          ? ea
-          : E.right(efab.right(ea.right));
-      },
-  map: (fab) => (ta) => () => pipe(ta(), E.map(fab)),
-  join: (tta) => () => pipe(tta(), E.chain((ta) => ta())),
-  chain: (fatb) =>
-    (ta) => () => pipe(ta(), (a) => E.isLeft(a) ? a : fatb(a.right)()),
+export const Functor: TC.Functor<IOEither<_0, _1>, 2> = {
+  map: (fab) => (ta) => flow(ta, E.map(fab)),
 };
 
-export const Functor: TC.Functor<IOEither<_0, _1>, 2> = Monad;
+export const Apply: TC.Apply<IOEither<_0, _1>, 2> = {
+  ap: (tfab) =>
+    (ta) =>
+      () =>
+        pipe(
+          E.sequenceTuple(tfab(), ta()),
+          E.map(([fab, a]) => fab(a)),
+        ),
+  map: Functor.map,
+};
 
-export const Applicative: TC.Applicative<IOEither<_0, _1>, 2> = Monad;
+export const Applicative: TC.Applicative<IOEither<_0, _1>, 2> = {
+  of: right,
+  ap: Apply.ap,
+  map: Functor.map,
+};
 
-export const Apply: TC.Apply<IOEither<_0, _1>, 2> = Monad;
+export const Chain: TC.Chain<IOEither<_0, _1>, 2> = {
+  ap: Apply.ap,
+  map: Functor.map,
+  chain: <E, A, B>(fatb: (a: A) => IOEither<E, B>) =>
+    (ta: IOEither<E, A>) =>
+      flow(ta, E.fold<E, A, E.Either<E, B>>(E.left, flow(fatb, apply()))),
+};
 
-export const Chain: TC.Chain<IOEither<_0, _1>, 2> = Monad;
+export const Monad: TC.Monad<IOEither<_0, _1>, 2> = {
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: Chain.chain(identity),
+  chain: Chain.chain,
+};
 
 export const Bifunctor: TC.Bifunctor<IOEither<_0, _1>> = {
-  bimap: (fab, fcd) => I.map(E.bimap(fab, fcd)),
+  bimap: flow(E.bimap, I.map),
   mapLeft: (fef) => I.map(E.mapLeft(fef)),
 };
 
 export const MonadThrow: TC.MonadThrow<IOEither<_0, _1>, 2> = {
-  ...Monad,
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: Monad.join,
+  chain: Chain.chain,
   throwError: left,
 };
 
 export const Alt: TC.Alt<IOEither<_0, _1>, 2> = ({
   map: Monad.map,
-  alt: (tb) => (ta) => () => pipe(ta(), (a) => E.isLeft(a) ? tb() : a),
+  alt: (tb) => (ta) => flow(ta, E.fold(tb, E.right)),
 });
 
 export const Extends: TC.Extend<IOEither<_0, _1>, 2> = {
@@ -114,11 +128,11 @@ export const getRightMonad = <E>(
   const { ap } = E.getRightMonad(S);
 
   return ({
-    of: right,
+    of: Applicative.of,
     ap: (tfab) => (ta) => pipe(ap(tfab())(ta()), constant),
-    map: Monad.map,
+    map: Functor.map,
     join: Monad.join,
-    chain: Monad.chain,
+    chain: Chain.chain,
   });
 };
 
@@ -137,3 +151,9 @@ export const { bimap, mapLeft } = Bifunctor;
 export const sequenceTuple = S.createSequenceTuple(Apply);
 
 export const sequenceStruct = S.createSequenceStruct(Apply);
+
+/***************************************************************************************************
+ * Do Notation
+ **************************************************************************************************/
+
+export const { Do, bind, bindTo } = createDo(Monad);

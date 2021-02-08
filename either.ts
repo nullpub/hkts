@@ -15,7 +15,7 @@ import type {
 import * as O from "./option.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { constant, identity, isNotNil, pipe } from "./fns.ts";
-import * as D from "./derivations.ts";
+import { createDo } from "./derivations.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -282,3 +282,9 @@ export const widen: <F>() => <E, A>(ta: Either<E, A>) => Either<E | F, A> =
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
+
+/***************************************************************************************************
+ * Do Notation
+ **************************************************************************************************/
+
+export const { Do, bind, bindTo } = createDo(Monad);

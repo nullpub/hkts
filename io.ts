@@ -2,7 +2,8 @@ import type * as TC from "./type_classes.ts";
 import type { $, _ } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-import { constant, flow } from "./fns.ts";
+import { apply, constant, flow } from "./fns.ts";
+import { createDo } from "./derivations.ts";
 
 /***************************************************************************************************
  * @section Types
@@ -14,26 +15,39 @@ export type IO<A> = () => A;
  * @section Modules
  **************************************************************************************************/
 
-export const Monad: TC.Monad<IO<_>> = {
-  of: constant,
+export const Functor: TC.Functor<IO<_>> = {
+  map: (fab) => (ta) => flow(ta, fab),
+};
+
+export const Apply: TC.Apply<IO<_>> = {
   ap: (tfab) => (ta) => () => tfab()(ta()),
-  map: (fab) => (ta) => () => fab(ta()),
-  join: (tta) => tta(),
-  chain: (fatb) => (ta) => fatb(ta()),
+  map: Functor.map,
+};
+
+export const Applicative: TC.Applicative<IO<_>> = {
+  of: constant,
+  ap: Apply.ap,
+  map: Functor.map,
+};
+
+export const Chain: TC.Chain<IO<_>> = {
+  ap: Apply.ap,
+  map: Functor.map,
+  chain: (fatb) => (ta) => flow(ta, fatb, apply()),
+};
+
+export const Monad: TC.Monad<IO<_>> = {
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: apply(),
+  chain: Chain.chain,
 };
 
 export const Alt: TC.Alt<IO<_>> = {
   alt: constant,
   map: Monad.map,
 };
-
-export const Functor: TC.Functor<IO<_>> = Monad;
-
-export const Applicative: TC.Applicative<IO<_>> = Monad;
-
-export const Apply: TC.Apply<IO<_>> = Monad;
-
-export const Chain: TC.Chain<IO<_>> = Monad;
 
 export const Extends: TC.Extend<IO<_>> = {
   map: Monad.map,
@@ -81,3 +95,9 @@ export const { reduce, traverse } = Traversable;
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
+
+/***************************************************************************************************
+ * Do Notation
+ **************************************************************************************************/
+
+export const { Do, bind, bindTo } = createDo(Monad);

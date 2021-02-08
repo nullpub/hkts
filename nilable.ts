@@ -1,12 +1,17 @@
 /***************************************************************************************************
  * Nilable
- * Note: This type is not a true Functor so no type classes are implemented
+ * Note: The Nilable Functor is not a true Functor as it does not satisfy the functor laws.
+ * However, it is still fairly useful.
  *
  * Nilable is a type like Maybe/Option that uses undefined/null in lieu of tagged unions.
  **************************************************************************************************/
 
 import type * as TC from "./type_classes.ts";
-import type { Lazy, Predicate, Fn } from "./types.ts";
+import type { _, Lazy, Predicate } from "./types.ts";
+
+import { identity } from "./fns.ts";
+import { createDo } from "./derivations.ts";
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
  * Types
@@ -24,9 +29,10 @@ export const nil: Nil = undefined;
 
 export const constNil = () => nil;
 
-export const fromPredicate = <A>(predicate: Predicate<A>) => (
-  a: A
-): Nilable<A> => (predicate(a) ? a : nil);
+export const fromPredicate = <A>(predicate: Predicate<A>) =>
+  (
+    a: A,
+  ): Nilable<A> => (predicate(a) ? a : nil);
 
 export const tryCatch = <A>(f: Lazy<A>): Nilable<A> => {
   try {
@@ -40,12 +46,13 @@ export const tryCatch = <A>(f: Lazy<A>): Nilable<A> => {
  * Destructors
  **************************************************************************************************/
 
-export const fold = <A, B>(onValue: (a: A) => B, onNil: (nil: Nil) => B) => (
-  ta: Nilable<A>
-): B => (isNil(ta) ? onNil(ta) : onValue(ta));
+export const fold = <A, B>(onValue: (a: A) => B, onNil: (nil: Nil) => B) =>
+  (
+    ta: Nilable<A>,
+  ): B => (isNil(ta) ? onNil(ta) : onValue(ta));
 
-export const getOrElse = <B>(onNil: (nil: Nil) => B) => (ta: Nilable<B>): B =>
-  isNil(ta) ? onNil(ta) : ta;
+export const getOrElse = <B>(onNil: (nil: Nil) => B) =>
+  (ta: Nilable<B>): B => isNil(ta) ? onNil(ta) : ta;
 
 export const toNullable = <A>(ma: Nilable<A>): A | null =>
   isNil(ma) ? null : ma;
@@ -71,19 +78,50 @@ export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Nilable<A>> => ({
 });
 
 /***************************************************************************************************
+ * Modules (Note that these modules do not follow the Type Class laws)
+ **************************************************************************************************/
+
+export const Functor: TC.Functor<Nilable<_>> = {
+  map: (fab) => (ta) => isNil(ta) ? nil : fab(ta),
+};
+
+export const Apply: TC.Apply<Nilable<_>> = {
+  ap: (tfab) => (ta) => isNil(ta) || isNil(tfab) ? nil : tfab(ta),
+  map: Functor.map,
+};
+
+export const Applicative: TC.Applicative<Nilable<_>> = {
+  of: identity,
+  ap: Apply.ap,
+  map: Functor.map,
+};
+
+export const Chain: TC.Chain<Nilable<_>> = {
+  ap: Apply.ap,
+  map: Functor.map,
+  chain: Functor.map,
+};
+
+export const Monad: TC.Monad<Nilable<_>> = {
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: identity,
+  chain: Chain.chain,
+};
+
+/***************************************************************************************************
  * Pipeables
  **************************************************************************************************/
 
-export const of = <A>(a: NonNullable<A>): Nilable<A> => a;
+export const { of, ap, map, join, chain } = Monad;
 
-export const ap = <A, B>(tfab: Nilable<Fn<[A], NonNullable<B>>>) => (
-  ta: Nilable<A>
-): Nilable<B> => (isNil(ta) || isNil(tfab) ? nil : tfab(ta));
+export const sequenceTuple = createSequenceTuple(Apply);
 
-export const map = <A, B>(fab: Fn<[A], NonNullable<B>>) => (
-  ta: Nilable<A>
-): Nilable<B> => (isNil(ta) ? nil : fab(ta));
+export const sequenceStruct = createSequenceStruct(Apply);
 
-export const chain = <A, B>(fab: (a: A) => Nilable<B>) => (
-  ma: Nilable<A>
-): Nilable<B> => (isNil(ma) ? ma : fab(ma));
+/***************************************************************************************************
+ * Do Notation
+ **************************************************************************************************/
+
+export const { Do, bind, bindTo } = createDo(Monad);

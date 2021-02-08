@@ -333,13 +333,12 @@ export interface Functor<T, L extends LS = 1> {
   readonly map: FunctorFn<T, L>;
 }
 
+// deno-fmt-ignore
 export type FunctorFn<T, L extends LS> = {
   1: <A, B>(fab: (a: A) => B) => (ta: $<T, [A]>) => $<T, [B]>;
-  2: <E, A, B>(fab: (a: A) => B) => (ta: $<T, [E, A]>) => $<T, [E, B]>;
-  3: <R, E, A, B>(fab: (a: A) => B) => (ta: $<T, [R, E, A]>) => $<T, [R, E, B]>;
-  4: <S, R, E, A, B>(
-    fab: (a: A) => B,
-  ) => (ta: $<T, [S, R, E, A]>) => $<T, [S, R, E, B]>;
+  2: <A, B>(fab: (a: A) => B) => <E>(ta: $<T, [E, A]>) => $<T, [E, B]>;
+  3: <A, B>(fab: (a: A) => B) => <R, E>(ta: $<T, [R, E, A]>) => $<T, [R, E, B]>;
+  4: <A, B>(fab: (a: A) => B) => <S, R, E>(ta: $<T, [S, R, E, A]>) => $<T, [S, R, E, B]>;
 }[L];
 
 /**

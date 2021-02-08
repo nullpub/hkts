@@ -1,7 +1,8 @@
 import type * as TC from "./type_classes.ts";
 import type { _0, _1 } from "./types.ts";
 
-import { flow } from "./fns.ts";
+import { createDo } from "./derivations.ts";
+import { flow, identity } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
@@ -36,32 +37,40 @@ export const gets: <S, A>(f: (s: S) => A) => State<S, A> = (f) =>
  * @section Modules
  **************************************************************************************************/
 
-export const Monad: TC.Monad<State<_0, _1>, 2> = {
-  of: (a) => (s) => [a, s],
+export const Functor: TC.Functor<State<_0, _1>, 2> = {
+  map: (fab) => (ta) => flow(ta, ([a, s]) => [fab(a), s]),
+};
+
+export const Apply: TC.Apply<State<_0, _1>, 2> = {
   ap: (tfab) =>
     (ta) =>
       (s1) => {
-        const [f, s2] = tfab(s1);
+        const [fab, s2] = tfab(s1);
         const [a, s3] = ta(s2);
-        return [f(a), s3];
+        return [fab(a), s3];
       },
-  map: (fab) => (ta) => flow(ta, ([a, s]) => [fab(a), s]),
-  join: (tta) => flow(tta, ([fn, a]) => fn(a)), // TODO optimize
-  chain: (fatb) =>
-    (ta) =>
-      (s1) => {
-        const [a, s2] = ta(s1);
-        return fatb(a)(s2 as any);
-      },
+  map: Functor.map,
 };
 
-export const Functor: TC.Functor<State<_0, _1>, 2> = Monad;
+export const Applicative: TC.Applicative<State<_0, _1>, 2> = {
+  of: (a) => (s) => [a, s],
+  ap: Apply.ap,
+  map: Functor.map,
+};
 
-export const Applicative: TC.Applicative<State<_0, _1>, 2> = Monad;
+export const Chain: TC.Chain<State<_0, _1>, 2> = {
+  ap: Apply.ap,
+  map: Functor.map,
+  chain: (fatb) => (ta) => flow(ta, ([a, s]) => fatb(a)(s)),
+};
 
-export const Apply: TC.Apply<State<_0, _1>, 2> = Monad;
-
-export const Chain: TC.Chain<State<_0, _1>, 2> = Monad;
+export const Monad: TC.Monad<State<_0, _1>, 2> = {
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: Chain.chain(identity),
+  chain: Chain.chain,
+};
 
 /***************************************************************************************************
  * @section Pipeables
@@ -80,3 +89,9 @@ export const execute = <S>(s: S) => <A>(ma: State<S, A>): S => ma(s)[1];
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
+
+/***************************************************************************************************
+ * Do
+ **************************************************************************************************/
+
+export const { Do, bind, bindTo } = createDo(Monad);

@@ -2,7 +2,8 @@ import type * as TC from "./type_classes.ts";
 import type { $, _, _0, _1, _2, _3, Lazy, Predicate } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-import { isNotNil } from "./fns.ts";
+import { flow, identity, isNotNil, pipe } from "./fns.ts";
+import { createDo } from "./derivations.ts";
 
 /***************************************************************************************************
  * Types
@@ -228,44 +229,61 @@ export const getGroup = <A>(G: TC.Group<A>): TC.Group<Option<A>> => ({
  * Modules
  **************************************************************************************************/
 
-export const Monad: TC.Monad<Option<_>> = {
-  of: some,
+export const Functor: TC.Functor<Option<_>> = {
+  map: (fab) => (ta) => isNone(ta) ? ta : some(fab(ta.value)),
+};
+
+export const Apply: TC.Apply<Option<_>> = {
   ap: (tfab) =>
     (ta) => isNone(tfab) || isNone(ta) ? none : some(tfab.value(ta.value)),
-  map: (fab) => (ta) => isNone(ta) ? none : some(fab(ta.value)),
-  join: (tta) => isNone(tta) ? tta : tta.value,
+  map: Functor.map,
+};
+
+export const Applicative: TC.Applicative<Option<_>> = {
+  of: some,
+  ap: Apply.ap,
+  map: Functor.map,
+};
+
+export const Chain: TC.Chain<Option<_>> = {
+  ap: Apply.ap,
+  map: Functor.map,
   chain: (fatb) => (ta) => (isSome(ta) ? fatb(ta.value) : ta),
 };
 
+export const Monad: TC.Monad<Option<_>> = {
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: Chain.chain(identity),
+  chain: Chain.chain,
+};
+
 export const MonadThrow: TC.MonadThrow<Option<_>> = {
-  ...Monad,
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: Chain.chain(identity),
+  chain: Chain.chain,
   throwError: constNone,
 };
 
-export const Functor: TC.Functor<Option<_>> = Monad;
-
-export const Applicative: TC.Applicative<Option<_>> = Monad;
-
-export const Apply: TC.Apply<Option<_>> = Monad;
-
-export const Chain: TC.Chain<Option<_>> = Monad;
-
 export const Alt: TC.Alt<Option<_>> = {
-  map: Monad.map,
+  map: Functor.map,
   alt: (tb) => (ta) => (isNone(ta) ? tb : ta),
 };
 
 export const Alternative: TC.Alternative<Option<_>> = {
-  of: Monad.of,
-  ap: Monad.ap,
-  map: Monad.map,
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
   alt: Alt.alt,
   zero: constNone,
 };
 
 export const Extends: TC.Extend<Option<_>> = {
   map: Monad.map,
-  extend: (ftab) => (ta) => some(ftab(ta)),
+  extend: (ftab) => flow(ftab, some),
 };
 
 export const Filterable: TC.Filterable<Option<_>> = {
@@ -299,6 +317,12 @@ export const { of, ap, map, join, chain } = Monad;
 
 export const { reduce, traverse } = Traversable;
 
+export const { zero, alt } = Alternative;
+
+export const { filter } = Filterable;
+
+export const { extend } = Extends;
+
 export const exists = <A>(predicate: Predicate<A>) =>
   (ta: Option<A>): boolean => isSome(ta) && predicate(ta.value);
 
@@ -309,3 +333,9 @@ export const exists = <A>(predicate: Predicate<A>) =>
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
+
+/***************************************************************************************************
+ * Do
+ **************************************************************************************************/
+
+export const { Do, bind, bindTo } = createDo(Monad);

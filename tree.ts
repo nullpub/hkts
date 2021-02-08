@@ -2,8 +2,9 @@ import type * as TC from "./type_classes.ts";
 import type { $, _ } from "./types.ts";
 
 import * as A from "./array.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
+import { createDo } from "./derivations.ts";
 import { identity, pipe } from "./fns.ts";
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
  * @section Optimizations
@@ -61,15 +62,28 @@ export const getShow = <A>(S: TC.Show<A>): TC.Show<Tree<A>> => {
  * @section Modules
  **************************************************************************************************/
 
-export const Monad: TC.Monad<Tree<_>> = {
-  of: make,
-  ap: (tfab) => (ta) => pipe(tfab, Monad.chain((fab) => Monad.map(fab)(ta))),
+export const Functor: TC.Functor<Tree<_>> = {
   map: (fab) =>
     (ta) => ({
       value: fab(ta.value),
-      forest: ta.forest.map(Monad.map(fab)),
+      forest: ta.forest.map(Functor.map(fab)),
     }),
-  join: (tta) => pipe(tta, Monad.chain(identity)),
+};
+
+export const Apply: TC.Apply<Tree<_>> = {
+  ap: (tfab) => (ta) => pipe(tfab, Monad.chain((fab) => Functor.map(fab)(ta))),
+  map: Functor.map,
+};
+
+export const Applicative: TC.Applicative<Tree<_>> = {
+  of: make,
+  ap: Apply.ap,
+  map: Functor.map,
+};
+
+export const Chain: TC.Chain<Tree<_>> = {
+  ap: Apply.ap,
+  map: Functor.map,
   chain: (fatb) =>
     (ta) => {
       const { value, forest } = fatb(ta.value);
@@ -80,16 +94,16 @@ export const Monad: TC.Monad<Tree<_>> = {
     },
 };
 
-export const Functor: TC.Functor<Tree<_>> = Monad;
-
-export const Applicative: TC.Applicative<Tree<_>> = Monad;
-
-export const Apply: TC.Apply<Tree<_>> = Monad;
-
-export const Chain: TC.Chain<Tree<_>> = Monad;
+export const Monad: TC.Monad<Tree<_>> = {
+  of: make,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: Chain.chain(identity),
+  chain: Chain.chain,
+};
 
 export const Traversable: TC.Traversable<Tree<_>> = {
-  map: Monad.map,
+  map: Functor.map,
   reduce: (faba, b) =>
     (ta) => {
       let r = faba(b, ta.value);
@@ -146,3 +160,9 @@ export const fold = <A, B>(f: (a: A, bs: Array<B>) => B) =>
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
+
+/***************************************************************************************************
+ * Do Notation
+ **************************************************************************************************/
+
+export const { Do, bind, bindTo } = createDo(Monad);

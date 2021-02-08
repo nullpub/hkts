@@ -71,6 +71,14 @@ export const call = <AS extends unknown[], B>(fn: Fn<AS, B>) =>
 
 export const apply1 = <A, B>(a: A, fn: Fn<[A], B>): B => fn(a);
 
+export function absurd<A>(_: never): A {
+  throw new Error("Called `absurd` function which should be uncallable");
+}
+
+export const hole: <T>() => T = absurd as any;
+
+export const wait = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 /***************************************************************************************************
  * @section Pipe
  * Original pipe function pulled from fp-ts and modified

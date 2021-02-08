@@ -1,10 +1,10 @@
 import type * as TC from "./type_classes.ts";
-import type { $, _0, _1, _2, _3, Fix, Lazy } from "./types.ts";
+import type { _0, _1, _2, _3, Fix, Lazy } from "./types.ts";
 
 import * as E from "./either.ts";
 import * as T from "./task.ts";
-import { constant, identity, pipe } from "./fns.ts";
-import { createMonad } from "./derivations.ts";
+import { createDo } from "./derivations.ts";
+import { apply, constant, flow, identity, pipe, wait } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /***************************************************************************************************
@@ -42,30 +42,42 @@ export const fromFailableTask = <E, A>(onError: (e: unknown) => E) =>
 export const fromEither = <E, A>(ta: E.Either<E, A>): TaskEither<E, A> =>
   pipe(ta, E.fold((e) => left(e), right));
 
-export const orElse = <E, A, M>(onLeft: (e: E) => TaskEither<M, A>) =>
-  (ma: TaskEither<E, A>): TaskEither<M, A> =>
-    pipe(
-      ma,
-      T.chain(E.fold(onLeft, right)),
-    );
+export const orElse = <E, A>(onLeft: (e: E) => TaskEither<E, A>) =>
+  T.chain(E.fold<E, A, TaskEither<E, A>>(onLeft, right));
 
 /***************************************************************************************************
- * @section Modules
+ * @section Modules (Sequential)
  **************************************************************************************************/
 
-export const Monad = createMonad<TaskEither<_0, _1>, 2>({
+export const Functor: TC.Functor<TaskEither<_0, _1>, 2> = {
+  map: flow(E.map, T.map) as TC.FunctorFn<TaskEither<_0, _1>, 2>,
+};
+
+export const Apply: TC.Apply<TaskEither<_0, _1>, 2> = {
+  ap: (tfab) => (ta) => pipe(tfab, chain(flow(map, apply(ta)))),
+  map: Functor.map,
+};
+
+export const Applicative: TC.Applicative<TaskEither<_0, _1>, 2> = {
   of: right,
-  map: (fab) => T.map(E.map(fab)),
-  chain: (fatb) => T.chain(E.fold((l) => left(l), fatb)),
-});
+  ap: Apply.ap,
+  map: Functor.map,
+};
 
-export const Functor: TC.Functor<TaskEither<_0, _1>, 2> = Monad;
+export const Chain: TC.Chain<TaskEither<_0, _1>, 2> = {
+  ap: Apply.ap,
+  map: Functor.map,
+  chain: <E, A, B>(fatb: (a: A) => TaskEither<E, B>) =>
+    T.chain(E.fold<E, A, TaskEither<E, B>>(left, fatb)),
+};
 
-export const Applicative: TC.Applicative<TaskEither<_0, _1>, 2> = Monad;
-
-export const Apply: TC.Apply<TaskEither<_0, _1>, 2> = Monad;
-
-export const Chain: TC.Chain<TaskEither<_0, _1>, 2> = Monad;
+export const Monad: TC.Monad<TaskEither<_0, _1>, 2> = {
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: T.chain(E.fold(left, identity)),
+  chain: Chain.chain,
+};
 
 export const Bifunctor: TC.Bifunctor<TaskEither<_0, _1>> = {
   bimap: (fab, fcd) => (tac) => () => tac().then(E.bimap(fab, fcd)),
@@ -73,14 +85,44 @@ export const Bifunctor: TC.Bifunctor<TaskEither<_0, _1>> = {
 };
 
 export const MonadThrow: TC.MonadThrow<TaskEither<_0, _1>, 2> = {
-  ...Monad,
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: Monad.join,
+  chain: Chain.chain,
   throwError: left,
 };
 
 export const Alt: TC.Alt<TaskEither<_0, _1>, 2> = ({
-  map: Monad.map,
+  map: Functor.map,
   alt: (tb) => (ta) => () => ta().then((te) => E.isLeft(te) ? tb() : te),
 });
+
+/***************************************************************************************************
+ * @section Modules (Parallel)
+ **************************************************************************************************/
+
+export const ApplyPar: TC.Apply<TaskEither<_0, _1>, 2> = {
+  ap: flow(T.map(E.ap), T.ap),
+  map: Functor.map,
+};
+
+export const MonadPar: TC.Monad<TaskEither<_0, _1>, 2> = {
+  of: Applicative.of,
+  ap: ApplyPar.ap,
+  map: Functor.map,
+  join: Monad.join,
+  chain: Chain.chain,
+};
+
+export const MonadThrowPar: TC.MonadThrow<TaskEither<_0, _1>, 2> = {
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: Monad.join,
+  chain: Chain.chain,
+  throwError: left,
+};
 
 /***************************************************************************************************
  * @section Module Getters
@@ -113,6 +155,10 @@ export const widen: <F>() => <E, A>(
   ta: TaskEither<E, A>,
 ) => TaskEither<E | F, A> = constant(identity);
 
+export const timeout = <E, A>(ms: number, onTimeout: () => E) =>
+  (ta: TaskEither<E, A>): TaskEither<E, A> =>
+    () => Promise.race([ta(), wait(ms).then(flow(onTimeout, E.left))]);
+
 /***************************************************************************************************
  * @section Sequence
  **************************************************************************************************/
@@ -120,3 +166,13 @@ export const widen: <F>() => <E, A>(
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
+
+export const sequenceTuplePar = createSequenceTuple(ApplyPar);
+
+export const sequenceStructPar = createSequenceStruct(ApplyPar);
+
+/***************************************************************************************************
+ * Do Notation
+ **************************************************************************************************/
+
+export const { Do, bind, bindTo } = createDo(Monad);
