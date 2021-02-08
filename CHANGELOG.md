@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.49](https://github.com/nullpub/hkts/compare/v0.0.48...v0.0.49) (2021-02-08)
+
+
+### Features
+
+* added affect and cleaned up code ([aceb741](https://github.com/nullpub/hkts/commit/aceb7417a7a70e4d69707376e30be2a964ac26b2))
+
 ### [0.0.48](https://github.com/nullpub/hkts/compare/v0.0.47...v0.0.48) (2021-01-30)
 
 
