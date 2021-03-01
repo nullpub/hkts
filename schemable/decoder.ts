@@ -375,6 +375,7 @@ export const Schemable: S.Schemable<Decoder<unknown, _>> = {
   array,
   tuple: tuple as S.TupleSchemable<Decoder<unknown, _>, 1>,
   intersect,
+  union: union as S.UnionSchemable<Decoder<unknown, _>, 1>,
   sum,
   lazy,
 };
@@ -383,3 +384,23 @@ export const Category: TC.Category<Decoder<_0, _1>> = {
   compose: (jk) => (ij) => flow(ij, chain(jk)),
   id: () => identity,
 };
+
+
+
+const a = union(literal("hello"), type({ hello: string }));
+
+const r1 = a("hello");
+const r2 = a({ hello: "world" });
+const r3 = a("world");
+const r4 = a({ world: "hello" });
+const r5 = a(null);
+
+const log = (d: Decoded<any>) => {
+  if (E.isLeft(d)) {
+    console.error(draw(d.left))
+  } else {
+    console.log(JSON.stringify(d.right, null, 2))
+  }
+}
+
+[r1, r2, r3, r4, r5].forEach(log);

@@ -135,6 +135,21 @@ export type IntersectSchemable<T, L extends LS> = {
   ) => $<T, [S, R, E, A & B]>;
 }[L];
 
+export type UnionSchemable<T, L extends LS> = {
+  1: <A extends readonly [T, ...Array<T>]>(
+    ...members: { [K in keyof A]: $<T, [A[K]]> }
+  ) => $<T, [A[number]]>;
+  2: <E, A extends readonly [T, ...Array<T>]>(
+    ...members: { [K in keyof A]: $<T, [E, A[K]]> }
+  ) => $<T, [E, A[number]]>;
+  3: <R, E, A extends readonly [T, ...Array<T>]>(
+    ...members: { [K in keyof A]: $<T, [R, E, A[K]]> }
+  ) => $<T, [R, E, A[number]]>;
+  4: <S, R, E, A extends readonly [T, ...Array<T>]>(
+    ...members: { [K in keyof A]: $<T, [S, R, E, A[K]]> }
+  ) => $<T, [S, R, E, A[number]]>;
+}[L];
+
 export type SumSchemable<T, L extends LS> = {
   1: <U extends string, A>(
     tag: U,
@@ -189,6 +204,7 @@ export type Schemable<T, L extends LS = 1> = {
   readonly array: ArraySchemable<T, L>;
   readonly tuple: TupleSchemable<T, L>;
   readonly intersect: IntersectSchemable<T, L>;
+  readonly union: UnionSchemable<T, L>;
   readonly sum: SumSchemable<T, L>;
   readonly lazy: LazySchemable<T, L>;
 };
