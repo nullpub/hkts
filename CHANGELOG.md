@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.50](https://github.com/nullpub/hkts/compare/v0.0.49...v0.0.50) (2021-03-07)
+
+
+### Features
+
+* add union to Schemable ([6d0c1cf](https://github.com/nullpub/hkts/commit/6d0c1cfe1f27971006f592c5aca87d535a3898e4))
+
 ### [0.0.49](https://github.com/nullpub/hkts/compare/v0.0.48...v0.0.49) (2021-02-08)
 
 
