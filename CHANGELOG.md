@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.51](https://github.com/nullpub/hkts/compare/v0.0.50...v0.0.51) (2021-03-07)
+
+
+### Bug Fixes
+
+* remove testing from decoder.ts ([b27298f](https://github.com/nullpub/hkts/commit/b27298fc58af1623c6b2f96bca485c80404181b8))
+
 ### [0.0.50](https://github.com/nullpub/hkts/compare/v0.0.49...v0.0.50) (2021-03-07)
 
 
