@@ -1,5 +1,5 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { $, _0, _1 } from "./types.ts";
 
 import * as O from "./option.ts";
 import * as A from "./array.ts";
@@ -7,9 +7,9 @@ import { compare } from "./ord.ts";
 import { fromEquals } from "./setoid.ts";
 import { constant, identity, pipe } from "./fns.ts";
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Constructors
+ ******************************************************************************/
 
 export const zero: Map<never, never> = new Map<never, never>();
 
@@ -17,9 +17,24 @@ export const empty = constant(zero);
 
 export const singleton = <K, A>(k: K, a: A): Map<K, A> => new Map([[k, a]]);
 
-/***************************************************************************************************
- * @section Module Getters
- **************************************************************************************************/
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
+
+export const URI = "Map";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: Map<_[1], _[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
 
 export const getShow = <K, A>(
   SK: TC.Show<K>,
@@ -38,7 +53,7 @@ export const getSetoid = <K, A>(
   SA: TC.Setoid<A>,
 ): TC.Setoid<Map<K, A>> => {
   const submap = isSubmap(SK, SA);
-  return fromEquals((x, y) => submap(x)(y) && submap(y)(x));
+  return fromEquals((x) => (y) => submap(x)(y) && submap(y)(x));
 };
 
 export const getMonoid = <K, A>(
@@ -47,34 +62,35 @@ export const getMonoid = <K, A>(
 ): TC.Monoid<Map<K, A>> => {
   const lookupKey = lookupWithKey(SK);
   return {
-    concat: (a, b) => {
-      if (a === zero) {
-        return b;
-      }
-      if (b === zero) {
-        return a;
-      }
-      const r = new Map(a);
-      for (const [bk, ba] of b) {
-        pipe(
-          lookupKey(bk)(a),
-          O.fold(
-            ([ak, aa]) => r.set(ak, SA.concat(aa, ba)),
-            () => r.set(bk, ba),
-          ),
-        );
-      }
-      return r;
-    },
+    concat: (a) =>
+      (b) => {
+        if (a === zero) {
+          return b;
+        }
+        if (b === zero) {
+          return a;
+        }
+        const r = new Map(a);
+        for (const [bk, ba] of b) {
+          pipe(
+            lookupKey(bk)(a),
+            O.fold(
+              ([ak, aa]) => r.set(ak, SA.concat(aa)(ba)),
+              () => r.set(bk, ba),
+            ),
+          );
+        }
+        return r;
+      },
     empty,
   };
 };
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
 
-export const Functor: TC.Functor<Map<_0, _1>, 2> = {
+export const Functor: TC.Functor<URI> = {
   map: (fab) =>
     (ta) => {
       const tb = new Map();
@@ -85,7 +101,7 @@ export const Functor: TC.Functor<Map<_0, _1>, 2> = {
     },
 };
 
-export const Bifunctor: TC.Bifunctor<Map<_0, _1>> = {
+export const Bifunctor: TC.Bifunctor<URI> = {
   bimap: (fab, fcd) =>
     (tac) => {
       const tbd = new Map();
@@ -94,12 +110,12 @@ export const Bifunctor: TC.Bifunctor<Map<_0, _1>> = {
       }
       return tbd;
     },
-  mapLeft: (fef) => Bifunctor.bimap(fef, identity),
+  mapLeft: (fef) => (ta) => pipe(ta, Bifunctor.bimap(fef, identity)),
 };
 
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
 export const size = <K, A>(d: Map<K, A>): number => d.size;
 
@@ -109,11 +125,11 @@ export const lookupWithKey = <K>(S: TC.Setoid<K>) =>
   (k: K) =>
     <A>(m: Map<K, A>): O.Option<readonly [K, A]> => {
       for (const [ka, a] of m.entries()) {
-        if (S.equals(ka, k)) {
+        if (S.equals(ka)(k)) {
           return O.some([ka, a]);
         }
       }
-      return O.none;
+      return O.constNone;
     };
 
 export const lookup = <K>(S: TC.Setoid<K>) =>
@@ -137,7 +153,7 @@ export const elem = <A>(S: TC.Setoid<A>) =>
   (a: A) =>
     <K>(m: Map<K, A>): boolean => {
       for (const ma of m.values()) {
-        if (S.equals(ma, a)) {
+        if (S.equals(ma)(a)) {
           return true;
         }
       }
@@ -202,7 +218,7 @@ export const updateAt = <K>(
     return (m: Map<K, A>): O.Option<Map<K, A>> => {
       const found = lookupIn(m);
       if (O.isNone(found)) {
-        return O.none;
+        return O.constNone;
       }
       const r = new Map(m);
       r.set(found.value[0], a);
@@ -221,7 +237,7 @@ export const modifyAt = <K>(
     return (m: Map<K, A>): O.Option<Map<K, A>> => {
       const found = lookupIn(m);
       if (O.isNone(found)) {
-        return O.none;
+        return O.constNone;
       }
       const r = new Map(m);
       r.set(found.value[0], f(found.value[1]));
@@ -250,7 +266,7 @@ export const isSubmap = <K, A>(
       for (const [mk, ma] of sub.entries()) {
         const matches = pipe(
           lookupKey(mk)(sup),
-          O.exists(([_, ca]) => SA.equals(ma, ca)),
+          O.exists(([_, ca]) => SA.equals(ma)(ca)),
         );
         if (!matches) {
           return false;

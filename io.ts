@@ -1,42 +1,57 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { $, _ } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-import { apply, constant, flow } from "./fns.ts";
+import { apply, constant, flow, pipe } from "./fns.ts";
 import { createDo } from "./derivations.ts";
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
 export type IO<A> = () => A;
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
 
-export const Functor: TC.Functor<IO<_>> = {
+export const URI = "IO";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: IO<_[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
+
+export const Functor: TC.Functor<URI> = {
   map: (fab) => (ta) => flow(ta, fab),
 };
 
-export const Apply: TC.Apply<IO<_>> = {
+export const Apply: TC.Apply<URI> = {
   ap: (tfab) => (ta) => () => tfab()(ta()),
   map: Functor.map,
 };
 
-export const Applicative: TC.Applicative<IO<_>> = {
+export const Applicative: TC.Applicative<URI> = {
   of: constant,
   ap: Apply.ap,
   map: Functor.map,
 };
 
-export const Chain: TC.Chain<IO<_>> = {
+export const Chain: TC.Chain<URI> = {
   ap: Apply.ap,
   map: Functor.map,
   chain: (fatb) => (ta) => flow(ta, fatb, apply()),
 };
 
-export const Monad: TC.Monad<IO<_>> = {
+export const Monad: TC.Monad<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
@@ -44,35 +59,32 @@ export const Monad: TC.Monad<IO<_>> = {
   chain: Chain.chain,
 };
 
-export const Alt: TC.Alt<IO<_>> = {
+export const Alt: TC.Alt<URI> = {
   alt: constant,
   map: Monad.map,
 };
 
-export const Extends: TC.Extend<IO<_>> = {
+export const Extends: TC.Extend<URI> = {
   map: Monad.map,
   extend: (ftab) => (ta) => () => ftab(ta),
 };
 
-export const Foldable: TC.Foldable<IO<_>> = {
+export const Foldable: TC.Foldable<URI> = {
   reduce: (faba, a) => (tb) => faba(a, tb()),
 };
 
-export const Traversable: TC.Traversable<IO<_>, 1> = {
+export const Traversable: TC.Traversable<URI> = {
   map: Monad.map,
   reduce: Foldable.reduce,
-  traverse: <U>(A: TC.Applicative<U>) =>
-    <A, B>(faub: (a: A) => $<U, [B]>) =>
-      (ta: $<IO<_>, [A]>) =>
-        A.map((ta: $<IO<_>, [A]>) => flow(ta, faub))(A.of(ta)),
+  traverse: (A) => (faub) => (ta) => pipe(faub(ta()), A.map(of)),
 };
 
-/***************************************************************************************************
- * @section Module Getters
- **************************************************************************************************/
+/*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
 
 export const getSemigroup = <A>(S: TC.Semigroup<A>): TC.Semigroup<IO<A>> => ({
-  concat: (x, y) => () => S.concat(x(), y()),
+  concat: (x) => (y) => () => S.concat(x())(y()),
 });
 
 export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<IO<A>> => ({
@@ -80,24 +92,24 @@ export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<IO<A>> => ({
   empty: constant(M.empty),
 });
 
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
 export const { of, ap, map, join, chain } = Monad;
 
 export const { reduce, traverse } = Traversable;
 
-/***************************************************************************************************
- * @section Sequenec
- **************************************************************************************************/
+/*******************************************************************************
+ * Sequenec
+ ******************************************************************************/
 
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
 
-/***************************************************************************************************
+/*******************************************************************************
  * Do Notation
- **************************************************************************************************/
+ ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

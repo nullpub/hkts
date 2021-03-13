@@ -1,4 +1,3 @@
 .vscode
+.vim-lsp-settings
 draft
-draft.ts
-bundle

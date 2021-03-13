@@ -1,13 +1,14 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { $, _, _0, _1, _2, _3, Lazy, Predicate } from "./types.ts";
+import type { Lazy, Predicate } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { flow, identity, isNotNil, pipe } from "./fns.ts";
 import { createDo } from "./derivations.ts";
 
-/***************************************************************************************************
+/*******************************************************************************
  * Types
- **************************************************************************************************/
+ ******************************************************************************/
 
 /**
  * The None type represents the non-existence of a value.
@@ -23,17 +24,28 @@ export type Some<V> = { tag: "Some"; value: V };
  * The Option<A> represents a type A that may or may not exist. It's the functional
  * progamming equivalent of A | undefined | null.
  */
-export type Option<A> = None | Some<A>;
+export type Option<A> = Some<A> | None;
 
-/***************************************************************************************************
+export const URI = "Option";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: Option<_[0]>;
+  }
+}
+
+/*******************************************************************************
  * Constructors
- **************************************************************************************************/
+ ******************************************************************************/
 
 /**
  * The cannonical implementation of the None type. Since all None values are equivalent there
  * is no reason to construct more than one object instance.
  */
-export const none: None = { tag: "None" };
+export const none = <A = never>(): Option<A> => constNone;
 
 /**
  * The some constructer takes any value and wraps it in the Some type.
@@ -43,7 +55,7 @@ export const some = <A>(value: A): Option<A> => ({ tag: "Some", value });
 /**
  * constNone is a thunk that returns the canonical none instance.
  */
-export const constNone = () => none;
+export const constNone: Option<never> = { tag: "None" };
 
 /**
  * fromNullable takes a potentially null or undefined value and maps null or undefined to
@@ -58,7 +70,7 @@ export const constNone = () => none;
  *     const optionFourthEntry = fromNullable(numberArray[3]); // None
  */
 export const fromNullable = <A>(a: A): Option<NonNullable<A>> =>
-  isNotNil(a) ? some(a) : none;
+  isNotNil(a) ? some(a) : constNone;
 
 /**
  * fromPredicate will test the value a with the predicate. If
@@ -73,7 +85,7 @@ export const fromNullable = <A>(a: A): Option<NonNullable<A>> =>
 export const fromPredicate = <A>(predicate: Predicate<A>) =>
   (
     a: A,
-  ): Option<A> => (predicate(a) ? some(a) : none);
+  ): Option<A> => (predicate(a) ? some(a) : constNone);
 
 /**
  * tryCatch takes a thunk that can potentially throw and wraps it
@@ -84,13 +96,13 @@ export const tryCatch = <A>(f: Lazy<A>): Option<A> => {
   try {
     return some(f());
   } catch (e) {
-    return none;
+    return constNone;
   }
 };
 
-/***************************************************************************************************
+/*******************************************************************************
  * Destructors
- **************************************************************************************************/
+ ******************************************************************************/
 
 /**
  * fold is the standard catamorphism on an Option<A>. It operates like a switch case
@@ -134,9 +146,9 @@ export const toNullable = <A>(ma: Option<A>): A | null =>
 export const toUndefined = <A>(ma: Option<A>): A | undefined =>
   isNone(ma) ? undefined : ma.value;
 
-/***************************************************************************************************
+/*******************************************************************************
  * Combinators
- **************************************************************************************************/
+ ******************************************************************************/
 
 /**
  * mapNullable is useful for piping an option's values through functions that may return
@@ -151,11 +163,11 @@ export const toUndefined = <A>(ma: Option<A>): A | undefined =>
 export const mapNullable = <A, B>(f: (a: A) => B | null | undefined) =>
   (
     ma: Option<A>,
-  ): Option<B> => (isNone(ma) ? none : fromNullable(f(ma.value)));
+  ): Option<B> => (isNone(ma) ? constNone : fromNullable(f(ma.value)));
 
-/***************************************************************************************************
+/*******************************************************************************
  * Guards
- **************************************************************************************************/
+ ******************************************************************************/
 
 /**
  * Tests wether an Option is None. Can be used as a predicate.
@@ -167,9 +179,9 @@ export const isNone = <A>(m: Option<A>): m is None => m.tag === "None";
  */
 export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
 
-/***************************************************************************************************
+/*******************************************************************************
  * Module Getters
- **************************************************************************************************/
+ ******************************************************************************/
 
 /**
  * Generates a Show module for an option with inner type of A.
@@ -194,30 +206,32 @@ export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Option<A>> => ({
  *     const d = Setoid.equals(some(1), none); // false
  */
 export const getSetoid = <A>(S: TC.Setoid<A>): TC.Setoid<Option<A>> => ({
-  equals: (a, b) =>
-    a === b || isNone(a)
-      ? isNone(b)
-      : (isNone(b) ? false : S.equals(a.value, b.value)),
+  equals: (a) =>
+    (b) =>
+      a === b || isNone(a)
+        ? isNone(b)
+        : (isNone(b) ? false : S.equals(a.value)(b.value)),
 });
 
 export const getOrd = <A>(O: TC.Ord<A>): TC.Ord<Option<A>> => ({
   ...getSetoid(O),
-  lte: (a, b) =>
-    a === b || isNone(a)
-      ? isNone(b)
-      : (isNone(b) ? false : O.lte(a.value, b.value)),
+  lte: (a) =>
+    (b) =>
+      a === b || isNone(a)
+        ? isNone(b)
+        : (isNone(b) ? false : O.lte(a.value)(b.value)),
 });
 
 export const getSemigroup = <A>(
   S: TC.Semigroup<A>,
 ): TC.Semigroup<Option<A>> => ({
-  concat: (x, y) =>
-    isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value, y.value)),
+  concat: (x) =>
+    (y) => isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value)(y.value)),
 });
 
 export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<Option<A>> => ({
   ...getSemigroup(M),
-  empty: constNone,
+  empty: none,
 });
 
 export const getGroup = <A>(G: TC.Group<A>): TC.Group<Option<A>> => ({
@@ -225,33 +239,33 @@ export const getGroup = <A>(G: TC.Group<A>): TC.Group<Option<A>> => ({
   invert: (ta) => isNone(ta) ? ta : some(G.invert(ta.value)),
 });
 
-/***************************************************************************************************
+/*******************************************************************************
  * Modules
- **************************************************************************************************/
+ ******************************************************************************/
 
-export const Functor: TC.Functor<Option<_>> = {
+export const Functor: TC.Functor<URI> = {
   map: (fab) => (ta) => isNone(ta) ? ta : some(fab(ta.value)),
 };
 
-export const Apply: TC.Apply<Option<_>> = {
+export const Apply: TC.Apply<URI> = {
   ap: (tfab) =>
-    (ta) => isNone(tfab) || isNone(ta) ? none : some(tfab.value(ta.value)),
+    (ta) => isNone(tfab) || isNone(ta) ? constNone : some(tfab.value(ta.value)),
   map: Functor.map,
 };
 
-export const Applicative: TC.Applicative<Option<_>> = {
+export const Applicative: TC.Applicative<URI> = {
   of: some,
   ap: Apply.ap,
   map: Functor.map,
 };
 
-export const Chain: TC.Chain<Option<_>> = {
+export const Chain: TC.Chain<URI> = {
   ap: Apply.ap,
   map: Functor.map,
   chain: (fatb) => (ta) => (isSome(ta) ? fatb(ta.value) : ta),
 };
 
-export const Monad: TC.Monad<Option<_>> = {
+export const Monad: TC.Monad<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
@@ -259,59 +273,59 @@ export const Monad: TC.Monad<Option<_>> = {
   chain: Chain.chain,
 };
 
-export const MonadThrow: TC.MonadThrow<Option<_>> = {
+export const MonadThrow: TC.MonadThrow<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
   join: Chain.chain(identity),
   chain: Chain.chain,
-  throwError: constNone,
+  throwError: none,
 };
 
-export const Alt: TC.Alt<Option<_>> = {
+export const Alt: TC.Alt<URI> = {
   map: Functor.map,
   alt: (tb) => (ta) => (isNone(ta) ? tb : ta),
 };
 
-export const Alternative: TC.Alternative<Option<_>> = {
+export const Alternative: TC.Alternative<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
   alt: Alt.alt,
-  zero: constNone,
+  zero: none,
 };
 
-export const Extends: TC.Extend<Option<_>> = {
+export const Extends: TC.Extend<URI> = {
   map: Monad.map,
   extend: (ftab) => flow(ftab, some),
 };
 
-export const Filterable: TC.Filterable<Option<_>> = {
+export const Filterable: TC.Filterable<URI> = {
   filter: (predicate) =>
-    (ta) => isNone(ta) ? ta : predicate(ta.value) ? ta : none,
+    (ta) => isNone(ta) ? ta : predicate(ta.value) ? ta : constNone,
 };
 
-export const Foldable: TC.Foldable<Option<_>> = {
+export const Foldable: TC.Foldable<URI> = {
   reduce: (faba, a) => (tb) => (isSome(tb) ? faba(a, tb.value) : a),
 };
 
-export const Plus: TC.Plus<Option<_>> = {
+export const Plus: TC.Plus<URI> = {
   alt: Alt.alt,
   map: Monad.map,
-  zero: constNone,
+  zero: none,
 };
 
-export const Traversable: TC.Traversable<Option<_>> = {
+export const Traversable: TC.Traversable<URI> = {
   map: Functor.map,
   reduce: Foldable.reduce,
-  traverse: <U>(A: TC.Applicative<U>) =>
-    <A, B>(faub: (a: A) => $<U, [B]>) =>
-      (ta: Option<A>) => isNone(ta) ? A.of(none) : A.map(some)(faub(ta.value)),
+  traverse: (A) =>
+    (favi) =>
+      (ta) => isNone(ta) ? A.of(none()) : pipe(favi(ta.value), A.map(some)),
 };
 
-/***************************************************************************************************
+/*******************************************************************************
  * Pipeables
- **************************************************************************************************/
+ ******************************************************************************/
 
 export const { of, ap, map, join, chain } = Monad;
 
@@ -323,19 +337,15 @@ export const { filter } = Filterable;
 
 export const { extend } = Extends;
 
-export const exists = <A>(predicate: Predicate<A>) =>
-  (ta: Option<A>): boolean => isSome(ta) && predicate(ta.value);
-
-/***************************************************************************************************
- * Sequence
- **************************************************************************************************/
-
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
 
-/***************************************************************************************************
+export const exists = <A>(predicate: Predicate<A>) =>
+  (ta: Option<A>): boolean => isSome(ta) && predicate(ta.value);
+
+/*******************************************************************************
  * Do
- **************************************************************************************************/
+ ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

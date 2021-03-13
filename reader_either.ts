@@ -1,21 +1,36 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { _0, _1, _2, _3, Fix, Lazy } from "./types.ts";
+import type { Lazy } from "./types.ts";
 
 import * as E from "./either.ts";
 import * as R from "./reader.ts";
 import { createDo } from "./derivations.ts";
 import { apply, constant, flow, identity, pipe } from "./fns.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
 export type ReaderEither<S, L, R> = R.Reader<S, E.Either<L, R>>;
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
+
+export const URI = "ReaderEither";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: ReaderEither<_[2], _[1], _[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Constructors
+ ******************************************************************************/
 
 export const ask: <R, E = never>() => ReaderEither<R, E, R> = () => E.right;
 
@@ -51,33 +66,33 @@ export const orElse = <S, E, A, M>(onLeft: (e: E) => ReaderEither<S, M, A>) =>
     ma: ReaderEither<S, E, A>,
   ): ReaderEither<S, M, A> => pipe(ma, R.chain(E.fold(onLeft, right)));
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
 
-export const Functor: TC.Functor<ReaderEither<_0, _1, _2>, 3> = {
+export const Functor: TC.Functor<URI> = {
   map: (fab) => (ta) => flow(ta, E.map(fab)),
 };
 
-export const Apply: TC.Apply<ReaderEither<_0, _1, _2>, 3> = {
+export const Apply: TC.Apply<URI> = {
   ap: (tfab) =>
     (ta) => (r) => pipe(tfab(r), E.chain((fab) => pipe(ta(r), E.map(fab)))),
   map: Functor.map,
 };
 
-export const Applicative: TC.Applicative<ReaderEither<_0, _1, _2>, 3> = {
+export const Applicative: TC.Applicative<URI> = {
   of: flow(E.right, constant),
   ap: Apply.ap,
   map: Functor.map,
 };
 
-export const Chain: TC.Chain<ReaderEither<_0, _1, _2>, 3> = {
+export const Chain: TC.Chain<URI> = {
   ap: Apply.ap,
   map: Functor.map,
   chain: (fatb) => R.chain(E.fold(left, fatb)),
 };
 
-export const Monad: TC.Monad<ReaderEither<_0, _1, _2>, 3> = {
+export const Monad: TC.Monad<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
@@ -85,12 +100,12 @@ export const Monad: TC.Monad<ReaderEither<_0, _1, _2>, 3> = {
   chain: Chain.chain,
 };
 
-export const Bifunctor: TC.Bifunctor<ReaderEither<_0, _1, _2>, 3> = {
-  bimap: (fab, fcd) => (tac) => flow(tac, E.bimap(fab, fcd)),
-  mapLeft: (fef) => Bifunctor.bimap(fef, identity),
+export const Bifunctor: TC.Bifunctor<URI> = {
+  bimap: (fai, fbj) => (tab) => flow(tab, E.bimap(fai, fbj)),
+  mapLeft: (fbj) => (tab) => flow(tab, E.mapLeft(fbj)),
 };
 
-export const MonadThrow: TC.MonadThrow<ReaderEither<_0, _1, _2>, 3> = {
+export const MonadThrow: TC.MonadThrow<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
@@ -99,7 +114,7 @@ export const MonadThrow: TC.MonadThrow<ReaderEither<_0, _1, _2>, 3> = {
   throwError: left,
 };
 
-export const Alt: TC.Alt<ReaderEither<_0, _1, _2>, 3> = {
+export const Alt: TC.Alt<URI> = {
   map: Monad.map,
   alt: (tb) =>
     (ta) =>
@@ -110,44 +125,9 @@ export const Alt: TC.Alt<ReaderEither<_0, _1, _2>, 3> = {
         ),
 };
 
-/***************************************************************************************************
- * @section Module Getters
- **************************************************************************************************/
-
-export const getRightMonad = <F>(
-  S: TC.Semigroup<F>,
-): TC.Monad<ReaderEither<_0, Fix<F>, _1>, 2> => {
-  const M = E.getRightMonad(S);
-
-  return {
-    of: right,
-    ap: (tfab) =>
-      (ta) =>
-        (r) =>
-          pipe(
-            ta(r),
-            M.ap(tfab(r)),
-          ),
-    map: (fab) => (ta) => flow(ta, M.map(fab)),
-    join: (tta) =>
-      (r) =>
-        pipe(
-          tta(r),
-          M.chain(apply(r)),
-        ),
-    chain: (fatb) =>
-      (ta) =>
-        (r) =>
-          pipe(
-            ta(r),
-            M.chain(flow(fatb, apply(r))),
-          ),
-  };
-};
-
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
 export const { of, ap, map, join, chain, throwError } = MonadThrow;
 
@@ -163,16 +143,8 @@ export const widen: <F>() => <R, E, A>(
   ta: ReaderEither<R, E, A>,
 ) => ReaderEither<R, E | F, A> = constant(identity);
 
-/***************************************************************************************************
- * @section Sequence
- **************************************************************************************************/
-
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
-
-/***************************************************************************************************
+/*******************************************************************************
  * Do
- **************************************************************************************************/
+ ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

@@ -1,12 +1,33 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { $, _ } from "./types.ts";
+import type { Fn } from "./types.ts";
 
-import * as D from "./derivations.ts";
-import { hasOwnProperty } from "./fns.ts";
+import { hasOwnProperty, pipe } from "./fns.ts";
 
-/***************************************************************************************************
- * @section Optimizations
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
+
+export type ReadonlyRecord<V> = Readonly<Record<string, V>>;
+
+/*******************************************************************************
+  * Kind Registration
+  ******************************************************************************/
+
+export const URI = "ReadonlyRecord";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: ReadonlyRecord<_[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Optimizations
+ ******************************************************************************/
 
 export const _map = <A, B, KS extends string>(
   fab: (a: A, i: string) => B,
@@ -46,50 +67,48 @@ export const _assign = <KS extends string>(i: KS) =>
       return bs;
     };
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
 
-export const Functor: TC.Functor<Readonly<Record<string, _>>> = {
+export const Functor: TC.Functor<URI> = {
   map: (fab) => (ta) => _map(fab, ta),
 };
 
 export const IndexedFoldable: TC.IndexedFoldable<
-  Readonly<Record<string, _>>,
-  1,
+  URI,
   string
 > = {
   reduce: (faba, a) => (tb) => _reduce(faba, a, tb),
 };
 
 export const IndexedTraversable: TC.IndexedTraversable<
-  Readonly<Record<string, _>>,
-  1,
+  URI,
   string
 > = {
-  map: Functor.map,
+  map: (fai) => (ta) => _map(fai, ta),
   reduce: IndexedFoldable.reduce,
-  traverse: <U>(A: TC.Applicative<U>) =>
-    <A, B>(faub: (a: A, i: string) => $<U, [B]>) =>
-      IndexedFoldable.reduce(
-        (fbs, a: A, i) => {
-          return A.ap(A.map(_assign(i))(fbs))(faub(a, i));
-        },
-        A.of({}),
-      ),
+  traverse: (A) =>
+    (faui) =>
+      (ta) =>
+        _reduce(
+          (ubs, a, index) =>
+            pipe(
+              faui(a, index),
+              A.ap(pipe(ubs, A.map((is) => (i) => _assign(index)(is)(i)))),
+            ),
+          A.of({}),
+          ta,
+        ),
 };
 
-export const Foldable: TC.Foldable<
-  Readonly<Record<string, _>>
-> = IndexedFoldable;
+export const Foldable: TC.Foldable<URI> = IndexedFoldable;
 
-export const Traversable: TC.Traversable<
-  Readonly<Record<string, _>>
-> = IndexedTraversable;
+export const Traversable = IndexedTraversable as TC.Traversable<URI>;
 
-/***************************************************************************************************
- * @section Module Getters
- **************************************************************************************************/
+/*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
 
 export const getShow = <A>(SA: TC.Show<A>): TC.Show<Record<string, A>> => ({
   show: (ta) =>
@@ -99,63 +118,17 @@ export const getShow = <A>(SA: TC.Show<A>): TC.Show<Record<string, A>> => ({
     } }`,
 });
 
-/***************************************************************************************************
- * @section Traverses
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
-// deno-fmt-ignore
-type TraverseFn = {
-  <U, L extends TC.LS = 1>(A: TC.Applicative<U, L>): <A, B>(
-    faub: (a: A) => $<U, [B]>
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [Record<K, B>]>;
-  <U, L extends TC.LS = 2>(A: TC.Applicative<U, L>): <E, A, B>(
-    faub: (a: A) => $<U, [E, B]>
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [E, Record<K, B>]>;
-  <U, L extends TC.LS = 3>(A: TC.Applicative<U, L>): <R, E, A, B>(
-    faub: (a: A) => $<U, [R, E, B]>
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [R, E, Record<K, B>]>;
-  <U, L extends TC.LS = 4>(A: TC.Applicative<U, L>): <S, R, E, A, B>(
-    faub: (a: A) => $<U, [S, R, E, B]>
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [S, R, E, Record<K, B>]>;
-};
+export const { traverse, reduce, map } = Traversable;
 
-export const traverse: TraverseFn = Traversable.traverse as TraverseFn;
-
-// deno-fmt-ignore
-type IndexedTraverseFn<I extends string = string> = {
-  <U, L extends TC.LS = 1>(A: TC.Applicative<U, L>): <A, B>(
-    faub: (a: A, i: I) => $<U, [B]>
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [Record<K, B>]>;
-  <U, L extends TC.LS = 2>(A: TC.Applicative<U, L>): <E, A, B>(
-    faub: (a: A, i: I) => $<U, [E, B]>
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [E, Record<K, B>]>;
-  <U, L extends TC.LS = 3>(A: TC.Applicative<U, L>): <R, E, A, B>(
-    faub: (a: A, i: I) => $<U, [R, E, B]>
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [R, E, Record<K, B>]>;
-  <U, L extends TC.LS = 4>(A: TC.Applicative<U, L>): <S, R, E, A, B>(
-    faub: (a: A, i: I) => $<U, [S, R, E, B]>
-  ) => <K extends string>(ta: Record<K, A>) => $<U, [S, R, E, Record<K, B>]>;
-};
-
-export const indexedTraverse: IndexedTraverseFn = Traversable
-  .traverse as IndexedTraverseFn;
-
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
-
-export const map = Traversable.map as <A, B>(
-  fab: (a: A) => B,
-) => <K extends string>(r: Record<K, A>) => Record<K, B>;
-
-export const indexedMap = <A, B>(fab: (a: A, i: string) => B) =>
-  <
-    K extends string,
-  >(
-    r: Record<K, A>,
-  ): Record<K, B> => _map(fab, r);
-
-export const reduce = Traversable.reduce;
+export const {
+  traverse: indexedTraverse,
+  reduce: indexedReduce,
+  map: indexedMap,
+} = IndexedTraversable;
 
 export const insertAt = <K extends string, A>(k: K, a: A) =>
   <KS extends K>(
@@ -186,16 +159,20 @@ export const omit = <A, P extends keyof A>(
 };
 
 export const pick = <R, K extends keyof R>(...props: [K, K, ...K[]]) =>
-  (
-    record: R,
-  ): Pick<R, K> => {
+  (record: R): Pick<R, K> => {
     const output: Partial<Pick<R, K>> = {};
 
     for (const k of props) {
       output[k] = record[k];
     }
+
     return output as Pick<R, K>;
   };
 
 export const keys = <P extends Record<string, unknown>>(p: P): keyof P[] =>
   (Object.keys(p) as unknown) as keyof P[];
+
+export const zipFirst = <A, I>(fabi: Fn<[string, A, unknown], I>) =>
+  <KS extends string>(a: { [K in KS]: A }) =>
+    (b: Record<string, unknown>): { [K in KS]: I } =>
+      _map<A, I, KS>((a, key) => fabi(key, a, b[key]), a);

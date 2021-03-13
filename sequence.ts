@@ -1,17 +1,20 @@
 // deno-lint-ignore-file no-explicit-any
 
-import type { $ } from "./types.ts";
-import type { Apply, LS } from "./type_classes.ts";
+import type { Kind, URIS } from "./hkt.ts";
+import type { Apply } from "./type_classes.ts";
+import type { NonEmptyRecord } from "./types.ts";
 
-/***************************************************************************************************
- * @section Ap Function Constructors
- **************************************************************************************************/
+import { pipe } from "./fns.ts";
+
+/*******************************************************************************
+ * Ap Function Constructors
+ ******************************************************************************/
 
 const loopTuple = <T>(len: number, init: T[] = []): T[] | ((t: T) => any) =>
   len === 0 ? init : (t: T) => loopTuple(len - 1, [...init, t]);
 
-const loopRecord = (
-  keys: ReadonlyArray<string>,
+const loopRecord = <K extends string>(
+  keys: K[],
   i = 0,
   init: Record<string, any> = {},
 ): Record<string, any> | ((a: unknown) => any) =>
@@ -19,113 +22,54 @@ const loopRecord = (
     ? init
     : (a: unknown) => loopRecord(keys, i + 1, { ...init, [keys[i]]: a });
 
-/***************************************************************************************************
- * @section Sequence Tuple
- **************************************************************************************************/
+/*******************************************************************************
+ * Sequence Tuple
+ ******************************************************************************/
 
 type NonEmptyArray<T> = [T, ...T[]];
 
 // deno-fmt-ignore
-type SequenceTuple<T, R extends NonEmptyArray<$<T, any[]>>, L extends LS = 1> = {
-  1: $<T, [{ [K in keyof R]: R[K] extends $<T, [infer A]> ? A : never }]>;
-  2: $<T, [
-    { [K in keyof R]: R[K] extends $<T, [infer E, infer A]> ? E : never }[number],
-    { [K in keyof R]: R[K] extends $<T, [infer E, infer A]> ? A : never },
-  ]>;
-  3: $<T, [
-    { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? R : never }[number],
-    { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? E : never }[number],
-    { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? A : never },
-  ]>;
-  4: $<T, [
-    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? S : never }[number],
-    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? R : never }[number],
-    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? E : never }[number],
-    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? A : never },
-  ]>;
-}[L];
-
-// deno-fmt-ignore
-type CreateSequenceTuple = {
-  <T, L extends 1>(A: Apply<T, L>):
-    <R extends NonEmptyArray<$<T, [any]>>>(...r: R) =>
-      SequenceTuple<T, R, L>;
-  <T, L extends 2>(A: Apply<T, L>):
-    <R extends NonEmptyArray<$<T, [any, any]>>>(...r: R) =>
-      SequenceTuple<T, R, L>;
-  <T, L extends 3>(A: Apply<T, L>):
-    <R extends NonEmptyArray<$<T, [any, any, any]>>>(...r: R) =>
-      SequenceTuple<T, R, L>;
-  <T, L extends 4>(A: Apply<T, L>):
-    <R extends NonEmptyArray<$<T, [any, any, any, any]>>>(...r: R) =>
-      SequenceTuple<T, R, L>;
-};
+type SequenceTuple<URI extends URIS, R extends NonEmptyArray<Kind<URI, any[]>>> = Kind<URI, [
+  { [K in keyof R]: R[K] extends Kind<URI, [infer A, infer _, infer _, infer _]> ? A : never },
+  { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer B, infer _, infer _]> ? B : never }[number],
+  { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer _, infer C, infer _]> ? C : never }[number],
+  { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer _, infer _, infer D]> ? D : never }[number]
+]>;
 
 /**
  * Create a sequence over tuple function from Apply
  */
-export const createSequenceTuple: CreateSequenceTuple = <T>(A: Apply<T>) =>
-  <R extends NonEmptyArray<$<T, [any]>>>(
+export const createSequenceTuple = <URI extends URIS>(A: Apply<URI>) =>
+  <R extends NonEmptyArray<Kind<URI, any[]>>>(
     ...r: R
-  ): SequenceTuple<T, R> => {
+  ): SequenceTuple<URI, R> => {
     const [head, ...tail] = r;
     return tail.reduce(
-      (acc, cur) => A.ap(acc)(cur) as any,
-      A.map(loopTuple(r.length) as any)(head),
+      (acc: any, cur: any) => pipe(cur, A.ap(acc)) as any,
+      pipe(head, A.map(loopTuple(r.length) as any) as any),
     ) as any;
   };
 
-/***************************************************************************************************
- * @section Sequence Struct
- **************************************************************************************************/
-
-type NonEmptyRecord<R> = keyof R extends never ? never : R;
+/*******************************************************************************
+ * Sequence Struct
+ ******************************************************************************/
 
 // deno-fmt-ignore
-type SequenceStruct<T, R extends Record<string, $<T, any[]>>, L extends LS = 1> = {
-  1: $<T, [{ [K in keyof R]: R[K] extends $<T, [infer A]> ? A : never }]>;
-  2: $<T, [
-    { [K in keyof R]: R[K] extends $<T, [infer E, infer A]> ? E : never }[keyof R],
-    { [K in keyof R]: R[K] extends $<T, [infer E, infer A]> ? A : never },
-  ]>;
-  3: $<T, [
-    { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? R : never }[keyof R],
-    { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? E : never }[keyof R],
-    { [K in keyof R]: R[K] extends $<T, [infer R, infer E, infer A]> ? A : never },
-  ]>;
-  4: $<T, [
-    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? S : never }[keyof R],
-    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? R : never }[keyof R],
-    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? E : never }[keyof R],
-    { [K in keyof R]: R[K] extends $<T, [infer S, infer R, infer E, infer A]> ? A : never },
-  ]>;
-}[L];
+type SequenceStruct<URI extends URIS, R extends Record<string, Kind<URI, any[]>>> = Kind<URI, [
+  { [K in keyof R]: R[K] extends Kind<URI, [infer A, infer _, infer _, infer _]> ? A : never },
+  { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer B, infer _, infer _]> ? B : never }[keyof R],
+  { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer _, infer C, infer _]> ? C : never }[keyof R],
+  { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer _, infer _, infer D]> ? D : never }[keyof R]
+]>
 
-// deno-fmt-ignore
-type CreateSequenceStruct = {
-  <T, L extends 1>(A: Apply<T, L>):
-    <R extends Record<string, $<T, [any]>>>(r: NonEmptyRecord<R>) =>
-      SequenceStruct<T, R, L>;
-  <T, L extends 2>(A: Apply<T, L>):
-    <R extends Record<string, $<T, [any, any]>>>(r: NonEmptyRecord<R>) =>
-      SequenceStruct<T, R, L>;
-  <T, L extends 3>(A: Apply<T, L>):
-    <R extends Record<string, $<T, [any, any, any]>>>(r: NonEmptyRecord<R>) =>
-      SequenceStruct<T, R, L>;
-  <T, L extends 4>(A: Apply<T, L>):
-    <R extends Record<string, $<T, [any, any, any, any]>>>(r: NonEmptyRecord<R>) =>
-      SequenceStruct<T, R, L>;
-};
-
-export const createSequenceStruct: CreateSequenceStruct = <T>(A: Apply<T>) =>
-  <R extends Record<string, $<T, any[]>>>(
+export const createSequenceStruct = <URI extends URIS>(A: Apply<URI>) =>
+  <R extends Record<string, Kind<URI, any[]>>>(
     r: NonEmptyRecord<R>,
-  ): SequenceStruct<T, R> => {
-    const keys = Object.keys(r);
+  ): SequenceStruct<URI, R> => {
+    const keys: ((keyof R) & string)[] = Object.keys(r);
     const [head, ...tail] = keys;
-
     return tail.reduce(
-      (f: any, key) => A.ap<any, any>(f)(r[key] as any),
-      A.map<any, any>(loopRecord(keys) as any)(r[head] as any),
-    );
+      (f: any, key: keyof R) => pipe(r[key], A.ap(f) as any),
+      pipe(r[head] as any, A.map(loopRecord(keys) as any) as any),
+    ) as any;
   };

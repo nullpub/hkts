@@ -1,34 +1,54 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { $, _0, _1, Fix } from "./types.ts";
 
 import * as E from "./either.ts";
-import { identity } from "./fns.ts";
+import { identity, pipe } from "./fns.ts";
 import { createMonad } from "./derivations.ts";
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
 export type Left<L> = E.Left<L>;
+
 export type Right<R> = E.Right<R>;
+
 export type Both<L, R> = { tag: "Both"; left: L; right: R };
+
 export type These<L, R> = E.Either<L, R> | Both<L, R>;
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
+
+export const URI = "These";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: These<_[1], _[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Constructors
+ ******************************************************************************/
 
 export const left = E.left;
+
 export const right = E.right;
+
 export const both = <L, R>(left: L, right: R): Both<L, R> => ({
   tag: "Both",
   left,
   right,
 });
 
-/***************************************************************************************************
- * @section Destructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Destructors
+ ******************************************************************************/
 
 export const fold = <E, A, B>(
   onLeft: (e: E) => B,
@@ -46,24 +66,22 @@ export const fold = <E, A, B>(
     }
   };
 
-/***************************************************************************************************
- * @section Combinators
- **************************************************************************************************/
-
-/***************************************************************************************************
- * @section Guards
- **************************************************************************************************/
+/*******************************************************************************
+ * Guards
+ ******************************************************************************/
 
 export const isLeft = <L, R>(m: These<L, R>): m is E.Left<L> =>
   m.tag === "Left";
+
 export const isRight = <L, R>(m: These<L, R>): m is E.Right<R> =>
   m.tag === "Right";
+
 export const isBoth = <L, R>(m: These<L, R>): m is Both<L, R> =>
   m.tag === "Both";
 
-/***************************************************************************************************
- * @section Module Getters
- **************************************************************************************************/
+/*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
 
 export const getShow = <E, A>(
   SE: TC.Show<E>,
@@ -80,70 +98,40 @@ export const getSemigroup = <E, A>(
   SE: TC.Semigroup<E>,
   SA: TC.Semigroup<A>,
 ): TC.Semigroup<These<E, A>> => ({
-  concat: (x, y) => {
-    if (isLeft(x)) {
-      if (isLeft(y)) {
-        return left(SE.concat(x.left, y.left));
-      } else if (isRight(y)) {
-        return both(x.left, y.right);
+  concat: (x) =>
+    (y) => {
+      if (isLeft(x)) {
+        if (isLeft(y)) {
+          return left(SE.concat(x.left)(y.left));
+        } else if (isRight(y)) {
+          return both(x.left, y.right);
+        }
+        return both(SE.concat(x.left)(y.left), y.right);
       }
-      return both(SE.concat(x.left, y.left), y.right);
-    }
 
-    if (isRight(x)) {
-      if (isLeft(y)) {
-        return both(y.left, x.right);
-      } else if (isRight(y)) {
-        return right(SA.concat(x.right, y.right));
+      if (isRight(x)) {
+        if (isLeft(y)) {
+          return both(y.left, x.right);
+        } else if (isRight(y)) {
+          return right(SA.concat(x.right)(y.right));
+        }
+        return both(y.left, SA.concat(x.right)(y.right));
       }
-      return both(y.left, SA.concat(x.right, y.right));
-    }
 
-    if (isLeft(y)) {
-      return both(SE.concat(x.left, y.left), x.right);
-    } else if (isRight(y)) {
-      return both(x.left, SA.concat(x.right, y.right));
-    }
-    return both(SE.concat(x.left, y.left), SA.concat(x.right, y.right));
-  },
+      if (isLeft(y)) {
+        return both(SE.concat(x.left)(y.left), x.right);
+      } else if (isRight(y)) {
+        return both(x.left, SA.concat(x.right)(y.right));
+      }
+      return both(SE.concat(x.left)(y.left), SA.concat(x.right)(y.right));
+    },
 });
 
-export const getRightMonad = <E>(
-  SE: TC.Semigroup<E>,
-): TC.Monad<These<Fix<E>, _0>> =>
-  createMonad<These<Fix<E>, _0>>({
-    of: right,
-    map: (fab) =>
-      (ta) =>
-        isLeft(ta)
-          ? ta
-          : isBoth(ta)
-          ? both(ta.left, fab(ta.right))
-          : right(fab(ta.right)),
-    chain: (fatb) =>
-      (ta) => {
-        if (isLeft(ta)) {
-          return ta;
-        } else if (isRight(ta)) {
-          return fatb(ta.right);
-        }
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
 
-        const tb = fatb(ta.right);
-
-        if (isLeft(tb)) {
-          return left(SE.concat(ta.left, tb.left));
-        } else if (isRight(tb)) {
-          return both(ta.left, tb.right);
-        }
-        return both(SE.concat(ta.left, tb.left), tb.right);
-      },
-  });
-
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
-
-export const Functor: TC.Functor<These<_0, _1>, 2> = {
+export const Functor: TC.Functor<URI> = {
   map: (fab) =>
     (ta) =>
       isLeft(ta)
@@ -153,7 +141,7 @@ export const Functor: TC.Functor<These<_0, _1>, 2> = {
         : both(ta.left, fab(ta.right)),
 };
 
-export const Bifunctor: TC.Bifunctor<These<_0, _1>, 2> = {
+export const Bifunctor: TC.Bifunctor<URI> = {
   bimap: (fab, fcd) =>
     (tac) =>
       isLeft(tac)
@@ -161,31 +149,31 @@ export const Bifunctor: TC.Bifunctor<These<_0, _1>, 2> = {
         : isRight(tac)
         ? right(fcd(tac.right))
         : both(fab(tac.left), fcd(tac.right)),
-  mapLeft: (fef) => Bifunctor.bimap(fef, identity),
+  mapLeft: (fef) => (ta) => pipe(ta, Bifunctor.bimap(fef, identity)),
 };
 
-export const Foldable: TC.Foldable<These<_0, _1>, 2> = {
+export const Foldable: TC.Foldable<URI> = {
   reduce: (faba, a) =>
     (tb) =>
       isLeft(tb) ? a : isRight(tb) ? faba(a, tb.right) : faba(a, tb.right),
 };
 
-export const Traversable: TC.Traversable<These<_0, _1>, 2> = {
+export const Traversable: TC.Traversable<URI> = {
   reduce: Foldable.reduce,
   map: Functor.map,
-  traverse: <U>(A: TC.Applicative<U>) =>
-    <E, A, B>(faub: (a: A) => $<U, [B]>) =>
-      (ta: These<E, A>) =>
+  traverse: (A) =>
+    (faub) =>
+      (ta) =>
         isLeft(ta)
           ? A.of(ta)
           : isRight(ta)
-          ? A.map(right)(faub(ta.right))
-          : A.map((r) => both(ta.left, r))(faub(ta.right)),
+          ? pipe(faub(ta.right), A.map(right))
+          : pipe(faub(ta.right), A.map((r) => both(ta.left, r))),
 };
 
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
 export const { bimap } = Bifunctor;
 

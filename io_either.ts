@@ -1,21 +1,37 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { _, _0, _1, Fix, Lazy } from "./types.ts";
+import type { Lazy } from "./types.ts";
 
 import * as E from "./either.ts";
 import * as I from "./io.ts";
 import * as S from "./sequence.ts";
 import { createDo } from "./derivations.ts";
-import { apply, constant, flow, identity, pipe } from "./fns.ts";
+import { constant, flow, identity, pipe } from "./fns.ts";
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
 export type IOEither<L, R> = I.IO<E.Either<L, R>>;
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
+
+export const URI = "IOEither";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: IOEither<_[1], _[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Constructors
+ ******************************************************************************/
 
 export const left = <E = never, A = never>(left: E): IOEither<E, A> =>
   I.of(E.left(left));
@@ -44,40 +60,38 @@ export const orElse = <E, A, M>(onLeft: (e: E) => IOEither<M, A>) =>
       I.chain(E.fold(onLeft, right)),
     );
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
 
-export const Functor: TC.Functor<IOEither<_0, _1>, 2> = {
+export const Functor: TC.Functor<URI> = {
   map: (fab) => (ta) => flow(ta, E.map(fab)),
 };
 
-export const Apply: TC.Apply<IOEither<_0, _1>, 2> = {
+export const Apply: TC.Apply<URI> = {
   ap: (tfab) =>
     (ta) =>
       () =>
         pipe(
           E.sequenceTuple(tfab(), ta()),
-          E.map(([fab, a]) => fab(a)),
+          E.map((s) => s[0](s[1])),
         ),
   map: Functor.map,
 };
 
-export const Applicative: TC.Applicative<IOEither<_0, _1>, 2> = {
+export const Applicative: TC.Applicative<URI> = {
   of: right,
   ap: Apply.ap,
   map: Functor.map,
 };
 
-export const Chain: TC.Chain<IOEither<_0, _1>, 2> = {
+export const Chain: TC.Chain<URI> = {
   ap: Apply.ap,
   map: Functor.map,
-  chain: <E, A, B>(fatb: (a: A) => IOEither<E, B>) =>
-    (ta: IOEither<E, A>) =>
-      flow(ta, E.fold<E, A, E.Either<E, B>>(E.left, flow(fatb, apply()))),
+  chain: (fatb) => (ta) => flow(ta, E.fold(E.left, (a) => fatb(a)())),
 };
 
-export const Monad: TC.Monad<IOEither<_0, _1>, 2> = {
+export const Monad: TC.Monad<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
@@ -85,12 +99,12 @@ export const Monad: TC.Monad<IOEither<_0, _1>, 2> = {
   chain: Chain.chain,
 };
 
-export const Bifunctor: TC.Bifunctor<IOEither<_0, _1>> = {
+export const Bifunctor: TC.Bifunctor<URI> = {
   bimap: flow(E.bimap, I.map),
-  mapLeft: (fef) => I.map(E.mapLeft(fef)),
+  mapLeft: (fef) => (ta) => pipe(ta, I.map(E.mapLeft(fef))),
 };
 
-export const MonadThrow: TC.MonadThrow<IOEither<_0, _1>, 2> = {
+export const MonadThrow: TC.MonadThrow<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
@@ -99,17 +113,17 @@ export const MonadThrow: TC.MonadThrow<IOEither<_0, _1>, 2> = {
   throwError: left,
 };
 
-export const Alt: TC.Alt<IOEither<_0, _1>, 2> = ({
+export const Alt: TC.Alt<URI> = ({
   map: Monad.map,
   alt: (tb) => (ta) => flow(ta, E.fold(tb, E.right)),
 });
 
-export const Extends: TC.Extend<IOEither<_0, _1>, 2> = {
+export const Extends: TC.Extend<URI> = {
   map: Functor.map,
   extend: (tfab) => flow(tfab, right),
 };
 
-export const Foldable: TC.Foldable<IOEither<_0, _1>, 2> = {
+export const Foldable: TC.Foldable<URI> = {
   reduce: (faba, a) =>
     (tb) =>
       pipe(
@@ -118,42 +132,24 @@ export const Foldable: TC.Foldable<IOEither<_0, _1>, 2> = {
       ),
 };
 
-/***************************************************************************************************
- * @section Module Getters
- **************************************************************************************************/
-
-export const getRightMonad = <E>(
-  S: TC.Semigroup<E>,
-): TC.Monad<IOEither<Fix<E>, _>> => {
-  const { ap } = E.getRightMonad(S);
-
-  return ({
-    of: Applicative.of,
-    ap: (tfab) => (ta) => pipe(ap(tfab())(ta()), constant),
-    map: Functor.map,
-    join: Monad.join,
-    chain: Chain.chain,
-  });
-};
-
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
 export const { of, ap, map, join, chain } = Monad;
 
 export const { bimap, mapLeft } = Bifunctor;
 
-/***************************************************************************************************
- * @section Sequence
- **************************************************************************************************/
+/*******************************************************************************
+ * Sequence
+ ******************************************************************************/
 
 export const sequenceTuple = S.createSequenceTuple(Apply);
 
 export const sequenceStruct = S.createSequenceStruct(Apply);
 
-/***************************************************************************************************
+/*******************************************************************************
  * Do Notation
- **************************************************************************************************/
+ ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

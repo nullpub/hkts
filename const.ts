@@ -1,23 +1,38 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { _, _0, _1, Fix } from "./types.ts";
 
 import { identity } from "./fns.ts";
 
-/***************************************************************************************************
- * @section Models
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
-export type Const<E, A = never> = E;
+export type Const<E, _ = never> = E;
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
+
+export const URI = "Const";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: Const<_[1], _[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Constructors
+ ******************************************************************************/
 
 export const make = <E, A = never>(e: E): Const<E, A> => e;
 
-/***************************************************************************************************
- * @section Module Getters
- **************************************************************************************************/
+/*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
 
 export const getShow = <E, A>(S: TC.Show<E>): TC.Show<Const<E, A>> => ({
   show: (c) => `make(${S.show(c)})`,
@@ -39,36 +54,33 @@ export const getMonoid: <E, A>(
 
 export const getApply = <E>(
   S: TC.Semigroup<E>,
-): TC.Apply<Const<Fix<E>, _>> => ({
+): TC.Apply<URI, [E]> => ({
   map: (_) => (ta) => ta,
-  ap: (fab) => (fa) => make(S.concat(fab, fa)),
+  // deno-lint-ignore no-explicit-any
+  ap: (tfai) => (ta): Const<any, any> => make(S.concat(tfai)(ta)),
 });
 
 export const getApplicative = <E>(
   M: TC.Monoid<E>,
-): TC.Applicative<Const<Fix<E>, _>> => {
-  const A = getApply(M);
-  const zero = M.empty();
-  return {
-    map: A.map,
-    ap: A.ap,
-    of: () => make(zero),
-  };
-};
+): TC.Applicative<URI, [E]> => ({
+  // deno-lint-ignore no-explicit-any
+  of: (): Const<any, any> => make(M.empty()),
+  ...getApply(M),
+});
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
 
-export const Functor: TC.Functor<Const<_0, _1>, 2> = {
+export const Functor: TC.Functor<URI> = {
   map: (_) => (ta) => ta,
 };
 
-export const Contravariant: TC.Contravariant<Const<_0, _1>, 2> = {
+export const Contravariant: TC.Contravariant<URI> = {
   contramap: (_) => (tb) => tb,
 };
 
-export const Bifunctor: TC.Bifunctor<Const<_0, _1>, 2> = {
+export const Bifunctor: TC.Bifunctor<URI> = {
   bimap: (fab, _) => (tac) => make(fab(tac)),
   mapLeft: (fef) => Bifunctor.bimap(fef, identity),
 };

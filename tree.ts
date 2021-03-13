@@ -1,14 +1,39 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { $, _ } from "./types.ts";
 
 import * as A from "./array.ts";
 import { createDo } from "./derivations.ts";
-import { identity, pipe } from "./fns.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
+import { apply, flow, identity, pipe } from "./fns.ts";
 
-/***************************************************************************************************
- * @section Optimizations
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
+
+export type Forest<A> = ReadonlyArray<Tree<A>>;
+
+export type Tree<A> = {
+  readonly value: A;
+  readonly forest: Forest<A>;
+};
+
+/*******************************************************************************
+  * Kind Registration
+  ******************************************************************************/
+
+export const URI = "Tree";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: Tree<_[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Optimizations
+ ******************************************************************************/
 
 // deno-lint-ignore no-explicit-any
 const _concat = A.getMonoid<Tree<any>>().concat;
@@ -26,29 +51,21 @@ const _draw = (indentation: string, forest: Forest<string>): string => {
   return r;
 };
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+const _make = <A>(value: A) =>
+  (forest: Forest<A>): Tree<A> => ({ value, forest });
 
-export type Forest<A> = ReadonlyArray<Tree<A>>;
-
-export type Tree<A> = {
-  readonly value: A;
-  readonly forest: Forest<A>;
-};
-
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Constructors
+ ******************************************************************************/
 
 export const make = <A>(value: A, forest: Forest<A> = A.zero): Tree<A> => ({
   value,
   forest,
 });
 
-/***************************************************************************************************
- * @section Module Getters
- **************************************************************************************************/
+/*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
 
 export const getShow = <A>(S: TC.Show<A>): TC.Show<Tree<A>> => {
   const show = (ta: Tree<A>): string =>
@@ -58,11 +75,11 @@ export const getShow = <A>(S: TC.Show<A>): TC.Show<Tree<A>> => {
   return ({ show });
 };
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
 
-export const Functor: TC.Functor<Tree<_>> = {
+export const Functor: TC.Functor<URI> = {
   map: (fab) =>
     (ta) => ({
       value: fab(ta.value),
@@ -70,18 +87,18 @@ export const Functor: TC.Functor<Tree<_>> = {
     }),
 };
 
-export const Apply: TC.Apply<Tree<_>> = {
-  ap: (tfab) => (ta) => pipe(tfab, Monad.chain((fab) => Functor.map(fab)(ta))),
+export const Apply: TC.Apply<URI> = {
+  ap: (tfab) => (ta) => pipe(tfab, Monad.chain(flow(Functor.map, apply(ta)))),
   map: Functor.map,
 };
 
-export const Applicative: TC.Applicative<Tree<_>> = {
+export const Applicative: TC.Applicative<URI> = {
   of: make,
   ap: Apply.ap,
   map: Functor.map,
 };
 
-export const Chain: TC.Chain<Tree<_>> = {
+export const Chain: TC.Chain<URI> = {
   ap: Apply.ap,
   map: Functor.map,
   chain: (fatb) =>
@@ -89,12 +106,12 @@ export const Chain: TC.Chain<Tree<_>> = {
       const { value, forest } = fatb(ta.value);
       return {
         value,
-        forest: _concat(forest, ta.forest.map(Monad.chain(fatb))),
+        forest: _concat(forest)(ta.forest.map(Monad.chain(fatb))),
       };
     },
 };
 
-export const Monad: TC.Monad<Tree<_>> = {
+export const Monad: TC.Monad<URI> = {
   of: make,
   ap: Apply.ap,
   map: Functor.map,
@@ -102,7 +119,7 @@ export const Monad: TC.Monad<Tree<_>> = {
   chain: Chain.chain,
 };
 
-export const Traversable: TC.Traversable<Tree<_>> = {
+export const Traversable: TC.Traversable<URI> = {
   map: Functor.map,
   reduce: (faba, b) =>
     (ta) => {
@@ -113,29 +130,28 @@ export const Traversable: TC.Traversable<Tree<_>> = {
       }
       return r;
     },
-  traverse: <U>(AP: TC.Applicative<U>) =>
-    <A, B>(faub: (a: A) => $<U, [B]>) =>
-      (ta: Tree<A>) => {
+  // TODO Clean up this implementation
+  traverse: (AP) =>
+    (faub) =>
+      (ta) => {
         const traverseF = A.traverse(AP);
-        const out = <A, B>(f: (a: A) => $<U, [B]>) =>
-          (ta: Tree<A>): $<U, [Tree<B>]> =>
-            AP.ap(
-              AP.map((value: B) =>
-                (forest: Forest<B>) => ({
-                  value,
-                  forest,
-                })
-              )(f(ta.value)),
-            )(
-              pipe(ta.forest, traverseF(out(f))),
+        // deno-lint-ignore no-explicit-any
+        const out = (f: any) =>
+          // deno-lint-ignore no-explicit-any
+          (ta: any): any =>
+            pipe(
+              ta.forest,
+              // deno-lint-ignore no-explicit-any
+              traverseF(out(f)) as any,
+              AP.ap(pipe(f(ta.value), AP.map(_make))),
             );
         return out(faub)(ta);
       },
 };
 
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
 export const { of, ap, map, join, chain } = Monad;
 
@@ -153,16 +169,8 @@ export const fold = <A, B>(f: (a: A, bs: Array<B>) => B) =>
     return go(tree);
   };
 
-/***************************************************************************************************
- * @section Sequence
- **************************************************************************************************/
-
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
-
-/***************************************************************************************************
+/*******************************************************************************
  * Do Notation
- **************************************************************************************************/
+ ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

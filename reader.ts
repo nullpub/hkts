@@ -1,50 +1,64 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { _0, _1 } from "./types.ts";
 
 import { createDo } from "./derivations.ts";
 import { constant, flow, identity, pipe } from "./fns.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
 export type Reader<R, A> = (r: R) => A;
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
+
+export const URI = "Reader";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: Reader<_[1], _[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Constructors
+ ******************************************************************************/
 
 export const ask: <R>() => Reader<R, R> = () => identity;
 
 export const asks: <R, A>(f: (r: R) => A) => Reader<R, A> = identity;
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
 
-export const Functor: TC.Functor<Reader<_0, _1>, 2> = {
+export const Functor: TC.Functor<URI> = {
   map: (fab) => (ta) => flow(ta, fab),
 };
 
-export const Apply: TC.Apply<Reader<_0, _1>, 2> = {
+export const Apply: TC.Apply<URI> = {
   ap: (tfab) => (ta) => (r) => pipe(ta(r), tfab(r)),
   map: Functor.map,
 };
 
-export const Applicative: TC.Applicative<Reader<_0, _1>, 2> = {
+export const Applicative: TC.Applicative<URI> = {
   of: constant,
   ap: Apply.ap,
   map: Functor.map,
 };
 
-export const Chain: TC.Chain<Reader<_0, _1>, 2> = {
+export const Chain: TC.Chain<URI> = {
   ap: Apply.ap,
   map: Functor.map,
   chain: (fatb) => (ta) => (r) => fatb(ta(r))(r),
 };
 
-export const Monad: TC.Monad<Reader<_0, _1>, 2> = {
+export const Monad: TC.Monad<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
@@ -52,22 +66,14 @@ export const Monad: TC.Monad<Reader<_0, _1>, 2> = {
   chain: Chain.chain,
 };
 
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
 export const { of, ap, map, join, chain } = Monad;
 
-/***************************************************************************************************
- * @section Sequence
- **************************************************************************************************/
-
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
-
-/***************************************************************************************************
+/*******************************************************************************
  * Do
- **************************************************************************************************/
+ ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

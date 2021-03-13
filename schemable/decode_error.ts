@@ -1,25 +1,26 @@
 import type { Semigroup } from "../type_classes.ts";
 import { Free, getFreeSemigroup } from "../semigroup.ts";
+import { flow } from "../fns.ts";
 
-/***************************************************************************************************
- * @section DecodeError
+/*******************************************************************************
+ * DecodeError
  * @from https://raw.githubusercontent.com/gcanti/io-ts/master/src/DecodeError.ts
- **************************************************************************************************/
+ ******************************************************************************/
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
+
+export const required = "required" as const;
+export const optional = "optional" as const;
+
+export type Kind = "required" | "optional";
 
 export type Leaf<E> = {
   readonly tag: "Leaf";
   readonly actual: unknown;
   readonly error: E;
 };
-
-export const required = "required" as const;
-export const optional = "optional" as const;
-
-export type Kind = "required" | "optional";
 
 export type Key<E> = {
   readonly tag: "Key";
@@ -61,9 +62,9 @@ export type DecodeError<E> =
   | Lazy<E>
   | Wrap<E>;
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Constructors
+ ******************************************************************************/
 
 export const leaf = <E>(actual: unknown, error: E): DecodeError<E> => ({
   tag: "Leaf",
@@ -120,9 +121,9 @@ export const wrap = <E>(
   errors,
 });
 
-/***************************************************************************************************
- * @section Destructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Destructors
+ ******************************************************************************/
 
 export const fold = <E, R>(patterns: {
   Leaf: (input: unknown, error: E) => R;
@@ -151,9 +152,18 @@ export const fold = <E, R>(patterns: {
   return f;
 };
 
-/***************************************************************************************************
- * @section Module Getters
- **************************************************************************************************/
+/*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
 
 export const getSemigroup = <E = never>(): Semigroup<Free<DecodeError<E>>> =>
   getFreeSemigroup();
+
+export const make = {
+  leaf: flow(leaf, Free.of),
+  key: flow(key, Free.of),
+  index: flow(index, Free.of),
+  member: flow(member, Free.of),
+  lazy: flow(lazy, Free.of),
+  wrap: flow(wrap, Free.of),
+};
