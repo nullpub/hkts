@@ -1,190 +1,161 @@
-import type { _, NonEmptyRecord, Refinement } from "../types.ts";
+import type * as HKT from "../hkt.ts";
 
-import { identity, memoize, pipe } from "../fns.ts";
+import { isNil, isRecord } from "../fns.ts";
 
 import * as S from "./schemable.ts";
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
-export type Guard<I, A extends I> = Refinement<I, A>;
+export type Guard<A> = (i: unknown) => i is A;
 
-export type InputOf<D> = D extends Guard<infer I, infer _> ? I : never;
+export type TypeOf<D> = D extends Guard<infer A> ? A : never;
 
-export type TypeOf<D> = D extends Guard<infer _, infer A> ? A : never;
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+export const URI = "Guard";
 
-export const refineUnknown: <A>(
-  refinement: Refinement<unknown, A>,
-) => Guard<unknown, A> = identity;
+export type URI = typeof URI;
 
-/***************************************************************************************************
- * @section Guard Schemables
- **************************************************************************************************/
+declare module "../hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: Guard<_[0]>;
+  }
+}
 
-export const unknown = (u: unknown): u is unknown => true;
+/*******************************************************************************
+ * Guard Schemables
+ ******************************************************************************/
 
-export const literal = <A extends readonly [S.Literal, ...S.Literal[]]>(
-  ...values: A
-): Guard<unknown, A[number]> =>
-  (u: unknown): u is A[number] => values.findIndex((a) => a === u) !== -1;
-
-export const string = refineUnknown((u): u is string => typeof u === "string");
-
-export const number = refineUnknown(
-  (u): u is number => typeof u === "number" && !isNaN(u),
-);
-
-export const boolean = refineUnknown(
-  (u): u is boolean => typeof u === "boolean",
-);
-
-export const unknownArray = refineUnknown(Array.isArray);
-
-export const unknownRecord = refineUnknown(
-  (u): u is Record<string, unknown> =>
-    Object.prototype.toString.call(u) === "[object Object]",
-);
-
-export const refine = <I, A extends I, B extends A>(
-  refinement: (a: A) => a is B,
-) =>
-  (from: Guard<I, A>): Guard<I, B> =>
-    (i: I): i is B => from(i) && refinement(i);
-
-export const nullable = <I, A extends I>(
-  or: Guard<I, A>,
-): Guard<null | I, null | A> => (i): i is null | A => i === null || or(i);
-
-export const type = <A>(
-  properties: NonEmptyRecord<{ [K in keyof A]: Guard<unknown, A[K]> }>,
-): Guard<unknown, { [K in keyof A]: A[K] }> =>
-  pipe(
-    unknownRecord,
-    refine((r): r is {
-      [K in keyof A]: A[K];
-    } => {
-      for (const k in properties) {
-        if (!(k in r) || !properties[k](r[k])) {
-          return false;
-        }
-      }
-      return true;
-    }),
-  );
-
-export const partial = <A>(
-  properties: NonEmptyRecord<{ [K in keyof A]: Guard<unknown, A[K]> }>,
-): Guard<unknown, Partial<{ [K in keyof A]: A[K] }>> =>
-  pipe(
-    unknownRecord,
-    refine((r): r is Partial<A> => {
-      for (const k in properties) {
-        const v = r[k];
-        if (v !== undefined && !properties[k](v)) {
-          return false;
-        }
-      }
-      return true;
-    }),
-  );
-
-export const array = <A>(item: Guard<unknown, A>): Guard<unknown, Array<A>> =>
-  pipe(
-    unknownArray,
-    refine((us): us is Array<A> => us.every(item)),
-  );
-
-export const record = <A>(
-  codomain: Guard<unknown, A>,
-): Guard<unknown, Record<string, A>> =>
-  pipe(
-    unknownRecord,
-    refine((r): r is Record<string, A> => {
-      for (const k in r) {
-        if (!codomain(r[k])) {
-          return false;
-        }
-      }
-      return true;
-    }),
-  );
-
-export const tuple = <A extends ReadonlyArray<unknown>>(
-  ...components: { [K in keyof A]: Guard<unknown, A[K]> }
-): Guard<unknown, A> =>
-  (u): u is A =>
-    Array.isArray(u) &&
-    u.length === components.length &&
-    components.every((c, i) => c(u[i]));
-
-export const intersect = <A, B>(
-  left: Guard<unknown, A>,
-  right: Guard<unknown, B>,
-): Guard<unknown, A & B> => (u: unknown): u is A & B => left(u) && right(u);
-
-export const union = <A extends readonly [unknown, ...Array<unknown>]>(
-  ...members: { [K in keyof A]: Guard<unknown, A[K]> }
-): Guard<unknown, A[number]> =>
-  (u: unknown): u is A | A[number] => members.some((m) => m(u));
-
-export const lazy = <A>(f: () => Guard<unknown, A>): Guard<unknown, A> => {
-  const get = memoize<void, Guard<unknown, A>>(f);
-  return (u: unknown): u is A => get()(u);
+export const UnknownSchemable: S.UnknownSchemable<URI> = {
+  unknown: () => (_: unknown): _ is unknown => true,
 };
 
-export const alt = <I, A extends I>(that: () => Guard<I, A>) =>
-  (
-    me: Guard<I, A>,
-  ): Guard<I, A> => (i): i is A => me(i) || that()(i);
+export const StringSchemable: S.StringSchemable<URI> = {
+  string: () => (u: unknown): u is string => typeof u === "string",
+};
 
-export const zero = <I, A extends I>(): Guard<I, A> => (_): _ is A => false;
+export const NumberSchemable: S.NumberSchemable<URI> = {
+  number: () => (u: unknown): u is number => typeof u === "number",
+};
 
-export const compose = <I, A extends I, B extends A>(to: Guard<A, B>) =>
-  (
-    from: Guard<I, A>,
-  ): Guard<I, B> => (i): i is B => from(i) && to(i);
+export const BooleanSchemable: S.BooleanSchemable<URI> = {
+  boolean: () => (u: unknown): u is boolean => typeof u === "boolean",
+};
 
-export const id = <A>(): Guard<A, A> => (_): _ is A => true;
+export const LiteralSchemable: S.LiteralSchemable<URI> = {
+  literal: <A extends [S.Literal, ...S.Literal[]]>(...s: A) =>
+    (u: unknown): u is A[number] => s.some((l) => l === u),
+};
 
-export const sum = <T extends string, A>(
-  tag: T,
-  members: { [K in keyof A]: Guard<unknown, A[K]> },
-): Guard<unknown, A[keyof A]> =>
-  pipe(
-    unknownRecord,
+export const NullableSchemable: S.NullableSchemable<URI> = {
+  nullable: <A>(or: Guard<A>) =>
+    (u: unknown): u is A | null => u === null || or(u),
+};
+
+export const UndefinableSchemable: S.UndefinableSchemable<URI> = {
+  undefinable: <A>(or: Guard<A>) =>
+    (u: unknown): u is A | undefined => u === undefined || or(u),
+};
+
+export const RecordSchemable: S.RecordSchemable<URI> = {
+  record: <A>(codomain: Guard<A>) =>
+    (u: unknown): u is Record<string, A> =>
+      isRecord(u) && Object.values(u).every(codomain),
+};
+
+export const ArraySchemable: S.ArraySchemable<URI> = {
+  array: <A>(item: Guard<A>) =>
+    (u: unknown): u is ReadonlyArray<A> => Array.isArray(u) && u.every(item),
+};
+
+export const TupleSchemable: S.TupleSchemable<URI> = {
+  // deno-lint-ignore no-explicit-any
+  tuple: (<A extends any[]>(
+    ...components: { [K in keyof A]: Guard<A[K]> }
+  ): Guard<{ [K in keyof A]: A[K] }> =>
+    (u: unknown): u is { [K in keyof A]: A[K] } =>
+      (Array.isArray(u) && components.length === u.length) &&
+      u.every((v, i) => components[i](v))) as S.TupleSchemable<URI>["tuple"],
+};
+
+export const StructSchemable: S.StructSchemable<URI> = {
+  struct: <A>(
+    properties: { [K in keyof A]: Guard<A[K]> },
+  ): Guard<{ [K in keyof A]: A[K] }> =>
+    (u: unknown): u is { [K in keyof A]: A[K] } => (isRecord(u) &&
+      Object.keys(properties).every((key) =>
+        properties[key as keyof typeof properties](u[key])
+      )),
+};
+
+export const PartialSchemable: S.PartialSchemable<URI> = {
+  partial: <A>(
+    properties: { [K in keyof A]: Guard<A[K]> },
+  ): Guard<{ [K in keyof A]?: A[K] | null }> =>
     // deno-lint-ignore no-explicit-any
-    refine((r): r is any => {
-      const v = r[tag] as keyof A;
-      if (v in members) {
-        return members[v](r);
-      }
-      return false;
-    }),
-  );
+    (u: unknown): u is any => (isRecord(u) &&
+      Object.keys(properties).every((key) =>
+        isNil(u) || properties[key as keyof typeof properties](u[key])
+      )),
+};
 
-/***************************************************************************************************
- * @section Guard Schemable
- **************************************************************************************************/
+export const IntersectSchemable: S.IntersectSchemable<URI> = {
+  intersect: <I>(and: Guard<I>) =>
+    <A>(ga: Guard<A>): Guard<A & I> =>
+      (u: unknown): u is A & I => ga(u) && and(u),
+};
 
-export const Schemable: S.Schemable<Guard<unknown, _>> = {
-  unknown: () => unknown,
+export const UnionSchemable: S.UnionSchemable<URI> = {
+  union: <I>(or: Guard<I>) =>
+    <A>(ga: Guard<A>): Guard<A | I> =>
+      (u: unknown): u is A | I => ga(u) || or(u),
+};
+
+export const LazySchemable: S.LazySchemable<URI> = {
+  lazy: <A>(_: string, f: () => Guard<A>) => f(),
+};
+
+export const Schemable: S.Schemable<URI> = {
+  ...UnknownSchemable,
+  ...StringSchemable,
+  ...NumberSchemable,
+  ...BooleanSchemable,
+  ...LiteralSchemable,
+  ...NullableSchemable,
+  ...UndefinableSchemable,
+  ...RecordSchemable,
+  ...ArraySchemable,
+  ...TupleSchemable,
+  ...StructSchemable,
+  ...PartialSchemable,
+  ...IntersectSchemable,
+  ...UnionSchemable,
+  ...LazySchemable,
+};
+
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
+
+export const {
+  unknown,
+  string,
+  number,
+  boolean,
   literal,
-  string: () => string,
-  number: () => number,
-  boolean: () => boolean,
-  nullable: nullable,
-  type: type as S.TypeSchemable<Guard<unknown, _>, 1>,
-  partial: partial as S.PartialSchemable<Guard<unknown, _>, 1>,
+  undefinable,
+  nullable,
   record,
   array,
-  tuple: tuple as S.TupleSchemable<Guard<unknown, _>, 1>,
+  tuple,
+  struct,
+  partial,
   intersect,
-  union: union as S.UnionSchemable<Guard<unknown, _>, 1>,
-  sum,
-  lazy: (_, f) => lazy(f),
-};
+  union,
+  lazy,
+} = Schemable;

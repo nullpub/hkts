@@ -1,18 +1,39 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { $, _, Fn, Predicate } from "./types.ts";
+import type { Fn, Predicate } from "./types.ts";
 
 import * as O from "./option.ts";
 import { pipe } from "./fns.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
-/***************************************************************************************************
- * @section Optimizations
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
+
+export type TypeOf<T> = T extends ReadonlyArray<infer A> ? A : never;
+
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
+
+export const URI = "ReadonlyArray";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: ReadonlyArray<_[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Optimizations
+ ******************************************************************************/
 
 export const _map = <A, B>(
   as: readonly A[],
   fab: (a: A, i: number) => B,
-): ReadonlyArray<B> => {
+): Array<B> => {
   const out: B[] = new Array(as.length);
   for (let i = 0; i < as.length; i++) {
     out[i] = fab(as[i], i);
@@ -158,106 +179,122 @@ export const _unsafePush = <A>(as: A[], a: A): A[] => {
   return as;
 };
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+export const _append = <A>(as: readonly A[]) => (a: A) => [...as, a];
+
+/*******************************************************************************
+ * Constructors
+ ******************************************************************************/
 
 export const zero: ReadonlyArray<never> = [];
 
 export const empty = <A = never>(): readonly A[] => zero;
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
 
-export const Monoid: TC.Monoid<ReadonlyArray<_>> = {
-  empty,
-  concat: _concat,
+export const Functor: TC.Functor<URI> = {
+  map: (fab) => (ta) => _map(ta, fab),
 };
 
-export const Monad: TC.Monad<ReadonlyArray<_>> = {
+export const Apply: TC.Apply<URI> = {
+  ap: (tfab) => (ta) => pipe(tfab, _chain((fab) => _map(ta, fab))),
+  map: Functor.map,
+};
+
+export const Applicative: TC.Applicative<URI> = {
   of: (a) => [a],
-  ap: (tfab) => (ta) => pipe(tfab, Monad.chain((fab) => _map(ta, fab))),
-  map: (fab) => (ta) => _map(ta, fab),
-  join: _flatten,
+  ap: Apply.ap,
+  map: Functor.map,
+};
+
+export const Chain: TC.Chain<URI> = {
+  ap: Apply.ap,
+  map: Functor.map,
   chain: _chain,
 };
 
-export const Functor: TC.Functor<ReadonlyArray<_>> = Monad;
-
-export const Apply: TC.Apply<ReadonlyArray<_>> = Monad;
-
-export const Applicative: TC.Applicative<ReadonlyArray<_>> = Monad;
-
-export const Chain: TC.Chain<ReadonlyArray<_>> = Monad;
-
-export const Alt: TC.Alt<ReadonlyArray<_>> = {
-  alt: (tb) => (ta) => tb.length === 0 ? ta : tb,
-  map: Monad.map,
+export const Monad: TC.Monad<URI> = {
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: _flatten,
+  chain: Chain.chain,
 };
 
-export const Filterable: TC.Filterable<ReadonlyArray<_>> = {
+export const Alt: TC.Alt<URI> = {
+  alt: (tb) => (ta) => tb.length === 0 ? ta : tb,
+  map: Functor.map,
+};
+
+export const Filterable: TC.Filterable<URI> = {
   filter: _filter,
 };
 
-export const IndexedFoldable: TC.IndexedFoldable<ReadonlyArray<_>> = {
+export const IndexedFoldable: TC.IndexedFoldable<URI> = {
   reduce: (faba, a) => (tb) => _reduce(tb, faba, a),
 };
 
-export const IndexedTraversable: TC.IndexedTraversable<ReadonlyArray<_>> = {
-  map: Monad.map,
+export const IndexedTraversable: TC.IndexedTraversable<URI> = {
+  map: (fai) => (ta) => _map(ta, fai),
   reduce: IndexedFoldable.reduce,
-  traverse: <U>(A: TC.Applicative<U>) =>
-    <A, B>(faub: Fn<[A, number], $<U, [B]>>) =>
-      (ta: ReadonlyArray<A>) =>
+  traverse: (A) =>
+    (fasi) =>
+      (ta) =>
         _reduce(
           ta,
           (fbs, a, i) =>
-            pipe(
-              faub(a, i),
-              A.ap(pipe(fbs, A.map((bs: B[]) => (b: B) => [...bs, b]))),
-            ),
-          A.of([] as B[]),
-        ),
+            // deno-lint-ignore no-explicit-any
+            pipe(fasi(a, i) as any, A.ap(pipe(fbs, A.map(_append)))),
+          // deno-lint-ignore no-explicit-any
+          A.of([] as any[]),
+          // deno-lint-ignore no-explicit-any
+        ) as any,
 };
 
-export const Foldable: TC.Foldable<ReadonlyArray<_>> = IndexedFoldable;
+export const Foldable: TC.Foldable<URI> = IndexedFoldable;
 
-export const Traversable: TC.Traversable<ReadonlyArray<_>> = IndexedTraversable;
+export const Traversable: TC.Traversable<URI> = IndexedTraversable;
 
-/***************************************************************************************************
- * @section Module Getters
- **************************************************************************************************/
+/*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
 
 export const getSetoid = <A>(S: TC.Setoid<A>): TC.Setoid<readonly A[]> => ({
-  equals: (a, b) =>
-    a === b || (a.length === b.length && a.every((v, i) => S.equals(v, b[i]))),
+  equals: (a) =>
+    (b) =>
+      a === b ||
+      (a.length === b.length && a.every((v, i) => S.equals(v)(b[i]))),
 });
 
 export const getOrd = <A>(O: TC.Ord<A>): TC.Ord<readonly A[]> => {
   const { equals } = getSetoid(O);
   return ({
     equals,
-    lte: (a, b) => {
-      const length = Math.min(a.length, b.length);
-      for (let i = 0; i < length; i++) {
-        if (!O.equals(a[i], b[i])) {
-          return O.lte(a[i], b[i]);
+    lte: (a) =>
+      (b) => {
+        const length = Math.min(a.length, b.length);
+        for (let i = 0; i < length; i++) {
+          if (!O.equals(a[i])(b[i])) {
+            return O.lte(a[i])(b[i]);
+          }
         }
-      }
-      return a.length <= b.length;
-    },
+        return a.length <= b.length;
+      },
   });
 };
 
 export const getSemigroup = <A>(
   S: TC.Semigroup<A>,
 ): TC.Semigroup<readonly A[]> => ({
-  concat: (a, b) => [a.reduce(S.concat, b.reduce(S.concat))],
+  concat: (a) =>
+    (b) => [
+      a.reduce((a, c) => S.concat(a)(c), b.reduce((a, c) => S.concat(a)(c))),
+    ],
 });
 
 export const getFreeSemigroup = <A>(): TC.Semigroup<readonly A[]> => ({
-  concat: _concat,
+  concat: (a) => (b) => _concat(a, b),
 });
 
 export const getShow = <A>({ show }: TC.Show<A>): TC.Show<readonly A[]> => ({
@@ -266,12 +303,12 @@ export const getShow = <A>({ show }: TC.Show<A>): TC.Show<readonly A[]> => ({
 
 export const getMonoid = <A = never>(): TC.Monoid<readonly A[]> => ({
   empty,
-  concat: _concat,
+  concat: (a) => (b) => _concat(a, b),
 });
 
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
 export const { of, ap, map, join, chain } = Monad;
 
@@ -282,28 +319,21 @@ export const { filter } = Filterable;
 export const {
   traverse: indexedTraverse,
   reduce: indexedReduce,
-}: TC.IndexedTraversable<ReadonlyArray<_>> = IndexedTraversable;
+  map: indexedMap,
+} = IndexedTraversable;
 
 export const lookup = (i: number) =>
   <A>(as: readonly A[]): O.Option<A> =>
-    _isOutOfBounds(i, as) ? O.none : O.some(as[i]);
+    _isOutOfBounds(i, as) ? O.constNone : O.some(as[i]);
 
 export const insertAt = <A>(i: number, a: A) =>
   (as: readonly A[]): O.Option<readonly A[]> =>
-    i < 0 || i > as.length ? O.none : O.some(_unsafeInsertAt(i, a, as));
+    i < 0 || i > as.length ? O.constNone : O.some(_unsafeInsertAt(i, a, as));
 
 export const updateAt = <A>(i: number, a: A) =>
   (as: readonly A[]): O.Option<readonly A[]> =>
-    _isOutOfBounds(i, as) ? O.none : O.some(_unsafeUpdateAt(i, a, as));
+    _isOutOfBounds(i, as) ? O.constNone : O.some(_unsafeUpdateAt(i, a, as));
 
 export const deleteAt = (i: number) =>
   <A>(as: readonly A[]): O.Option<readonly A[]> =>
-    _isOutOfBounds(i, as) ? O.none : O.some(_unsafeDeleteAt(i, as));
-
-/***************************************************************************************************
- * @section Sequence
- **************************************************************************************************/
-
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
+    _isOutOfBounds(i, as) ? O.constNone : O.some(_unsafeDeleteAt(i, as));

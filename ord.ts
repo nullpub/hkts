@@ -6,26 +6,26 @@ import type { Fn } from "./types.ts";
 import { setoidStrict } from "./setoid.ts";
 import { flow } from "./fns.ts";
 
-/***************************************************************************************************
- * @section Internal
- **************************************************************************************************/
+/*******************************************************************************
+ * Internal
+ ******************************************************************************/
 
 // lte for primmimtives
-const _lte = (a: any, b: any): boolean => a <= b;
+const _lte = (a: any) => (b: any): boolean => a <= b;
 
 const _equals = setoidStrict.equals;
 
-/***************************************************************************************************
- * @section Models
- **************************************************************************************************/
+/*******************************************************************************
+ * Models
+ ******************************************************************************/
 
 export type Ordering = -1 | 0 | 1;
 
 export type Compare<A> = Fn<[A, A], Ordering>;
 
-/***************************************************************************************************
- * @section Module Instances
- **************************************************************************************************/
+/*******************************************************************************
+ * Module Instances
+ ******************************************************************************/
 
 export const ordString: Ord<string> = {
   equals: _equals,
@@ -42,35 +42,35 @@ export const ordBoolean: Ord<boolean> = {
   lte: _lte,
 };
 
-/***************************************************************************************************
- * @section Combinators
- **************************************************************************************************/
+/*******************************************************************************
+ * Combinators
+ ******************************************************************************/
 
 export const compare = <A>(O: Ord<A>): Compare<A> =>
-  (a, b) => O.lte(a, b) ? O.equals(a, b) ? 0 : -1 : 1;
+  (a, b) => O.lte(a)(b) ? O.equals(a)(b) ? 0 : -1 : 1;
 
 export const lt = <A>(O: Ord<A>) =>
-  (a: A) => (b: A): boolean => O.lte(a, b) && !O.equals(a, b);
+  (a: A) => (b: A): boolean => O.lte(a)(b) && !O.equals(a)(b);
 
-export const gt = <A>(O: Ord<A>) => (a: A) => (b: A): boolean => !O.lte(a, b);
+export const gt = <A>(O: Ord<A>) => (a: A) => (b: A): boolean => !O.lte(a)(b);
 
-export const lte = <A>(O: Ord<A>) => (a: A) => (b: A): boolean => O.lte(a, b);
+export const lte = <A>(O: Ord<A>) => (a: A) => (b: A): boolean => O.lte(a)(b);
 
 export const gte = <A>(O: Ord<A>) =>
-  (a: A) => (b: A): boolean => !O.lte(a, b) || O.equals(a, b);
+  (a: A) => (b: A): boolean => !O.lte(a)(b) || O.equals(a)(b);
 
-export const eq = <A>(O: Ord<A>) => (a: A) => (b: A): boolean => O.equals(a, b);
+export const eq = <A>(O: Ord<A>) => (a: A) => (b: A): boolean => O.equals(a)(b);
 
-export const min = <A>(O: Ord<A>) => (a: A) => (b: A): A => O.lte(a, b) ? a : b;
+export const min = <A>(O: Ord<A>) => (a: A) => (b: A): A => O.lte(a)(b) ? a : b;
 
-export const max = <A>(O: Ord<A>) => (a: A) => (b: A): A => O.lte(a, b) ? b : a;
+export const max = <A>(O: Ord<A>) => (a: A) => (b: A): A => O.lte(a)(b) ? b : a;
 
 export const clamp = <A>(O: Ord<A>) =>
   (low: A, high: A): ((a: A) => A) => flow(max(O)(low), min(O)(high));
 
-/***************************************************************************************************
- * @section Combinator Getters
- **************************************************************************************************/
+/*******************************************************************************
+ * Combinator Getters
+ ******************************************************************************/
 
 export const getOrdUtilities = <A>(O: Ord<A>) => ({
   lt: lt(O),

@@ -1,21 +1,36 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { _0, _1, _2, _3, Fix, Lazy } from "./types.ts";
+import type { Lazy } from "./types.ts";
 
 import * as E from "./either.ts";
 import * as T from "./task.ts";
 import { createDo } from "./derivations.ts";
-import { apply, constant, flow, identity, pipe, wait } from "./fns.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
+import { constant, flow, identity, pipe, wait } from "./fns.ts";
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
 export type TaskEither<L, R> = T.Task<E.Either<L, R>>;
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
+
+export const URI = "TaskEither";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: TaskEither<_[1], _[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Constructors
+ ******************************************************************************/
 
 export const left = <E = never, A = never>(left: E): TaskEither<E, A> =>
   T.of(E.left(left));
@@ -45,46 +60,67 @@ export const fromEither = <E, A>(ta: E.Either<E, A>): TaskEither<E, A> =>
 export const orElse = <E, A>(onLeft: (e: E) => TaskEither<E, A>) =>
   T.chain(E.fold<E, A, TaskEither<E, A>>(onLeft, right));
 
-/***************************************************************************************************
- * @section Modules (Sequential)
- **************************************************************************************************/
+/*******************************************************************************
+ * Utilities
+ ******************************************************************************/
 
-export const Functor: TC.Functor<TaskEither<_0, _1>, 2> = {
-  map: flow(E.map, T.map) as TC.FunctorFn<TaskEither<_0, _1>, 2>,
+export const then = <A, B>(fab: (a: A) => B) =>
+  (p: Promise<A>): Promise<B> => p.then(fab);
+
+/*******************************************************************************
+ * Modules (Sequential)
+ ******************************************************************************/
+
+export const Functor: TC.Functor<URI> = {
+  map: (fai) => (ta) => flow(ta, then(E.map(fai))),
 };
 
-export const Apply: TC.Apply<TaskEither<_0, _1>, 2> = {
-  ap: (tfab) => (ta) => pipe(tfab, chain(flow(map, apply(ta)))),
+// TODO Refactor in terms of Task.ap (Sequential)
+export const Apply: TC.Apply<URI> = {
+  ap: (tfab) =>
+    (ta) =>
+      async () => {
+        const efab = await tfab();
+        const ea = await ta();
+        return pipe(ea, E.ap(efab));
+      },
   map: Functor.map,
 };
 
-export const Applicative: TC.Applicative<TaskEither<_0, _1>, 2> = {
+export const Applicative: TC.Applicative<URI> = {
   of: right,
   ap: Apply.ap,
   map: Functor.map,
 };
 
-export const Chain: TC.Chain<TaskEither<_0, _1>, 2> = {
+export const Chain: TC.Chain<URI> = {
   ap: Apply.ap,
   map: Functor.map,
-  chain: <E, A, B>(fatb: (a: A) => TaskEither<E, B>) =>
-    T.chain(E.fold<E, A, TaskEither<E, B>>(left, fatb)),
+  chain: (fatb) =>
+    (ta) =>
+      async () => {
+        const ea = await ta();
+        if (E.isLeft(ea)) {
+          return ea;
+        }
+        return await fatb(ea.right)();
+      },
 };
 
-export const Monad: TC.Monad<TaskEither<_0, _1>, 2> = {
+export const Monad: TC.Monad<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
-  join: T.chain(E.fold(left, identity)),
+  join: Chain.chain(identity),
   chain: Chain.chain,
 };
 
-export const Bifunctor: TC.Bifunctor<TaskEither<_0, _1>> = {
+export const Bifunctor: TC.Bifunctor<URI> = {
   bimap: (fab, fcd) => (tac) => () => tac().then(E.bimap(fab, fcd)),
-  mapLeft: (fef) => Bifunctor.bimap(fef, identity),
+  mapLeft: (fef) => (ta) => pipe(ta, Bifunctor.bimap(fef, identity)),
 };
 
-export const MonadThrow: TC.MonadThrow<TaskEither<_0, _1>, 2> = {
+export const MonadThrow: TC.MonadThrow<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
@@ -93,21 +129,21 @@ export const MonadThrow: TC.MonadThrow<TaskEither<_0, _1>, 2> = {
   throwError: left,
 };
 
-export const Alt: TC.Alt<TaskEither<_0, _1>, 2> = ({
+export const Alt: TC.Alt<URI> = ({
   map: Functor.map,
   alt: (tb) => (ta) => () => ta().then((te) => E.isLeft(te) ? tb() : te),
 });
 
-/***************************************************************************************************
- * @section Modules (Parallel)
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules (Parallel)
+ ******************************************************************************/
 
-export const ApplyPar: TC.Apply<TaskEither<_0, _1>, 2> = {
+export const ApplyPar: TC.Apply<URI> = {
   ap: flow(T.map(E.ap), T.ap),
   map: Functor.map,
 };
 
-export const MonadPar: TC.Monad<TaskEither<_0, _1>, 2> = {
+export const MonadPar: TC.Monad<URI> = {
   of: Applicative.of,
   ap: ApplyPar.ap,
   map: Functor.map,
@@ -115,7 +151,7 @@ export const MonadPar: TC.Monad<TaskEither<_0, _1>, 2> = {
   chain: Chain.chain,
 };
 
-export const MonadThrowPar: TC.MonadThrow<TaskEither<_0, _1>, 2> = {
+export const MonadThrowPar: TC.MonadThrow<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
@@ -124,28 +160,9 @@ export const MonadThrowPar: TC.MonadThrow<TaskEither<_0, _1>, 2> = {
   throwError: left,
 };
 
-/***************************************************************************************************
- * @section Module Getters
- **************************************************************************************************/
-
-export const getRightMonad = <E>(
-  S: TC.Semigroup<E>,
-): TC.Monad<TaskEither<Fix<E>, _0>> => {
-  const M = E.getRightMonad(S);
-
-  return ({
-    of: right,
-    ap: (tfab) => (ta) => async () => M.ap(await tfab())(await ta()),
-    map: (fab) => (ta) => async () => M.map(fab)(await ta()),
-    join: (tta) => () => tta().then((ta) => E.isLeft(ta) ? ta : ta.right()),
-    chain: (fatb) =>
-      (ta) => () => ta().then((a) => E.isLeft(a) ? a : fatb(a.right)()),
-  });
-};
-
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
 export const { of, ap, map, join, chain } = Monad;
 
@@ -159,20 +176,8 @@ export const timeout = <E, A>(ms: number, onTimeout: () => E) =>
   (ta: TaskEither<E, A>): TaskEither<E, A> =>
     () => Promise.race([ta(), wait(ms).then(flow(onTimeout, E.left))]);
 
-/***************************************************************************************************
- * @section Sequence
- **************************************************************************************************/
-
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
-
-export const sequenceTuplePar = createSequenceTuple(ApplyPar);
-
-export const sequenceStructPar = createSequenceStruct(ApplyPar);
-
-/***************************************************************************************************
+/*******************************************************************************
  * Do Notation
- **************************************************************************************************/
+ ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

@@ -1,15 +1,17 @@
 import type * as TC from "../type_classes.ts";
-import type { $, _0, _1, Fn, Predicate, Refinement } from "../types.ts";
+import type { Kind, URIS } from "../hkt.ts";
+import type { Predicate, Refinement } from "../types.ts";
 import type { Either } from "../either.ts";
 import type { Option } from "../option.ts";
 
-import * as A from "../array.ts";
 import * as I from "../identity.ts";
 import * as O from "../option.ts";
 import * as E from "../either.ts";
 import * as C from "../const.ts";
+import * as A from "../array.ts";
 import { flow, identity, pipe } from "../fns.ts";
 
+import { fromTraversable } from "./from_traversable.ts";
 import { atRecord } from "./at.ts";
 import { indexArray, indexRecord } from "./index.ts";
 import { asTraversal as isoAsTraversal } from "./iso.ts";
@@ -22,79 +24,34 @@ import {
   props as lensProps,
 } from "./lens.ts";
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
-
-// deno-fmt-ignore
-export type traverseFn<S, A> = {
-  <T, L extends 1>(A: TC.Applicative<T, L>): (
-    f: (a: A) => $<T, [A]>
-  ) => (s: S) => $<T, [S]>;
-  <T, L extends 2>(A: TC.Applicative<T, L>): <E>(
-    f: (a: A) => $<T, [E, A]>
-  ) => (s: S) => $<T, [E, S]>;
-  <T, L extends 3>(A: TC.Applicative<T, L>): <R, E>(
-    f: (a: A) => $<T, [R, E, A]>
-  ) => (s: S) => $<T, [R, E, S]>;
-  <T, L extends 4>(A: TC.Applicative<T, L>): <U, R, E>(
-    f: (a: A) => $<T, [U, R, E, A]>
-  ) => (s: S) => $<T, [U, R, E, S]>;
-};
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
 export type Traversal<S, A> = {
-  readonly traverse: traverseFn<S, A>;
+  readonly traverse: <URI extends URIS>(
+    A: TC.Applicative<URI>,
+  ) => <B = never, C = never, D = never>(
+    fata: (a: A) => Kind<URI, [A, B, C, D]>,
+  ) => (s: S) => Kind<URI, [S, B, C, D]>;
 };
 
 export type From<T> = T extends Traversal<infer S, infer _> ? S : never;
 
 export type To<T> = T extends Traversal<infer _, infer A> ? A : never;
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeable Compose
+ ******************************************************************************/
 
-// deno-fmt-ignore
-type FromTraversableFn = {
-  <T, L extends 1>(T: TC.Traversable<T, L>): <A>() => Traversal<$<T, [A]>, A>;
-  <T, L extends 2>(T: TC.Traversable<T, L>): <E, A>() => Traversal<$<T, [E, A]>, A>;
-  <T, L extends 3>(T: TC.Traversable<T, L>): <R, E, A>() => Traversal<$<T, [R, E, A]>, A>;
-  <T, L extends 4>(T: TC.Traversable<T, L>): <S, R, E, A>() => Traversal<$<T, [S, R, E, A]>, A>;
-  };
-
-export const fromTraversable: FromTraversableFn = <T>(T: TC.Traversable<T>) =>
-  <A>(): Traversal<$<T, [A]>, A> => T;
-
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
-
-export const Category: TC.Category<Traversal<_0, _1>> = {
-  id: () => ({
-    traverse: () => identity,
-  }),
-  compose: (jk) =>
-    (ij) => ({
-      traverse: (F) => {
-        const fij = ij.traverse(F);
-        const fjk = jk.traverse(F);
-        return (f) => fij(fjk(f));
-      },
-    }),
-};
-
-/***************************************************************************************************
- * @section Pipeable Compose
- **************************************************************************************************/
-
-export const id: <A>() => Traversal<A, A> = Category.id;
-
-// deno-fmt-ignore
-export const compose = <A, B>(ab: Traversal<A, B>) => <S>(
-  sa: Traversal<S, A>
-): Traversal<S, B> => ({
-  traverse: pipe(sa, Category.compose(ab)).traverse
+export const id = <A>(): Traversal<A, A> => ({
+  traverse: () => identity,
 });
+
+export const compose = <J, K>(jk: Traversal<J, K>) =>
+  <I>(ij: Traversal<I, J>): Traversal<I, K> => ({
+    traverse: (F) => flow(jk.traverse(F), ij.traverse(F)),
+  });
 
 export const composeIso = flow(isoAsTraversal, compose);
 
@@ -104,12 +61,12 @@ export const composePrism = flow(prismAsTraversal, compose);
 
 export const composeOptional = flow(optionalAsTraversal, compose);
 
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
 export const modify = <A>(f: (a: A) => A) =>
-  <S>(sa: Traversal<S, A>) => sa.traverse(I.Applicative)(f);
+  <S>(sa: Traversal<S, A>) => pipe(f, sa.traverse(I.Applicative));
 
 export const set = <A>(a: A): (<S>(sa: Traversal<S, A>) => (s: S) => S) => {
   return modify(() => a);
@@ -138,59 +95,41 @@ export const props = <A, P extends keyof A>(
 export const index = (i: number) =>
   <S, A>(
     sa: Traversal<S, ReadonlyArray<A>>,
-  ): Traversal<S, A> => composeOptional(indexArray<A>().index(i))(sa);
+  ): Traversal<S, A> => pipe(sa, composeOptional(indexArray<A>().index(i)));
 
 export const key = (key: string) =>
   <S, A>(
     sa: Traversal<S, Readonly<Record<string, A>>>,
-  ): Traversal<S, A> => composeOptional(indexRecord<A>().index(key))(sa);
+  ): Traversal<S, A> => pipe(sa, composeOptional(indexRecord<A>().index(key)));
 
 export const atKey = (key: string) =>
   <S, A>(
     sa: Traversal<S, Readonly<Record<string, A>>>,
-  ): Traversal<S, Option<A>> => composeLens(atRecord<A>().at(key))(sa);
+  ): Traversal<S, Option<A>> => pipe(sa, composeLens(atRecord<A>().at(key)));
 
-// deno-fmt-ignore
-type TraverseFn = {
-  <T, L extends 1>(T: TC.Traversable<T, L>): <S, A>(
-    sta: Traversal<S, $<T, [A]>>
-  ) => Traversal<S, A>;
-  <T, L extends 2>(T: TC.Traversable<T, L>): <S, E, A>(
-    sta: Traversal<S, $<T, [E, A]>>
-  ) => Traversal<S, A>;
-  <T, L extends 3>(T: TC.Traversable<T, L>): <S, R, E, A>(
-    sta: Traversal<S, $<T, [R, E, A]>>
-  ) => Traversal<S, A>;
-  <T, L extends 4>(T: TC.Traversable<T, L>): <S, Q, R, E, A>(
-    sta: Traversal<S, $<T, [Q, R, E, A]>>
-  ) => Traversal<S, A>;
-};
-
-export const traverse: TraverseFn = <T>(T: TC.Traversable<T>) =>
-  <S, A>(
-    sa: Traversal<S, $<T, [A]>>,
+export const traverse = <URI extends URIS>(T: TC.Traversable<URI>) => {
+  const _traversal = fromTraversable(T);
+  return <S, A, B = never, C = never, D = never>(
+    sa: Traversal<S, Kind<URI, [A, B, C, D]>>,
   ): Traversal<S, A> =>
     pipe(
       sa,
-      compose(T as Traversal<$<T, [A]>, A>),
+      compose(_traversal<A, B, C, D>()),
     );
+};
 
-export const foldMap = <M>(M: TC.Monoid<M>) =>
-  <A>(f: (a: A) => M) =>
-    <S>(
-      sa: Traversal<S, A>,
-    ): ((s: S) => M) => sa.traverse(C.getApplicative(M))((a) => C.make(f(a)));
-
-export const fold = <A>(
-  M: TC.Monoid<A>,
-): (<S>(sa: Traversal<S, A>) => (s: S) => A) => foldMap(M)(identity);
+export const foldMap = <M>(M: TC.Monoid<M>) => {
+  const Applicative = C.getApplicative(M);
+  return <A>(fam: (a: A) => M) =>
+    <S>(sa: Traversal<S, A>) => pipe(fam, sa.traverse(Applicative));
+};
 
 export const getAll = <S, A>(sa: Traversal<S, A>) =>
-  (s: S): ReadonlyArray<A> => foldMap(A.getMonoid<A>())((a: A) => [a])(sa)(s);
+  pipe((a: A) => [a], foldMap(A.getMonoid<A>()))(sa);
 
-/***************************************************************************************************
- * @section Pipeable Over ADT
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeable Over ADT
+ ******************************************************************************/
 
 export const some: <S, A>(
   soa: Traversal<S, Option<A>>,

@@ -1,5 +1,5 @@
 import type * as TC from "../type_classes.ts";
-import type { $, _0, _1, Fn } from "../types.ts";
+import type { Kind, URIS } from "../hkt.ts";
 import type { Either } from "../either.ts";
 import type { Option } from "../option.ts";
 
@@ -8,22 +8,24 @@ import type { Optional } from "./optional.ts";
 import type { Prism } from "./prism.ts";
 import type { Traversal } from "./traversal.ts";
 
+import { fromTraversable } from "./from_traversable.ts";
+
 import * as O from "../option.ts";
 import * as E from "../either.ts";
 import { constant, flow, identity, pipe } from "../fns.ts";
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
 export type Iso<S, A> = {
   readonly get: (s: S) => A;
   readonly reverseGet: (s: A) => S;
 };
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Constructors
+ ******************************************************************************/
 
 export const make = <A, B>(
   get: (a: A) => B,
@@ -33,25 +35,13 @@ export const make = <A, B>(
   reverseGet,
 });
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
 
-export const Category: TC.Category<Iso<_0, _1>> = {
-  id: () => ({
-    get: identity,
-    reverseGet: identity,
-  }),
-  compose: (jk) =>
-    (ij) => ({
-      get: flow(ij.get, jk.get),
-      reverseGet: flow(jk.reverseGet, ij.reverseGet),
-    }),
-};
-
-/***************************************************************************************************
- * @section Converters
- **************************************************************************************************/
+/*******************************************************************************
+ * Converters
+ ******************************************************************************/
 
 export const asLens = <S, A>(sa: Iso<S, A>): Lens<S, A> => ({
   get: sa.get,
@@ -69,63 +59,68 @@ export const asOptional = <S, A>(sa: Iso<S, A>): Optional<S, A> => ({
 });
 
 export const asTraversal = <S, A>(sa: Iso<S, A>): Traversal<S, A> => ({
-  traverse: <T>({ map }: TC.Applicative<T>) =>
-    (f: Fn<[A], $<T, [A]>>) =>
-      (
-        s: S,
-      ) => map((a: A) => sa.reverseGet(a))(f(sa.get(s))),
+  traverse: ({ map }) =>
+    (fata) =>
+      flow(
+        sa.get,
+        fata,
+        map(sa.reverseGet),
+      ),
 });
 
-/***************************************************************************************************
- * @section Pipeable Compose
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeable Compose
+ ******************************************************************************/
 
-export const { id, compose } = Category;
+export const id = <A>(): Iso<A, A> => ({
+  get: identity,
+  reverseGet: identity,
+});
+
+export const compose = <J, K>(jk: Iso<J, K>) =>
+  <I>(ij: Iso<I, J>): Iso<I, K> => ({
+    get: flow(ij.get, jk.get),
+    reverseGet: flow(jk.reverseGet, ij.reverseGet),
+  });
 
 export const composeLens = <A, B>(ab: Lens<A, B>) =>
-  <S>(
-    sa: Iso<S, A>,
-  ): Lens<S, B> => ({
+  <S>(sa: Iso<S, A>): Lens<S, B> => ({
     get: flow(sa.get, ab.get),
     set: (b) => flow(sa.get, ab.set(b), sa.reverseGet),
   });
 
 export const composePrism = <A, B>(ab: Prism<A, B>) =>
-  <S>(
-    sa: Iso<S, A>,
-  ): Prism<S, B> => ({
+  <S>(sa: Iso<S, A>): Prism<S, B> => ({
     getOption: flow(sa.get, ab.getOption),
     reverseGet: flow(ab.reverseGet, sa.reverseGet),
   });
 
 export const composeOptional = <A, B>(ab: Optional<A, B>) =>
-  <S>(
-    sa: Iso<S, A>,
-  ): Optional<S, B> => ({
+  <S>(sa: Iso<S, A>): Optional<S, B> => ({
     getOption: flow(sa.get, ab.getOption),
     set: (b) => flow(sa.get, ab.set(b), sa.reverseGet),
   });
 
 export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
-  <S>(
-    sa: Iso<S, A>,
-  ): Traversal<S, B> => ({
-    traverse: <T>(A: TC.Applicative<T>) =>
-      (f: Fn<[B], $<T, [B]>>) =>
-        (s: S) => A.map(sa.reverseGet)(ab.traverse(A)(f)(sa.get(s))),
+  <S>(sa: Iso<S, A>): Traversal<S, B> => ({
+    traverse: (A) =>
+      (fata) =>
+        flow(
+          sa.get,
+          ab.traverse(A)(fata),
+          A.map(sa.reverseGet),
+        ),
   });
 
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
 export const modify = <A>(f: (a: A) => A) =>
   <S>(sa: Iso<S, A>) => (s: S): S => sa.reverseGet(f(sa.get(s)));
 
 export const map = <A, B>(ab: (a: A) => B, ba: (b: B) => A) =>
-  <S>(
-    sa: Iso<S, A>,
-  ): Iso<S, B> => ({
+  <S>(sa: Iso<S, A>): Iso<S, B> => ({
     get: flow(sa.get, ab),
     reverseGet: flow(ba, sa.reverseGet),
   });
@@ -135,18 +130,20 @@ export const reverse = <S, A>(sa: Iso<S, A>): Iso<A, S> => ({
   reverseGet: sa.get,
 });
 
-export const traverse = <T>(T: TC.Traversable<T>) =>
-  <S, A>(
-    sa: Iso<S, $<T, [A]>>,
+export const traverse = <URI extends URIS>(T: TC.Traversable<URI>) => {
+  const _traversal = fromTraversable(T);
+  return <S, A, B = never, C = never, D = never>(
+    sa: Iso<S, Kind<URI, [A, B, C, D]>>,
   ): Traversal<S, A> =>
     pipe(
       sa,
-      composeTraversal(T as Traversal<$<T, [A]>, A>),
+      composeTraversal(_traversal<A, B, C, D>()),
     );
+};
 
-/***************************************************************************************************
- * @section Pipeable Over ADT
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeable Over ADT
+ ******************************************************************************/
 
 export const some: <S, A>(soa: Iso<S, Option<A>>) => Prism<S, A> = composePrism(
   {

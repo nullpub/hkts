@@ -1,49 +1,95 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { $, _ } from "./types.ts";
 
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { call, identity } from "./fns.ts";
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
+/*******************************************************************************
+ * Identity<A>
+ *
+ * The identity type returns exactly the type that is passed into it.
+ ******************************************************************************/
 export type Identity<A> = A;
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
 
-export const Monad: TC.Monad<Identity<_>> = {
-  of: identity,
-  ap: call,
+/*******************************************************************************
+ * The Kinds URI for Identity
+ ******************************************************************************/
+export const URI = "Identity";
+
+/*******************************************************************************
+ * The Kinds URI Type for Identity
+ ******************************************************************************/
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: Identity<_[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
+
+/*******************************************************************************
+ * The standard Functor instance for Identity
+ ******************************************************************************/
+export const Functor: TC.Functor<URI> = {
   map: identity,
-  join: identity,
+};
+
+/*******************************************************************************
+ * The standard Apply instance for Identity
+ ******************************************************************************/
+export const Apply: TC.Apply<URI> = {
+  ap: call,
+  map: Functor.map,
+};
+
+export const Applicative: TC.Applicative<URI> = {
+  of: identity,
+  ap: Apply.ap,
+  map: Functor.map,
+};
+
+export const Chain: TC.Chain<URI> = {
+  ap: Apply.ap,
+  map: Functor.map,
   chain: identity,
 };
 
-export const Functor: TC.Functor<Identity<_>> = Monad;
-
-export const Applicative: TC.Applicative<Identity<_>> = Monad;
-
-export const Apply: TC.Apply<Identity<_>> = Monad;
-
-export const Traversable: TC.Traversable<Identity<_>> = {
-  map: Monad.map,
-  reduce: (faba, a) => (tb) => faba(a, tb),
-  traverse: <U>(_: TC.Applicative<U>) => call,
+export const Monad: TC.Monad<URI> = {
+  of: Applicative.of,
+  ap: Apply.ap,
+  map: Functor.map,
+  join: identity,
+  chain: Chain.chain,
 };
 
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
-export const { of, ap, map, join, chain } = Monad;
+/*******************************************************************************
+ * of
+ *
+ * Takes a value of any type and returns that value.
+ ******************************************************************************/
+export const of = Monad.of;
 
-/***************************************************************************************************
- * @section Sequence
- **************************************************************************************************/
+/*******************************************************************************
+ * ap
+ *
+ * Takes a function A -> B and returns a function A -> B
+ ******************************************************************************/
+export const ap = Monad.ap;
 
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
+export const { map, join, chain } = Monad;

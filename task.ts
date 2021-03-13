@@ -1,61 +1,77 @@
+import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { _, Lazy } from "./types.ts";
+import { Lazy } from "./types.ts";
 
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { apply, flow, wait } from "./fns.ts";
 import { createDo } from "./derivations.ts";
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
 export type Task<A> = () => Promise<A>;
 
-/***************************************************************************************************
- * @section Combinators
- **************************************************************************************************/
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
+
+export const URI = "Task";
+
+export type URI = typeof URI;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: Task<_[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Combinators
+ ******************************************************************************/
 
 export const delay = (ms: number) =>
   <A>(ma: Task<A>): Task<A> => () => wait(ms).then(ma);
 
-export const fromThunk = <A>(fa: Lazy<A>): Task<A> => async () => fa();
+export const fromThunk = <A>(fa: Lazy<A>): Task<A> =>
+  () => Promise.resolve(fa());
 
 export const tryCatch = <A>(fa: Lazy<A>, onError: (e: unknown) => A): Task<A> =>
-  async () => {
+  () => {
     try {
-      return fa();
+      return Promise.resolve(fa());
     } catch (e) {
-      return onError(e);
+      return Promise.resolve(onError(e));
     }
   };
 
-/***************************************************************************************************
- * @section Modules (Parallel)
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules (Parallel)
+ ******************************************************************************/
 
-export const Functor: TC.Functor<Task<_>> = {
+export const Functor: TC.Functor<URI> = {
   map: (fab) => (ta) => () => ta().then(fab),
 };
 
-export const Apply: TC.Apply<Task<_>> = {
+export const Apply: TC.Apply<URI> = {
   ap: (tfab) =>
     (ta) => () => Promise.all([tfab(), ta()]).then(([f, a]) => f(a)),
   map: Functor.map,
 };
 
-export const Applicative: TC.Applicative<Task<_>> = {
+export const Applicative: TC.Applicative<URI> = {
   of: (a) => () => Promise.resolve(a),
   ap: Apply.ap,
   map: Functor.map,
 };
 
-export const Chain: TC.Chain<Task<_>> = {
+export const Chain: TC.Chain<URI> = {
   ap: Apply.ap,
   map: Functor.map,
   chain: (fatb) => (ta) => () => ta().then(flow(fatb, apply())),
 };
 
-export const Monad: TC.Monad<Task<_>> = {
+export const Monad: TC.Monad<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
@@ -63,16 +79,16 @@ export const Monad: TC.Monad<Task<_>> = {
   chain: Chain.chain,
 };
 
-/***************************************************************************************************
- * @section Modules (Parallel)
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules (Sequential)
+ ******************************************************************************/
 
-export const ApplySeq: TC.Apply<Task<_>> = {
+export const ApplySeq: TC.Apply<URI> = {
   ap: (tfab) => (ta) => async () => (await tfab())(await ta()),
   map: Functor.map,
 };
 
-export const MonadSeq: TC.Monad<Task<_>> = {
+export const MonadSeq: TC.Monad<URI> = {
   of: Applicative.of,
   ap: ApplySeq.ap,
   map: Functor.map,
@@ -80,26 +96,14 @@ export const MonadSeq: TC.Monad<Task<_>> = {
   chain: Chain.chain,
 };
 
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
 
 export const { of, ap, map, join, chain } = Monad;
 
-/***************************************************************************************************
- * @section Sequence
- **************************************************************************************************/
-
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
-
-export const sequenceTupleSeq = createSequenceTuple(ApplySeq);
-
-export const sequenceStructSeq = createSequenceStruct(ApplySeq);
-
-/***************************************************************************************************
+/*******************************************************************************
  * Do Notation
- **************************************************************************************************/
+ ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

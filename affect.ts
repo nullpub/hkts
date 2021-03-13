@@ -1,57 +1,81 @@
 import type * as TC from "./type_classes.ts";
-import type { _0, _1, _2, _3 } from "./types.ts";
+import type * as HKT from "./hkt.ts";
 
 import * as E from "./either.ts";
 import { createDo } from "./derivations.ts";
 import { flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
-/***************************************************************************************************
- * @section Types
- **************************************************************************************************/
+/*******************************************************************************
+ * Types
+ ******************************************************************************/
 
 export type Affect<R, E, A> = (r: R) => Promise<E.Either<E, A>>;
 
-/***************************************************************************************************
- * @section Utilites
- **************************************************************************************************/
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
 
-export const aff = async <A>(a: A): Promise<A> => a;
+export const URI = "Affect";
+
+export type URI = typeof URI;
+
+export type URIS = HKT.URIS;
+
+declare module "./hkt.ts" {
+  // deno-lint-ignore no-explicit-any
+  export interface Kinds<_ extends any[]> {
+    [URI]: Affect<_[2], _[1], _[0]>;
+  }
+}
+
+/*******************************************************************************
+ * Utilites
+ ******************************************************************************/
+
+export const make = <A>(a: A): Promise<A> => Promise.resolve(a);
 
 export const then = <A, B>(fab: (a: A) => B) =>
   (p: Promise<A>): Promise<B> => p.then(fab);
 
-/***************************************************************************************************
- * @section Constructors
- **************************************************************************************************/
+/*******************************************************************************
+ * Constructors
+ ******************************************************************************/
 
-export const ask: <R>() => Affect<R, never, R> = () => async (r) => E.right(r);
+export const ask = <R, L = never>(): Affect<R, L, R> => flow(E.right, make);
+
+export const askLeft = <L, R = never>(): Affect<L, L, R> => flow(E.left, make);
 
 export const asks = <R, E = never, A = never>(
   fra: (r: R) => Promise<A>,
-): Affect<R, E, A> => async (r) => fra(r).then(E.right);
+): Affect<R, E, A> => flow(fra, then(E.right));
 
 export const asksLeft = <R, E = never, A = never>(
   fre: (r: R) => Promise<E>,
-): Affect<R, E, A> => async (r) => fre(r).then(E.left);
+): Affect<R, E, A> => flow(fre, then(E.left));
 
 export const right = <R = never, E = never, A = never>(
   right: A,
-): Affect<R, E, A> => async () => E.right(right);
+): Affect<R, E, A> => () => make(E.right(right));
 
 export const left = <R = never, E = never, A = never>(
   left: E,
-): Affect<R, E, A> => async () => E.left(left);
+): Affect<R, E, A> => () => make(E.left(left));
 
-/***************************************************************************************************
- * @section Modules
- **************************************************************************************************/
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
 
-export const Functor: TC.Functor<Affect<_0, _1, _2>, 3> = {
-  map: (fab) => (ta) => flow(ta, then(E.map(fab))),
+export const Functor: TC.Functor<URI> = {
+  map: (fai) => (ta) => flow(ta, then(E.map(fai))),
 };
 
-export const Apply: TC.Apply<Affect<_0, _1, _2>, 3> = {
+export const Bifunctor: TC.Bifunctor<URI> = {
+  bimap: (fbj, fai) => (ta) => flow(ta, then(E.bimap(fbj, fai))),
+  mapLeft: (fbj) => (ta) => flow(ta, then(E.mapLeft(fbj))),
+};
+
+export const Apply: TC.Apply<URI> = {
   ap: (tfab) =>
     (ta) =>
       async (r) => {
@@ -65,24 +89,24 @@ export const Apply: TC.Apply<Affect<_0, _1, _2>, 3> = {
   map: Functor.map,
 };
 
-export const Applicative: TC.Applicative<Affect<_0, _1, _2>, 3> = {
+export const Applicative: TC.Applicative<URI> = {
   of: right,
   ap: Apply.ap,
   map: Functor.map,
 };
 
-export const Chain: TC.Chain<Affect<_0, _1, _2>, 3> = {
+export const Chain: TC.Chain<URI> = {
   ap: Apply.ap,
   map: Functor.map,
-  chain: (fatb) =>
+  chain: (fati) =>
     (ta) =>
       async (r) => {
         const ea = await ta(r);
-        return E.isLeft(ea) ? ea : fatb(ea.right)(r);
+        return E.isLeft(ea) ? ea : fati(ea.right)(r);
       },
 };
 
-export const Monad: TC.Monad<Affect<_0, _1, _2>, 3> = {
+export const Monad: TC.Monad<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
@@ -90,11 +114,22 @@ export const Monad: TC.Monad<Affect<_0, _1, _2>, 3> = {
   chain: Chain.chain,
 };
 
-/***************************************************************************************************
- * @section Pipeables
- **************************************************************************************************/
+export const MonadThrow: TC.MonadThrow<URI> = {
+  ...Monad,
+  throwError: left,
+};
 
-export const { of, ap, map, join, chain } = Monad;
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
+
+export const { of, ap, map, join, chain, throwError } = MonadThrow;
+
+export const { bimap, mapLeft } = Bifunctor;
+
+export const sequenceTuple = createSequenceTuple(Apply);
+
+export const sequenceStruct = createSequenceStruct(Apply);
 
 export const compose = <E = never, A = never, B = never>(
   aeb: Affect<A, E, B>,
@@ -109,16 +144,8 @@ export const recover = <E, A>(fea: (e: E) => A) =>
   <R>(ta: Affect<R, E, A>): Affect<R, E, A> =>
     flow(ta, then(E.fold(flow(fea, E.right), E.right)));
 
-/***************************************************************************************************
- * @section Sequence
- **************************************************************************************************/
-
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
-
-/***************************************************************************************************
+/*******************************************************************************
  * Do
- **************************************************************************************************/
+ ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);
