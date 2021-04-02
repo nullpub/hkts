@@ -254,12 +254,12 @@ export interface Plus<URI extends URIS, _ extends any[] = any[]>
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#profunctor
  */
 export interface Profunctor<URI extends URIS> {
-  readonly promap: <A, B, I, J>(
+  readonly promap: <A, B, I, X>(
     fai: (a: A) => I,
-    fbj: (b: B) => J,
+    fbj: (b: B) => X,
   ) => <C, D>(
     tib: Kind<URI, [I, B, C, D]>,
-  ) => Kind<URI, [A, J, C, D]>;
+  ) => Kind<URI, [A, X, C, D]>;
 }
 
 /**
