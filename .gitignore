@@ -1,3 +1,4 @@
 .vscode
 .vim-lsp-settings
 draft
+*.swp
