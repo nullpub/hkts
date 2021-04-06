@@ -284,17 +284,8 @@ export const getOrd = <A>(O: TC.Ord<A>): TC.Ord<readonly A[]> => {
   });
 };
 
-export const getSemigroup = <A>(
-  S: TC.Semigroup<A>,
-): TC.Semigroup<readonly A[]> => ({
-  concat: (a) =>
-    (b) => [
-      a.reduce((a, c) => S.concat(a)(c), b.reduce((a, c) => S.concat(a)(c))),
-    ],
-});
-
-export const getFreeSemigroup = <A>(): TC.Semigroup<readonly A[]> => ({
-  concat: (a) => (b) => _concat(a, b),
+export const getSemigroup = <A>(): TC.Semigroup<ReadonlyArray<A>> => ({
+  concat: (a) => (b) => a.concat(b),
 });
 
 export const getShow = <A>({ show }: TC.Show<A>): TC.Show<readonly A[]> => ({
@@ -314,13 +305,13 @@ export const { of, ap, map, join, chain } = Monad;
 
 export const { reduce, traverse } = Traversable;
 
-export const { filter } = Filterable;
-
 export const {
-  traverse: indexedTraverse,
-  reduce: indexedReduce,
   map: indexedMap,
+  reduce: indexedReduce,
+  traverse: indexedTraverse,
 } = IndexedTraversable;
+
+export const { filter } = Filterable;
 
 export const lookup = (i: number) =>
   <A>(as: readonly A[]): O.Option<A> =>

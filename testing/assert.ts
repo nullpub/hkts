@@ -168,7 +168,7 @@ export const assertGroup = <T>(
 
 /*******************************************************************************
  * Assert: Semigroupoid
- * @todo Extend Types
+ * TODO Extend Types
  ******************************************************************************/
 
 // export const assertSemigroupoid = <
@@ -190,7 +190,7 @@ export const assertGroup = <T>(
 
 /*******************************************************************************
  * Assert: Category
- * @todo Extend Types
+ * TODO Extend Types
  ******************************************************************************/
 
 // export const assertCategory = <
@@ -279,7 +279,7 @@ export const assertFunctor = <
 ): void => {
   // Identity: F.map(x => x, a) ≡ a
   assertEquals(
-    F.map((x) => x)(ta),
+    pipe(ta, F.map((x) => x)),
     ta,
   );
 
@@ -316,7 +316,7 @@ export const assertBifunctor = <
 ): void => {
   // Identity: B.bimap(x => x, x => x, a) ≡ a
   assertEquals(
-    B.bimap((x) => x, (x) => x)(tab),
+    pipe(tab, B.bimap((x) => x, (x) => x)),
     tab,
   );
 
@@ -347,7 +347,8 @@ export const assertContravariant = <
   J = never,
 >(
   C: TC.Contravariant<URI>,
-  { tj, fai, fij }: {
+  { ti, tj, fai, fij }: {
+    ti: Kind<URI, [I, B, C, D]>;
     tj: Kind<URI, [J, B, C, D]>;
     fai: (a: A) => I;
     fij: (i: I) => J;
@@ -355,8 +356,8 @@ export const assertContravariant = <
 ): void => {
   // Identity: F.contramap(x => x, a) ≡ a
   assertEquals(
-    C.contramap((x) => x)(tj),
-    tj,
+    pipe(ti, C.contramap((x) => x)),
+    ti,
   );
 
   // Composition: F.contramap(x => f(g(x)), a) ≡ F.contramap(g, F.contramap(f, a))
@@ -723,6 +724,37 @@ export const assertFoldable = <
 };
 
 /*******************************************************************************
+ * Assert: IndexedFoldable
+ ******************************************************************************/
+
+export const assertIndexedFoldable = <
+  URI extends URIS,
+  Index,
+  A = never,
+  B = never,
+  C = never,
+  D = never,
+  I = never,
+>(
+  F: TC.IndexedFoldable<URI, Index>,
+  { a, tb, faia }: {
+    a: A;
+    tb: Kind<URI, [I, B, C, D]>;
+    faia: (a: A, i: I, index: Index) => A;
+  },
+): void => {
+  // F.reduce ≡ (f, x, u) => F.reduce((acc, y) => acc.concat([y]), [], u).reduce(f, x)
+  assertEquals(
+    pipe(tb, F.reduce((acc, y) => acc.concat([y]), [] as I[])).reduce(
+      // deno-lint-ignore no-explicit-any
+      faia as any,
+      a,
+    ),
+    pipe(tb, F.reduce(faia, a)),
+  );
+};
+
+/*******************************************************************************
  * Assert: Extend
  ******************************************************************************/
 
@@ -794,5 +826,6 @@ export const assertComonad = <
 
 /*******************************************************************************
  * Assert: Traversable
- * @todo Implement?
+ * TODO
  ******************************************************************************/
+
