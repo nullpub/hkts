@@ -356,7 +356,8 @@ export const assertContravariant = <
 ): void => {
   // Identity: F.contramap(x => x, a) ≡ a
   assertEquals(
-    pipe(ti, C.contramap((x) => x)),
+    // deno-lint-ignore no-explicit-any
+    pipe(ti, C.contramap((x: any) => x)),
     ti,
   );
 
@@ -393,7 +394,8 @@ export const assertProfunctor = <
 ): void => {
   // Identity: P.promap(x => x, x => x, a) ≡ a
   assertEquals(
-    pipe(tay, P.promap((x) => x, (x) => x)),
+    // deno-lint-ignore no-explicit-any
+    pipe(tay, P.promap((x: any) => x, (x: any) => x)),
     tay,
   );
 
@@ -492,7 +494,7 @@ export const assertApplicative = <
 
   // Interchange: A.ap(u, A.of(y)) ≡ A.ap(A.of(f => f(y)), u)
   assertEquals(
-    pipe(A.of(a), A.ap(tfai)),
+    pipe(A.of<A, B, C, D>(a), A.ap(tfai)),
     pipe(tfai, A.ap(A.of(apply(a)))),
   );
 
@@ -677,7 +679,7 @@ export const assertMonad = <
 ): void => {
   // Left identity: M.chain(f, M.of(a)) ≡ f(a)
   assertEquals(
-    pipe(M.of(a), M.chain(fati)),
+    pipe(M.of<A, B, C, D>(a), M.chain(fati)),
     fati(a),
   );
 

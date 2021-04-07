@@ -35,7 +35,7 @@ export const make = <E, A = never>(e: E): Const<E, A> => e;
  ******************************************************************************/
 
 export const getShow = <E, A>(S: TC.Show<E>): TC.Show<Const<E, A>> => ({
-  show: (c) => `make(${S.show(c)})`,
+  show: (c) => `Const(${S.show(c)})`,
 });
 
 export const getSetoid: <E, A>(
