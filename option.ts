@@ -45,7 +45,7 @@ declare module "./hkt.ts" {
  * The cannonical implementation of the None type. Since all None values are equivalent there
  * is no reason to construct more than one object instance.
  */
-export const none = <A = never>(): Option<A> => constNone;
+export const none: Option<never> = { tag: "None" };
 
 /**
  * The some constructer takes any value and wraps it in the Some type.
@@ -55,7 +55,7 @@ export const some = <A>(value: A): Option<A> => ({ tag: "Some", value });
 /**
  * constNone is a thunk that returns the canonical none instance.
  */
-export const constNone: Option<never> = { tag: "None" };
+export const constNone = <A = never>(): Option<A> => none;
 
 /**
  * fromNullable takes a potentially null or undefined value and maps null or undefined to
@@ -70,7 +70,7 @@ export const constNone: Option<never> = { tag: "None" };
  *     const optionFourthEntry = fromNullable(numberArray[3]); // None
  */
 export const fromNullable = <A>(a: A): Option<NonNullable<A>> =>
-  isNotNil(a) ? some(a) : constNone;
+  isNotNil(a) ? some(a) : none;
 
 /**
  * fromPredicate will test the value a with the predicate. If
@@ -85,7 +85,7 @@ export const fromNullable = <A>(a: A): Option<NonNullable<A>> =>
 export const fromPredicate = <A>(predicate: Predicate<A>) =>
   (
     a: A,
-  ): Option<A> => (predicate(a) ? some(a) : constNone);
+  ): Option<A> => (predicate(a) ? some(a) : none);
 
 /**
  * tryCatch takes a thunk that can potentially throw and wraps it
@@ -96,7 +96,7 @@ export const tryCatch = <A>(f: Lazy<A>): Option<A> => {
   try {
     return some(f());
   } catch (e) {
-    return constNone;
+    return none;
   }
 };
 
@@ -163,7 +163,7 @@ export const toUndefined = <A>(ma: Option<A>): A | undefined =>
 export const mapNullable = <A, B>(f: (a: A) => B | null | undefined) =>
   (
     ma: Option<A>,
-  ): Option<B> => (isNone(ma) ? constNone : fromNullable(f(ma.value)));
+  ): Option<B> => (isNone(ma) ? none : fromNullable(f(ma.value)));
 
 /*******************************************************************************
  * Guards
@@ -231,7 +231,7 @@ export const getSemigroup = <A>(
 
 export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<Option<A>> => ({
   ...getSemigroup(M),
-  empty: none,
+  empty: constNone,
 });
 
 export const getGroup = <A>(G: TC.Group<A>): TC.Group<Option<A>> => ({
@@ -249,7 +249,7 @@ export const Functor: TC.Functor<URI> = {
 
 export const Apply: TC.Apply<URI> = {
   ap: (tfab) =>
-    (ta) => isNone(tfab) || isNone(ta) ? constNone : some(tfab.value(ta.value)),
+    (ta) => isNone(tfab) || isNone(ta) ? none : some(tfab.value(ta.value)),
   map: Functor.map,
 };
 
@@ -279,7 +279,7 @@ export const MonadThrow: TC.MonadThrow<URI> = {
   map: Functor.map,
   join: Chain.chain(identity),
   chain: Chain.chain,
-  throwError: none,
+  throwError: constNone,
 };
 
 export const Alt: TC.Alt<URI> = {
@@ -292,7 +292,7 @@ export const Alternative: TC.Alternative<URI> = {
   ap: Apply.ap,
   map: Functor.map,
   alt: Alt.alt,
-  zero: none,
+  zero: constNone,
 };
 
 export const Extends: TC.Extend<URI> = {
@@ -302,7 +302,7 @@ export const Extends: TC.Extend<URI> = {
 
 export const Filterable: TC.Filterable<URI> = {
   filter: (predicate) =>
-    (ta) => isNone(ta) ? ta : predicate(ta.value) ? ta : constNone,
+    (ta) => isNone(ta) ? ta : predicate(ta.value) ? ta : none,
 };
 
 export const Foldable: TC.Foldable<URI> = {
@@ -312,7 +312,7 @@ export const Foldable: TC.Foldable<URI> = {
 export const Plus: TC.Plus<URI> = {
   alt: Alt.alt,
   map: Monad.map,
-  zero: none,
+  zero: constNone,
 };
 
 export const Traversable: TC.Traversable<URI> = {
@@ -320,7 +320,8 @@ export const Traversable: TC.Traversable<URI> = {
   reduce: Foldable.reduce,
   traverse: (A) =>
     (favi) =>
-      (ta) => isNone(ta) ? A.of(none()) : pipe(favi(ta.value), A.map(some)),
+      (ta) =>
+        isNone(ta) ? A.of(constNone()) : pipe(favi(ta.value), A.map(some)),
 };
 
 /*******************************************************************************

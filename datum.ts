@@ -160,19 +160,17 @@ export const getSemigroup = <A>(
   S: TC.Semigroup<A>,
 ): TC.Semigroup<Datum<A>> => ({
   concat: (mx) =>
-    (my) => {
-      if (isNone(my)) {
-        return mx;
-      } else if (isNone(mx)) {
-        return my;
-      } else {
-        if (isRefresh(my) || isRefresh(mx)) {
-          return refresh(S.concat(mx.value)(my.value));
-        } else {
-          return replete(S.concat(mx.value)(my.value));
-        }
-      }
-    },
+    fold(
+      () => mx,
+      () => toLoading(mx),
+      (v) =>
+        isSome(mx)
+          ? (isRefresh(mx)
+            ? refresh(S.concat(mx.value)(v))
+            : replete(S.concat(mx.value)(v)))
+          : (isPending(mx) ? refresh(v) : replete(v)),
+      (v) => isSome(mx) ? refresh(S.concat(mx.value)(v)) : refresh(v),
+    ),
 });
 
 export const getMonoid = <A>(S: TC.Semigroup<A>): TC.Monoid<Datum<A>> => ({
@@ -193,34 +191,12 @@ export const getOrd = <A>(O: TC.Ord<A>): TC.Ord<Datum<A>> => {
   return {
     equals,
     lte: (ta) =>
-      (tb) =>
-        pipe(
-          ta,
-          fold(
-            () => isInitial(tb),
-            () => isNone(tb),
-            (a) =>
-              pipe(
-                tb,
-                fold(
-                  () => false,
-                  () => false,
-                  (b) => O.lte(a)(b),
-                  () => true,
-                ),
-              ),
-            (a) =>
-              pipe(
-                tb,
-                fold(
-                  () => false,
-                  () => false,
-                  () => false,
-                  (b) => O.lte(a)(b),
-                ),
-              ),
-          ),
-        ),
+      fold(
+        () => isInitial(ta),
+        () => isNone(ta),
+        (v) => isNone(ta) ? true : isRefresh(ta) ? false : O.lte(ta.value)(v),
+        (v) => isNone(ta) ? true : isReplete(ta) ? true : O.lte(ta.value)(v),
+      ),
   };
 };
 
@@ -233,8 +209,8 @@ export const Functor: TC.Functor<URI> = {
     fold(
       constInitial,
       constPending,
-      flow(fab, refresh),
       flow(fab, replete),
+      flow(fab, refresh),
     ),
 };
 
@@ -262,19 +238,20 @@ export const Applicative: TC.Applicative<URI> = {
 export const Chain: TC.Chain<URI> = {
   ap: Apply.ap,
   map: Functor.map,
-  chain: (fatb) => (ta) => (isSome(ta) ? fatb(ta.value) : ta),
+  chain: (fati) =>
+    fold(
+      constInitial,
+      constPending,
+      fati,
+      flow(fati, toLoading),
+    ),
 };
 
 export const Monad: TC.Monad<URI> = {
   of: replete,
   ap: Apply.ap,
   map: Functor.map,
-  join: fold(
-    constInitial,
-    constPending,
-    identity,
-    toLoading,
-  ),
+  join: Chain.chain(identity),
   chain: Chain.chain,
 };
 
