@@ -130,7 +130,7 @@ Deno.test("Array IndexedTraversable", () => {
   const add = traverseOption((a: number, i: number) => O.some(a + i));
 
   assertEquals(sequence([O.some(1), O.some(2), O.some(3)]), O.some([1, 2, 3]));
-  assertEquals(sequence([O.some(1), O.some(2), O.none()]), O.none());
+  assertEquals(sequence([O.some(1), O.some(2), O.none]), O.none);
 
   assertEquals(add([1, 2, 3]), O.some([1, 3, 5]));
 });
@@ -229,23 +229,23 @@ Deno.test("Array filter", () => {
 
 Deno.test("Array lookup", () => {
   assertEquals(pipe([1, 2, 3], A.lookup(1)), O.some(2));
-  assertEquals(pipe([], A.lookup(1)), O.none());
+  assertEquals(pipe([], A.lookup(1)), O.none);
 });
 
 Deno.test("Array insertAt", () => {
   assertEquals(pipe([1, 2, 3], A.insertAt(0, 10)), O.some([10, 1, 2, 3]));
   assertEquals(pipe([1, 2, 3], A.insertAt(3, 10)), O.some([1, 2, 3, 10]));
-  assertEquals(pipe([1, 2, 3], A.insertAt(5, 10)), O.none());
+  assertEquals(pipe([1, 2, 3], A.insertAt(5, 10)), O.none);
 });
 
 Deno.test("Array updateAt", () => {
   assertEquals(pipe([1, 2, 3], A.updateAt(0, 10)), O.some([10, 2, 3]));
   assertEquals(pipe([1, 2, 3], A.updateAt(2, 10)), O.some([1, 2, 10]));
-  assertEquals(pipe([1, 2, 3], A.updateAt(5, 10)), O.none());
+  assertEquals(pipe([1, 2, 3], A.updateAt(5, 10)), O.none);
 });
 
 Deno.test("Array deleteAt", () => {
   assertEquals(pipe([1, 2, 3], A.deleteAt(0)), O.some([2, 3]));
   assertEquals(pipe([1, 2, 3], A.deleteAt(2)), O.some([1, 2]));
-  assertEquals(pipe([1, 2, 3], A.deleteAt(5)), O.none());
+  assertEquals(pipe([1, 2, 3], A.deleteAt(5)), O.none);
 });

@@ -272,11 +272,12 @@ export const Traversable: TC.Traversable<URI> = {
   reduce: Foldable.reduce,
   traverse: (A) =>
     (faub) =>
-      (ta) =>
-        isNone(ta) ? A.of(ta) : pipe(
-          faub(ta.value),
-          A.map((b) => isRefresh(ta) ? refresh(b) : replete(b)),
-        ),
+      fold(
+        () => A.of(constInitial()),
+        () => A.of(constPending()),
+        flow(faub, A.map(replete)),
+        flow(faub, A.map(refresh)),
+      ),
 };
 
 /*******************************************************************************

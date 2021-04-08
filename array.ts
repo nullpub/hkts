@@ -315,16 +315,16 @@ export const { filter } = Filterable;
 
 export const lookup = (i: number) =>
   <A>(as: readonly A[]): O.Option<A> =>
-    _isOutOfBounds(i, as) ? O.constNone : O.some(as[i]);
+    _isOutOfBounds(i, as) ? O.none : O.some(as[i]);
 
 export const insertAt = <A>(i: number, a: A) =>
   (as: readonly A[]): O.Option<readonly A[]> =>
-    i < 0 || i > as.length ? O.constNone : O.some(_unsafeInsertAt(i, a, as));
+    i < 0 || i > as.length ? O.none : O.some(_unsafeInsertAt(i, a, as));
 
 export const updateAt = <A>(i: number, a: A) =>
   (as: readonly A[]): O.Option<readonly A[]> =>
-    _isOutOfBounds(i, as) ? O.constNone : O.some(_unsafeUpdateAt(i, a, as));
+    _isOutOfBounds(i, as) ? O.none : O.some(_unsafeUpdateAt(i, a, as));
 
 export const deleteAt = (i: number) =>
   <A>(as: readonly A[]): O.Option<readonly A[]> =>
-    _isOutOfBounds(i, as) ? O.constNone : O.some(_unsafeDeleteAt(i, as));
+    _isOutOfBounds(i, as) ? O.none : O.some(_unsafeDeleteAt(i, as));

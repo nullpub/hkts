@@ -3,7 +3,7 @@ import type * as TC from "./type_classes.ts";
 import type { Fn, Lazy, Predicate, Refinement } from "./types.ts";
 
 import * as O from "./option.ts";
-import { constant, flow, identity, isNotNil, pipe } from "./fns.ts";
+import { constant, identity, isNotNil, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { createDo } from "./derivations.ts";
 
@@ -93,10 +93,10 @@ export const getOrElse = <E, A>(onLeft: (e: E) => A) =>
   (ma: Either<E, A>): A => isLeft(ma) ? onLeft(ma.left) : ma.right;
 
 export const getRight = <E, A>(ma: Either<E, A>): O.Option<A> =>
-  pipe(ma, fold(O.none, O.some));
+  pipe(ma, fold(O.constNone, O.some));
 
 export const getLeft = <E, A>(ma: Either<E, A>): O.Option<E> =>
-  pipe(ma, fold(O.some, O.none));
+  pipe(ma, fold(O.some, O.constNone));
 
 /*******************************************************************************
  * Combinators

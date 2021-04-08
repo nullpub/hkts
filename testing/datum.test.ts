@@ -8,7 +8,7 @@ import { setoidNumber } from "../setoid.ts";
 import { monoidSum } from "../monoid.ts";
 import { ordNumber } from "../ord.ts";
 import { semigroupSum } from "../semigroup.ts";
-import { absurd, pipe } from "../fns.ts";
+import { pipe } from "../fns.ts";
 
 import * as AS from "./assert.ts";
 

@@ -32,9 +32,24 @@ export const createDo = <URI extends URIS>(
 ) => ({
   // deno-lint-ignore ban-types
   Do: <B = never, C = never, D = never>() => M.of<{}, B, C, D>({}),
-  bindTo: (name: string) => M.map(<A = never>(a: A) => ({ [name]: a })),
-  bind: <A = never, B = never, C = never, D = never, I = never>(
-    name: string,
+  bindTo: <N extends string>(
+    name: N,
+  ): (<A, B, C, D>(
+    ta: Kind<URI, [A, B, C, D]>,
+    // deno-lint-ignore no-explicit-any
+  ) => Kind<URI, [{ [K in N]: A }, B, C, D]>) =>
+    M.map((a: any): any => ({ [name]: a })),
+  bind: <N extends string, A, I, B, C, D>(
+    name: Exclude<N, keyof A>,
     fati: (a: A) => Kind<URI, [I, B, C, D]>,
-  ) => M.chain((a: A) => pipe(fati(a), M.map((b) => ({ ...a, [name]: b })))),
+  ): ((
+    ma: Kind<URI, [A, B, C, D]>,
+  ) => Kind<
+    URI,
+    [{ readonly [K in keyof A | N]: K extends keyof A ? A[K] : I }, B, C, D]
+  > // deno-lint-ignore no-explicit-any
+  ) =>
+    M.chain((a: any): any =>
+      pipe(a, fati, M.map((b: any): any => ({ ...a, [name]: b })))
+    ),
 });
