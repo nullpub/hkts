@@ -36,7 +36,7 @@ jobs:
         run: deno test -A --unstable --coverage=coverage
 
       - name: Generate Coverage
-        run: deno coverage --unstable ./coverage --lcov > lcov.info
+        run: deno coverage --unstable ./coverage --lcov > ./coverage/lcov.info
 
       - name: Coveralls
         uses: coverallsapp/github-action@master

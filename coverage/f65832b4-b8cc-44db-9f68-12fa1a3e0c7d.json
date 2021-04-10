@@ -1,1 +1,0 @@
-{"scriptId":"13","url":"deno:op_crates/web/08_text_encoding.js","functions":[{"functionName":"encode","ranges":[{"startOffset":385949,"endOffset":386509,"count":274},{"startOffset":386147,"endOffset":386508,"count":0}],"isBlockCoverage":true}]}

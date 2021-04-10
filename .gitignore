@@ -2,3 +2,4 @@
 .vim-lsp-settings
 draft
 *.swp
+coverage
