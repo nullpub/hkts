@@ -122,8 +122,8 @@ Deno.test("fns wait", async () => {
   const within = (high: number, low: number) =>
     (value: number): boolean => value >= low && value <= high;
   const target = 100;
-  const high = 120;
-  const low = 80;
+  const high = 200;
+  const low = 50;
 
   const test = within(high, low);
   const start = Date.now();
@@ -136,7 +136,7 @@ Deno.test("fns wait", async () => {
   assertEquals(
     test(diff),
     true,
-    `wait of ${target}ms took ${diff}ms. Acceptable range ${low}-${high}ms`
+    `wait of ${target}ms took ${diff}ms. Acceptable range ${low}-${high}ms`,
   );
 });
 

@@ -1,6 +1,6 @@
 import type { Monoid, Semigroup } from "./type_classes.ts";
 
-import { constant } from "./fns.ts";
+import { constant, pipe } from "./fns.ts";
 import * as S from "./semigroup.ts";
 
 /*******************************************************************************
@@ -41,14 +41,14 @@ export const monoidVoid: Monoid<void> = {
  * Module Getters
  ******************************************************************************/
 
-export const getTupleMonoid = <T extends ReadonlyArray<Monoid<unknown>>>(
+// deno-lint-ignore no-explicit-any
+export const getTupleMonoid = <T extends ReadonlyArray<Monoid<any>>>(
   ...monoids: T
 ): Monoid<{ [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }> => {
-  const zero = monoids.map((m) => m.empty());
   const concat = S.getTupleSemigroup(...monoids).concat;
   return (({
     concat,
-    empty: () => zero,
+    empty: () => monoids.map((m) => m.empty()),
   }) as unknown) as Monoid<
     { [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }
   >;
@@ -59,9 +59,10 @@ export const getDualMonoid = <A>(M: Monoid<A>): Monoid<A> => ({
   empty: M.empty,
 });
 
-export const getStructMonoid = <O extends Record<string, () => unknown>>(
+// deno-lint-ignore no-explicit-any
+export const getStructMonoid = <O extends Record<string, any>>(
   monoids: { [K in keyof O]: Monoid<O[K]> },
-): Monoid<O> => {
+): Monoid<{ readonly [K in keyof O]: O[K] }> => {
   const empty: Record<string, O[keyof O]> = {};
   for (const key of Object.keys(monoids)) {
     empty[key] = monoids[key].empty();
@@ -76,5 +77,7 @@ export const getStructMonoid = <O extends Record<string, () => unknown>>(
  * Pipeables
  ******************************************************************************/
 
-export const fold = <A>(M: Monoid<A>) =>
-  (as: ReadonlyArray<A>): A => S.fold(M)(M.empty())(as);
+export const fold = <A>(M: Monoid<A>) => {
+  const inner_fold = S.fold(M);
+  return (as: ReadonlyArray<A>): A => pipe(as, inner_fold(M.empty()));
+};
