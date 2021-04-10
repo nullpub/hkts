@@ -10,9 +10,9 @@ name: Deno
 
 on:
   push:
-    branches: [master, test]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 
 jobs:
   test:
