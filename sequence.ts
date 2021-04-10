@@ -66,7 +66,9 @@ export const createSequenceStruct = <URI extends URIS>(A: Apply<URI>) =>
   <R extends Record<string, Kind<URI, any[]>>>(
     r: NonEmptyRecord<R>,
   ): SequenceStruct<URI, R> => {
-    const keys: ((keyof R) & string)[] = Object.keys(r);
+    // Sort included to make apply ordering explicit
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
+    const keys: ((keyof R) & string)[] = Object.keys(r).sort();
     const [head, ...tail] = keys;
     return tail.reduce(
       (f: any, key: keyof R) => pipe(r[key], A.ap(f) as any),

@@ -831,3 +831,44 @@ export const assertComonad = <
  * TODO
  ******************************************************************************/
 
+/*******************************************************************************
+ * Assert: Monad Helper
+ ******************************************************************************/
+
+export const testMonad = async <URI extends URIS>(
+  M: TC.Monad<URI>,
+  // deno-lint-ignore no-explicit-any
+  eq: (
+    a: Kind<URI, [any, any, any, any]>,
+    b: Kind<URI, [any, any, any, any]>,
+  ) => Promise<boolean>,
+) => {
+  const ta = M.of(1);
+  const tb = M.of(2);
+  const fai = (n: number) => n + 1;
+  const tfai = M.of(fai);
+  const fati = (n: number) => M.of(n + 1);
+
+  // of
+  assertEquals(await eq(ta, ta), true);
+  assertEquals(await eq(ta, tb), false);
+
+  // ap
+  const r1 = pipe(ta, M.ap(tfai));
+  assertEquals(await eq(r1, ta), false);
+  assertEquals(await eq(r1, tb), true);
+
+  // map
+  const r2 = pipe(ta, M.map(fai));
+  assertEquals(await eq(r2, ta), false);
+  assertEquals(await eq(r2, tb), true);
+
+  // join
+  assertEquals(await eq(M.join(M.of(ta)), ta), true);
+  assertEquals(await eq(M.join(M.of(ta)), tb), false);
+
+  // chain
+  const r3 = pipe(ta, M.chain(fati));
+  assertEquals(await eq(r3, ta), false);
+  assertEquals(await eq(r3, tb), true);
+};

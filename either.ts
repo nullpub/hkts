@@ -99,23 +99,6 @@ export const getLeft = <E, A>(ma: Either<E, A>): O.Option<E> =>
   pipe(ma, fold(O.some, O.constNone));
 
 /*******************************************************************************
- * Combinators
- ******************************************************************************/
-
-export const swap = <E, A>(ma: Either<E, A>): Either<A, E> =>
-  isLeft(ma) ? right(ma.left) : left(ma.right);
-
-export const orElse = <E, A, M>(onLeft: (e: E) => Either<M, A>) =>
-  (
-    ma: Either<E, A>,
-  ): Either<M, A> => (isLeft(ma) ? onLeft(ma.left) : ma);
-
-export const stringifyJSON = <E>(
-  u: unknown,
-  onError: (reason: unknown) => E,
-): Either<E, string> => tryCatch(() => JSON.stringify(u), onError);
-
-/*******************************************************************************
  * Guards
  ******************************************************************************/
 
@@ -123,6 +106,18 @@ export const isLeft = <L, R>(m: Either<L, R>): m is Left<L> => m.tag === "Left";
 
 export const isRight = <L, R>(m: Either<L, R>): m is Right<R> =>
   m.tag === "Right";
+
+/*******************************************************************************
+ * Combinators
+ ******************************************************************************/
+
+export const swap = <E, A>(ma: Either<E, A>): Either<A, E> =>
+  isLeft(ma) ? right(ma.left) : left(ma.right);
+
+export const stringifyJSON = <E>(
+  u: unknown,
+  onError: (reason: unknown) => E,
+): Either<E, string> => tryCatch(() => JSON.stringify(u), onError);
 
 /*******************************************************************************
  * Module Getters
@@ -171,21 +166,21 @@ export const getOrd = <E, A>(
   },
 });
 
-export const getLeftSemigroup = <E, A>(
+export const getLeftSemigroup = <E = never, A = never>(
   SE: TC.Semigroup<E>,
 ): TC.Semigroup<Either<E, A>> => ({
   concat: (x) =>
     (y) => isRight(x) ? x : isRight(y) ? y : left(SE.concat(x.left)(y.left)),
 });
 
-export const getRightSemigroup = <E, A>(
+export const getRightSemigroup = <E = never, A = never>(
   SA: TC.Semigroup<A>,
 ): TC.Semigroup<Either<E, A>> => ({
   concat: (x) =>
     (y) => isLeft(x) ? x : isLeft(y) ? y : right(SA.concat(x.right)(y.right)),
 });
 
-export const getRightMonoid = <E, A>(
+export const getRightMonoid = <E = never, A = never>(
   MA: TC.Monoid<A>,
 ): TC.Monoid<Either<E, A>> => ({
   ...getRightSemigroup(MA),
@@ -238,16 +233,16 @@ export const Monad: TC.Monad<URI> = {
   chain: Chain.chain,
 };
 
+export const MonadThrow: TC.MonadThrow<URI> = ({
+  ...Monad,
+  throwError: left,
+});
+
 export const Bifunctor: TC.Bifunctor<URI> = {
   bimap: (fbj, fai) =>
     (ta) => isLeft(ta) ? left(fbj(ta.left)) : right(fai(ta.right)),
   mapLeft: (fbj) => (ta) => isLeft(ta) ? left(fbj(ta.left)) : ta,
 };
-
-export const MonadThrow: TC.MonadThrow<URI> = ({
-  ...Monad,
-  throwError: left,
-});
 
 export const Alt: TC.Alt<URI> = {
   map: Functor.map,
@@ -295,6 +290,9 @@ export const { extend } = Extend;
 
 export const { alt } = Alt;
 
+export const chainLeft = <E, A, J>(fej: (e: E) => Either<J, A>) =>
+  (ma: Either<E, A>): Either<J, A> => (isLeft(ma) ? fej(ma.left) : ma);
+
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
@@ -303,6 +301,3 @@ export const { Do, bind, bindTo } = createDo(Monad);
 
 export const widen: <F>() => <E, A>(ta: Either<E, A>) => Either<E | F, A> =
   constant(identity);
-
-export const chainLeft = <E, A, J>(fej: (e: E) => Either<J, A>) =>
-  (ta: Either<E, A>): Either<J, A> => isLeft(ta) ? fej(ta.left) : ta;
