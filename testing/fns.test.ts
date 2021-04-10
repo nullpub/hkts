@@ -121,12 +121,23 @@ Deno.test("fns _", () => {
 Deno.test("fns wait", async () => {
   const within = (high: number, low: number) =>
     (value: number): boolean => value >= low && value <= high;
-  const test = within(110, 90);
+  const target = 100;
+  const high = 120;
+  const low = 80;
+
+  const test = within(high, low);
   const start = Date.now();
-  const result = await F.wait(100).then(() => 1);
+  const result = await F.wait(target).then(() => 1);
   const end = Date.now();
+
+  const diff = end - start;
+
   assertEquals(result, 1);
-  assertEquals(test(end - start), true);
+  assertEquals(
+    test(diff),
+    true,
+    `wait of ${target}ms took ${diff}ms. Acceptable range ${low}-${high}ms`
+  );
 });
 
 Deno.test("fns pipe", () => {
