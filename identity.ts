@@ -78,18 +78,4 @@ export const Monad: TC.Monad<URI> = {
  * Pipeables
  ******************************************************************************/
 
-/*******************************************************************************
- * of
- *
- * Takes a value of any type and returns that value.
- ******************************************************************************/
-export const of = Monad.of;
-
-/*******************************************************************************
- * ap
- *
- * Takes a function A -> B and returns a function A -> B
- ******************************************************************************/
-export const ap = Monad.ap;
-
-export const { map, join, chain } = Monad;
+export const { of, ap, map, join, chain } = Monad;
