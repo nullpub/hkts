@@ -329,7 +329,20 @@ export const Traversable: TC.Traversable<URI> = {
  * Pipeables
  ******************************************************************************/
 
-export const { of, ap, map, join, chain } = Monad;
+/** Canonical applicative for `Option` */
+export const of = Monad.of;
+
+/** Canonical apply for `Option` */
+export const ap = Monad.ap;
+
+/** Canonical functor for `Option` */
+export const map = Monad.map;
+
+/** Canonical flatten for `Option` */
+export const join = Monad.join;
+
+/** Canonical chain for `Option` */
+export const chain = Monad.chain;
 
 export const { reduce, traverse } = Traversable;
 
