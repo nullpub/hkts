@@ -3,7 +3,7 @@ import type * as TC from "./type_classes.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { apply, constant, flow, pipe } from "./fns.ts";
-import { createDo } from "./derivations.ts";
+import { createApplySemigroup, createDo } from "./derivations.ts";
 
 /*******************************************************************************
  * Types
@@ -59,11 +59,6 @@ export const Monad: TC.Monad<URI> = {
   chain: Chain.chain,
 };
 
-export const Alt: TC.Alt<URI> = {
-  alt: constant,
-  map: Monad.map,
-};
-
 export const Extends: TC.Extend<URI> = {
   map: Monad.map,
   extend: (ftab) => (ta) => () => ftab(ta),
@@ -83,9 +78,7 @@ export const Traversable: TC.Traversable<URI> = {
  * Module Getters
  ******************************************************************************/
 
-export const getSemigroup = <A>(S: TC.Semigroup<A>): TC.Semigroup<IO<A>> => ({
-  concat: (x) => (y) => () => S.concat(x())(y()),
-});
+export const getSemigroup = createApplySemigroup(Apply);
 
 export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<IO<A>> => ({
   ...getSemigroup(M),
@@ -99,6 +92,8 @@ export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<IO<A>> => ({
 export const { of, ap, map, join, chain } = Monad;
 
 export const { reduce, traverse } = Traversable;
+
+export const { extend } = Extends;
 
 /*******************************************************************************
  * Sequenec
