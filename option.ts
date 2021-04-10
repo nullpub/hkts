@@ -82,7 +82,9 @@ export function fromNullable<A>(a: A): Option<NonNullable<A>> {
  *       const a = fromPositiveNumber(-1); // None
  *       const a = fromPositiveNumber(1); // Some<number>
  */
-export function fromPredicate<A>(predicate: Predicate<A>) {
+export function fromPredicate<A>(
+  predicate: Predicate<A>,
+): ((a: A) => Option<A>) {
   return function testPredicate(a: A): Option<A> {
     return predicate(a) ? some(a) : none;
   };
