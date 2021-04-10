@@ -47,45 +47,46 @@ declare module "./hkt.ts" {
  */
 export const none: Option<never> = { tag: "None" };
 
-/**
- * The some constructer takes any value and wraps it in the Some type.
- */
-export const some = <A>(value: A): Option<A> => ({ tag: "Some", value });
+/** Default constructor for Option<A> */
+export function some<A>(value: A): Option<A> {
+  return ({ tag: "Some", value });
+}
 
-/**
- * constNone is a thunk that returns the canonical none instance.
- */
-export const constNone = <A = never>(): Option<A> => none;
+/** Thunk constructor for None */
+export function constNone<A = never>(): Option<A> {
+  return none;
+}
 
 /**
  * fromNullable takes a potentially null or undefined value and maps null or undefined to
  * None and non-null and non-undefined values to Some<NonNullable<A>>
  * 
- * @example
- *     const a: number | undefined = undefined;
- *     const b: number | undefined = 2;
- *     const optionNumber = fromNullable(a); // None
- *     const optionNumber = fromNullable(b); // Some<number>
- *     const numberArray = [1, 2, 3];
- *     const optionFourthEntry = fromNullable(numberArray[3]); // None
+ *       import { fromNullable } from "https://deno.land/x/hkts/option.ts";
+ *       const a: number | undefined = undefined;
+ *       const b: number | undefined = 2;
+ *       const optionNumber = fromNullable(a); // None
+ *       const optionNumber = fromNullable(b); // Some<number>
+ *       const numberArray = [1, 2, 3];
+ *       const optionFourthEntry = fromNullable(numberArray[3]); // None
  */
-export const fromNullable = <A>(a: A): Option<NonNullable<A>> =>
-  isNotNil(a) ? some(a) : none;
+export function fromNullable<A>(a: A): Option<NonNullable<A>> {
+  return isNotNil(a) ? some(a) : none;
+}
 
 /**
  * fromPredicate will test the value a with the predicate. If
  * the predicate evaluates to false then the function will return a None,
  * otherwise the value wrapped in Some
  * 
- * @example
- *     const fromPositiveNumber = fromPredicate((n: number) => n > 0);
- *     const a = fromPositiveNumber(-1); // None
- *     const a = fromPositiveNumber(1); // Some<number>
+ *       const fromPositiveNumber = fromPredicate((n: number) => n > 0);
+ *       const a = fromPositiveNumber(-1); // None
+ *       const a = fromPositiveNumber(1); // Some<number>
  */
-export const fromPredicate = <A>(predicate: Predicate<A>) =>
-  (
-    a: A,
-  ): Option<A> => (predicate(a) ? some(a) : none);
+export function fromPredicate<A>(predicate: Predicate<A>) {
+  return function testPredicate(a: A): Option<A> {
+    return predicate(a) ? some(a) : none;
+  };
+}
 
 /**
  * tryCatch takes a thunk that can potentially throw and wraps it
