@@ -51,14 +51,7 @@ export const tryCatch = <E, A>(
 };
 
 export const fromEither = <E, A>(ta: E.Either<E, A>): IOEither<E, A> =>
-  pipe(ta, E.fold((e) => left(e), right));
-
-export const orElse = <E, A, M>(onLeft: (e: E) => IOEither<M, A>) =>
-  (ma: IOEither<E, A>): IOEither<M, A> =>
-    pipe(
-      ma,
-      I.chain(E.fold(onLeft, right)),
-    );
+  constant(ta);
 
 /*******************************************************************************
  * Modules
@@ -136,9 +129,26 @@ export const Foldable: TC.Foldable<URI> = {
  * Pipeables
  ******************************************************************************/
 
-export const { of, ap, map, join, chain } = Monad;
+export const { of, ap, map, join, chain, throwError } = MonadThrow;
 
 export const { bimap, mapLeft } = Bifunctor;
+
+export const { reduce } = Foldable;
+
+export const { extend } = Extends;
+
+export const { alt } = Alt;
+
+export const chainLeft = <E, A, M>(onLeft: (e: E) => IOEither<M, A>) =>
+  (ma: IOEither<E, A>): IOEither<M, A> =>
+    pipe(
+      ma,
+      I.chain(E.fold(onLeft, right)),
+    );
+
+export const widen: <F>() => <E = never, A = never>(
+  ta: IOEither<E, A>,
+) => IOEither<E | F, A> = constant(identity);
 
 /*******************************************************************************
  * Sequence
