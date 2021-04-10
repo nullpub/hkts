@@ -8,16 +8,6 @@ import { fromEquals } from "./setoid.ts";
 import { constant, identity, pipe } from "./fns.ts";
 
 /*******************************************************************************
- * Constructors
- ******************************************************************************/
-
-export const zero: Map<never, never> = new Map<never, never>();
-
-export const empty = constant(zero);
-
-export const singleton = <K, A>(k: K, a: A): Map<K, A> => new Map([[k, a]]);
-
-/*******************************************************************************
  * Kind Registration
  ******************************************************************************/
 
@@ -33,6 +23,43 @@ declare module "./hkt.ts" {
 }
 
 /*******************************************************************************
+ * Constructors
+ ******************************************************************************/
+
+export const zero: Map<never, never> = new Map<never, never>();
+
+export const empty = <K, A>(): Map<K, A> => new Map<K, A>();
+
+export const singleton = <K, A>(k: K, a: A): Map<K, A> => new Map([[k, a]]);
+
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
+
+export const Functor: TC.Functor<URI> = {
+  map: (fab) =>
+    (ta) => {
+      const tb = new Map();
+      for (const [k, a] of ta) {
+        tb.set(k, fab(a));
+      }
+      return tb;
+    },
+};
+
+export const Bifunctor: TC.Bifunctor<URI> = {
+  bimap: (fab, fcd) =>
+    (tac) => {
+      const tbd = new Map();
+      for (const [a, c] of tac) {
+        tbd.set(fab(a), fcd(c));
+      }
+      return tbd;
+    },
+  mapLeft: (fef) => (ta) => pipe(ta, Bifunctor.bimap(fef, identity)),
+};
+
+/*******************************************************************************
  * Module Getters
  ******************************************************************************/
 
@@ -42,7 +69,7 @@ export const getShow = <K, A>(
 ): TC.Show<Map<K, A>> => ({
   show: (ta) => {
     const elements = Array.from(ta).map(([k, a]) =>
-      `[${SK.show(k)}, ${SA.show(a)}}]`
+      `[${SK.show(k)}, ${SA.show(a)}]`
     ).join(", ");
     return `new Map([${elements}])`;
   },
@@ -87,33 +114,6 @@ export const getMonoid = <K, A>(
 };
 
 /*******************************************************************************
- * Modules
- ******************************************************************************/
-
-export const Functor: TC.Functor<URI> = {
-  map: (fab) =>
-    (ta) => {
-      const tb = new Map();
-      for (const [k, a] of ta) {
-        tb.set(k, fab(a));
-      }
-      return tb;
-    },
-};
-
-export const Bifunctor: TC.Bifunctor<URI> = {
-  bimap: (fab, fcd) =>
-    (tac) => {
-      const tbd = new Map();
-      for (const [a, c] of tac) {
-        tbd.set(fab(a), fcd(c));
-      }
-      return tbd;
-    },
-  mapLeft: (fef) => (ta) => pipe(ta, Bifunctor.bimap(fef, identity)),
-};
-
-/*******************************************************************************
  * Pipeables
  ******************************************************************************/
 
@@ -129,7 +129,7 @@ export const lookupWithKey = <K>(S: TC.Setoid<K>) =>
           return O.some([ka, a]);
         }
       }
-      return O.constNone;
+      return O.none;
     };
 
 export const lookup = <K>(S: TC.Setoid<K>) =>
@@ -168,7 +168,7 @@ export const values = <A>(O: TC.Ord<A>) =>
 
 export const collect = <K>(O: TC.Ord<K>) => {
   const getKeys = keys(O);
-  <A, B>(f: (k: K, a: A) => B) =>
+  return <A, B>(f: (k: K, a: A) => B) =>
     (m: Map<K, A>): readonly B[] =>
       pipe(
         getKeys(m),
@@ -218,7 +218,7 @@ export const updateAt = <K>(
     return (m: Map<K, A>): O.Option<Map<K, A>> => {
       const found = lookupIn(m);
       if (O.isNone(found)) {
-        return O.constNone;
+        return O.none;
       }
       const r = new Map(m);
       r.set(found.value[0], a);
@@ -237,7 +237,7 @@ export const modifyAt = <K>(
     return (m: Map<K, A>): O.Option<Map<K, A>> => {
       const found = lookupIn(m);
       if (O.isNone(found)) {
-        return O.constNone;
+        return O.none;
       }
       const r = new Map(m);
       r.set(found.value[0], f(found.value[1]));
@@ -260,9 +260,9 @@ export const isSubmap = <K, A>(
   SK: TC.Setoid<K>,
   SA: TC.Setoid<A>,
 ) =>
-  (sup: Map<K, A>) => {
+  (sub: Map<K, A>) => {
     const lookupKey = lookupWithKey(SK);
-    return (sub: Map<K, A>): boolean => {
+    return (sup: Map<K, A>): boolean => {
       for (const [mk, ma] of sub.entries()) {
         const matches = pipe(
           lookupKey(mk)(sup),
