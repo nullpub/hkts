@@ -45,6 +45,34 @@ export const Free = {
 };
 
 /*******************************************************************************
+ * Module Instances
+ ******************************************************************************/
+
+export const semigroupAll: Semigroup<boolean> = {
+  concat: (x) => (y) => x && y,
+};
+
+export const semigroupAny: Semigroup<boolean> = {
+  concat: (x) => (y) => x || y,
+};
+
+export const semigroupSum: Semigroup<number> = {
+  concat: (x) => (y) => x + y,
+};
+
+export const semigroupProduct: Semigroup<number> = {
+  concat: (x) => (y) => x * y,
+};
+
+export const semigroupString: Semigroup<string> = {
+  concat: (x) => (y) => x + y,
+};
+
+export const semigroupVoid: Semigroup<void> = {
+  concat: () => () => undefined,
+};
+
+/*******************************************************************************
  * Module Getters
  ******************************************************************************/
 
@@ -92,34 +120,6 @@ export const getMeetSemigroup = <A>(O: Ord<A>): Semigroup<A> => ({
 export const getJoinSemigroup = <A>(O: Ord<A>): Semigroup<A> => ({
   concat: (a) => (b) => (O.lte(a)(b) ? b : a),
 });
-
-/*******************************************************************************
- * Module Instances
- ******************************************************************************/
-
-export const semigroupAll: Semigroup<boolean> = {
-  concat: (x) => (y) => x && y,
-};
-
-export const semigroupAny: Semigroup<boolean> = {
-  concat: (x) => (y) => x || y,
-};
-
-export const semigroupSum: Semigroup<number> = {
-  concat: (x) => (y) => x + y,
-};
-
-export const semigroupProduct: Semigroup<number> = {
-  concat: (x) => (y) => x * y,
-};
-
-export const semigroupString: Semigroup<string> = {
-  concat: (x) => (y) => x + y,
-};
-
-export const semigroupVoid: Semigroup<void> = {
-  concat: () => () => undefined,
-};
 
 /*******************************************************************************
  * Pipeables

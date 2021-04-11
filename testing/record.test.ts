@@ -116,6 +116,9 @@ Deno.test("Record insertAt", () => {
 
 Deno.test("Record deleteAt", () => {
   assertEquals(pipe({ a: 1, b: 2 }, R.deleteAt("a")), { b: 2 });
+  assertEquals(pipe({ a: 1 } as Record<string, number>, R.deleteAt("b")), {
+    a: 1,
+  });
 });
 
 Deno.test("Record omit", () => {
