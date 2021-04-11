@@ -57,11 +57,7 @@ export const _reduce = <A, B, KS extends string>(
 };
 
 export const _assign = <KS extends string>(i: KS) =>
-  <
-    R extends { [K in KS]: unknown },
-  >(
-    bs: R,
-  ) =>
+  <R extends { [K in KS]: unknown }>(bs: R) =>
     (b: R[typeof i]): Partial<R> => {
       bs[i] = b;
       return bs;
@@ -72,7 +68,11 @@ export const _assign = <KS extends string>(i: KS) =>
  ******************************************************************************/
 
 export const Functor: TC.Functor<URI> = {
-  map: (fab) => (ta) => _map(fab, ta),
+  map: (fai) => (ta) => _map(fai, ta),
+};
+
+export const IndexedFunctor: TC.IndexedFunctor<URI, string> = {
+  map: (fai) => (ta) => _map(fai, ta),
 };
 
 export const IndexedFoldable: TC.IndexedFoldable<
@@ -112,10 +112,10 @@ export const Traversable = IndexedTraversable as TC.Traversable<URI>;
 
 export const getShow = <A>(SA: TC.Show<A>): TC.Show<Record<string, A>> => ({
   show: (ta) =>
-    `{ ${
+    `{${
       Object.entries(ta).map(([key, value]) => `${key}: ${SA.show(value)}`)
         .join(", ")
-    } }`,
+    }}`,
 });
 
 /*******************************************************************************
