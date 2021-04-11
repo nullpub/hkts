@@ -32,19 +32,19 @@ declare module "./hkt.ts" {
  * Constructors
  ******************************************************************************/
 
-export const ask: <R, E = never>() => ReaderEither<R, E, R> = () => E.right;
+export const ask: <A, E = never>() => ReaderEither<A, E, A> = () => E.right;
 
 export const asks: <R, A, E = never>(
   f: (r: R) => A,
-) => ReaderEither<R, E, A> = (f) => (r) => E.right(f(r));
+) => ReaderEither<R, E, A> = (fra) => flow(fra, E.right);
 
-export const left = <S = never, E = never, A = never>(
-  left: E,
-): ReaderEither<S, E, A> => R.of(E.left(left));
+export const left = <B, A = never>(
+  left: B,
+): ReaderEither<unknown, B, A> => R.of(E.left(left));
 
-export const right = <S = never, E = never, A = never>(
+export const right = <A, B = never>(
   right: A,
-): ReaderEither<S, E, A> => R.of(E.right(right));
+): ReaderEither<unknown, B, A> => R.of(E.right(right));
 
 export const tryCatch = <S, E, A>(
   f: Lazy<A>,
@@ -60,11 +60,6 @@ export const tryCatch = <S, E, A>(
 export const fromEither = <S, E, A>(
   ta: E.Either<E, A>,
 ): ReaderEither<S, E, A> => R.of(ta);
-
-export const orElse = <S, E, A, M>(onLeft: (e: E) => ReaderEither<S, M, A>) =>
-  (
-    ma: ReaderEither<S, E, A>,
-  ): ReaderEither<S, M, A> => pipe(ma, R.chain(E.fold(onLeft, right)));
 
 /*******************************************************************************
  * Modules
@@ -134,6 +129,10 @@ export const { of, ap, map, join, chain, throwError } = MonadThrow;
 export const { bimap, mapLeft } = Bifunctor;
 
 export const { alt } = Alt;
+
+export const chainLeft = <A, B, C, J>(fbtj: (b: B) => ReaderEither<C, J, A>) =>
+  (ma: ReaderEither<C, B, A>): ReaderEither<C, J, A> =>
+    pipe(ma, R.chain(E.fold(fbtj, right)));
 
 export const compose = <E, B, C>(rbc: ReaderEither<B, E, C>) =>
   <A>(rab: ReaderEither<A, E, B>): ReaderEither<A, E, C> =>
