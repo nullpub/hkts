@@ -1,7 +1,5 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import type * as HKT from "../hkt.ts";
-
 import * as E from "../either.ts";
 import * as O from "../option.ts";
 import { ordNumber } from "../ord.ts";
@@ -205,7 +203,6 @@ Deno.test("Either getRightMonoid", () => {
 
 Deno.test("Either getRightMonad", () => {
   const Monad = E.getRightMonad(semigroupSum);
-  const { equals } = E.getSetoid(setoidNumber, setoidNumber);
 
   AS.assertMonad(Monad, {
     a: 1,
@@ -217,8 +214,6 @@ Deno.test("Either getRightMonad", () => {
     tfai: E.right((n: number) => n + 1),
     tfij: E.right((n: number) => n + 1),
   });
-
-  AS.testMonad(Monad, (a, b) => Promise.resolve(equals(a)(b)));
 });
 
 Deno.test("Either Functor", () => {
@@ -264,8 +259,6 @@ Deno.test("Either Chain", () => {
 });
 
 Deno.test("Either Monad", () => {
-  const { equals } = E.getSetoid(setoidNumber, setoidNumber);
-
   AS.assertMonad(E.Monad, {
     a: 1,
     ta: E.right(1),
@@ -276,8 +269,6 @@ Deno.test("Either Monad", () => {
     fati: (n: number) => E.right(n),
     fitj: (n: number) => E.right(n),
   });
-
-  AS.testMonad(E.Monad, (a, b) => Promise.resolve(equals(a)(b)));
 });
 
 Deno.test("Either Bifunctor", () => {

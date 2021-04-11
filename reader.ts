@@ -29,6 +29,8 @@ declare module "./hkt.ts" {
  * Constructors
  ******************************************************************************/
 
+export const make: <R>(r: R) => Reader<R, R> = constant;
+
 export const ask: <R>() => Reader<R, R> = () => identity;
 
 export const asks: <R, A>(f: (r: R) => A) => Reader<R, A> = identity;
@@ -42,7 +44,7 @@ export const Functor: TC.Functor<URI> = {
 };
 
 export const Apply: TC.Apply<URI> = {
-  ap: (tfab) => (ta) => (r) => pipe(ta(r), tfab(r)),
+  ap: (tfai) => (ta) => (r) => pipe(ta(r), tfai(r)),
   map: Functor.map,
 };
 
