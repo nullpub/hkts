@@ -84,9 +84,8 @@ export const intersection = <A>(S: TC.Setoid<A>) =>
   (ta: Set<A>) =>
     (tb: Set<A>): Set<A> => {
       const out = new Set<A>();
-      const [small, big] = ta.size > tb.size ? [tb, ta] : [ta, tb];
-      const isIn = elemOf(S)(small);
-      for (const b of big) {
+      const isIn = elemOf(S)(ta);
+      for (const b of tb) {
         if (isIn(b)) {
           out.add(b);
         }
