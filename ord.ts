@@ -54,7 +54,7 @@ export const lt = <A>(O: Ord<A>) =>
 
 export const gt = <A>(O: Ord<A>) => (a: A) => (b: A): boolean => !O.lte(a)(b);
 
-export const lte = <A>(O: Ord<A>) => (a: A) => (b: A): boolean => O.lte(a)(b);
+export const lte = <A>(O: Ord<A>) => O.lte;
 
 export const gte = <A>(O: Ord<A>) =>
   (a: A) => (b: A): boolean => !O.lte(a)(b) || O.equals(a)(b);
@@ -67,6 +67,14 @@ export const max = <A>(O: Ord<A>) => (a: A) => (b: A): A => O.lte(a)(b) ? b : a;
 
 export const clamp = <A>(O: Ord<A>) =>
   (low: A, high: A): ((a: A) => A) => flow(max(O)(low), min(O)(high));
+
+export const between = <A>(O: Ord<A>) =>
+  (low: A, high: A) => {
+    const higher = lt(O)(low);
+    const lower = gt(O)(high);
+
+    return (a: A): boolean => lower(a) && higher(a);
+  };
 
 /*******************************************************************************
  * Combinator Getters

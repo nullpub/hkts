@@ -10,8 +10,10 @@
  * etc.
  ******************************************************************************/
 
-// deno-lint-ignore no-explicit-any no-empty-interface
-export interface Kinds<_ extends any[]> {}
+// deno-lint-ignore no-explicit-any
+export interface Kinds<_ extends any[]> {
+  "_": _;
+}
 
 /*******************************************************************************
  * URIS Type
