@@ -27,42 +27,19 @@ declare module "./hkt.ts" {
 
 export const zero: Set<never> = new Set();
 
-export const empty = <A = never>(): Set<A> => zero;
+export const empty = <A = never>(): Set<A> => new Set();
+
+export const make = <A>(...as: [A, ...A[]]): Set<A> => new Set(as);
 
 /*******************************************************************************
  * Utilities
  ******************************************************************************/
 
-export const elem = <A>(S: TC.Setoid<A>) =>
-  (set: Set<A>) =>
-    (a: A): boolean => {
-      for (const b of set) {
-        if (S.equals(a)(b)) {
-          return true;
-        }
-      }
-      return false;
-    };
-
-export const every = <A>(
-  predicate: Predicate<A>,
-) =>
-  (set: Set<A>): boolean => {
-    const values = set.values();
-    for (const a of values) {
-      if (!predicate(a)) {
-        return false;
-      }
-    }
-    return true;
-  };
-
 export const some = <A>(
   predicate: Predicate<A>,
 ) =>
   (set: Set<A>): boolean => {
-    const values = set.values();
-    for (const a of values) {
+    for (const a of set) {
       if (predicate(a)) {
         return true;
       }
@@ -70,18 +47,31 @@ export const some = <A>(
     return false;
   };
 
+export const every = <A>(
+  predicate: Predicate<A>,
+) =>
+  (set: Set<A>): boolean => {
+    for (const a of set) {
+      if (!predicate(a)) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+export const elem = <A>(S: TC.Setoid<A>) => (a: A) => some(S.equals(a));
+
+export const elemOf = <A>(S: TC.Setoid<A>) =>
+  (set: Set<A>) => (a: A) => elem(S)(a)(set);
+
 export const isSubset = <A>(S: TC.Setoid<A>) =>
-  (set: Set<A>) =>
-    (check: Set<A>): boolean => {
-      const isIn = elem(S)(set);
-      return every(isIn)(check);
-    };
+  (set: Set<A>) => every(elemOf(S)(set));
 
 export const union = <A>(S: TC.Setoid<A>) =>
   (as: Set<A>) =>
     (bs: Set<A>): Set<A> => {
       const out = new Set(as);
-      const isIn = elem(S)(out);
+      const isIn = elemOf(S)(out);
       for (const b of bs) {
         if (!isIn(b)) {
           out.add(b);
@@ -95,7 +85,7 @@ export const intersection = <A>(S: TC.Setoid<A>) =>
     (tb: Set<A>): Set<A> => {
       const out = new Set<A>();
       const [small, big] = ta.size > tb.size ? [tb, ta] : [ta, tb];
-      const isIn = elem(S)(small);
+      const isIn = elemOf(S)(small);
       for (const b of big) {
         if (isIn(b)) {
           out.add(b);
@@ -107,7 +97,7 @@ export const intersection = <A>(S: TC.Setoid<A>) =>
 export const compact = <A>(S: TC.Setoid<A>) =>
   (ta: Set<A>): Set<A> => {
     const out = new Set<A>();
-    const isIn = elem(S)(out);
+    const isIn = elemOf(S)(out);
     for (const a of ta) {
       if (!isIn(a)) {
         out.add(a);
@@ -213,69 +203,14 @@ export const getSetoid = <A>(S: TC.Setoid<A>): TC.Setoid<Set<A>> => {
   return fromEquals((x) => (y) => subset(x)(y) && subset(y)(x));
 };
 
-export const getUnionMonoid = <A>(S: TC.Setoid<A>): TC.Monoid<Set<A>> => {
-  const merge = union(S);
-  return ({
-    concat: merge,
-    empty,
-  });
-};
-
-/**
- * @deprecated
- */
-export const getMonad = <B>(S: TC.Setoid<B>) => {
-  const isElementOf = elem(S);
-
-  const Monad = {
-    of: (a: B) => new Set([a]),
-    ap: <A>(tfab: Set<Fn<[A], B>>, ta: Set<A>) =>
-      Monad.chain((f) => Monad.map(f, ta), tfab),
-    map: <A>(fab: Fn<[A], B>, ta: Set<A>): Set<B> => {
-      const tb = new Set<B>();
-      const isIn = isElementOf(tb);
-      for (const a of ta.values()) {
-        const b = fab(a);
-        if (!isIn(b)) {
-          tb.add(b);
-        }
-      }
-      return tb;
-    },
-    join: (tta: Set<Set<B>>): Set<B> => {
-      const out = new Set<B>();
-      const isIn = isElementOf(out);
-      for (const ta of tta) {
-        for (const a of ta) {
-          if (!isIn(a)) {
-            out.add(a);
-          }
-        }
-      }
-      return out;
-    },
-    chain: <A>(fatb: Fn<[A], Set<B>>, ta: Set<A>): Set<B> => {
-      const tb = new Set<B>();
-      const isIn = isElementOf(tb);
-      for (const a of ta) {
-        for (const b of fatb(a)) {
-          if (!isIn(b)) {
-            tb.add(b);
-          }
-        }
-      }
-      return tb;
-    },
-  };
-
-  return Monad;
-};
+export const getUnionMonoid = <A>(S: TC.Setoid<A>): TC.Monoid<Set<A>> => ({
+  concat: union(S),
+  empty,
+});
 
 /*******************************************************************************
  * Pipeables
  ******************************************************************************/
-
-export const of = <A>(a: A): Set<A> => new Set([a]);
 
 export const { filter } = Filterable;
 
