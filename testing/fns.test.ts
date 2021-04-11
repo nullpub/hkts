@@ -122,7 +122,7 @@ Deno.test("fns wait", async () => {
   const within = (high: number, low: number) =>
     (value: number): boolean => value >= low && value <= high;
   const target = 100;
-  const high = 200;
+  const high = 900; // github actions on macos tend to drag
   const low = 50;
 
   const test = within(high, low);

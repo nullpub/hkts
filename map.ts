@@ -102,8 +102,8 @@ export const getMonoid = <K, A>(
           pipe(
             lookupKey(bk)(a),
             O.fold(
-              ([ak, aa]) => r.set(ak, SA.concat(aa)(ba)),
               () => r.set(bk, ba),
+              ([ak, aa]) => r.set(ak, SA.concat(aa)(ba)),
             ),
           );
         }

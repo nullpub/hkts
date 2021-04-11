@@ -54,7 +54,7 @@ Deno.test("IO reduce", () => {
 });
 
 Deno.test("IO traverse", () => {
-  const fold = O.fold((n: I.IO<number>) => n(), () => -1);
+  const fold = O.fold(() => -1, (n: I.IO<number>) => n());
   const t0 = I.traverse(O.Applicative);
   const t1 = t0((n: number) => n === 0 ? O.none : O.some(n));
   const t2 = fold(t1(I.of(0)));

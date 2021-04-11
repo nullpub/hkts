@@ -26,6 +26,10 @@ export type Some<V> = { tag: "Some"; value: V };
  */
 export type Option<A> = Some<A> | None;
 
+/*******************************************************************************
+ * Kind Registration
+ ******************************************************************************/
+
 export const URI = "Option";
 
 export type URI = typeof URI;
@@ -115,10 +119,8 @@ export const tryCatch = <A>(f: Lazy<A>): Option<A> => {
  *     const a = toNumber(some(1)); // 1
  *     const b = toNumber(none); // 0
  */
-export const fold = <A, B>(onSome: (a: A) => B, onNone: () => B) =>
-  (
-    ta: Option<A>,
-  ): B => (isNone(ta) ? onNone() : onSome(ta.value));
+export const fold = <A, B>(onNone: () => B, onSome: (a: A) => B) =>
+  (ta: Option<A>): B => (isNone(ta) ? onNone() : onSome(ta.value));
 
 /**
  * getOrElse operates like a simplified fold. One supplies a thunk that returns a default
@@ -136,7 +138,7 @@ export const getOrElse = <B>(onNone: () => B) =>
  * toNullable returns either null or the inner value of an Option. This is useful for
  * interacting with code that handles null but has no concept of the Option type.
  */
-export const toNullable = <A>(ma: Option<A>): A | null =>
+export const toNull = <A>(ma: Option<A>): A | null =>
   isNone(ma) ? null : ma.value;
 
 /**
@@ -178,66 +180,6 @@ export const isNone = <A>(m: Option<A>): m is None => m.tag === "None";
  * Tests wether an Option is Some. Can be used as a predicate.
  */
 export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
-
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
-
-/**
- * Generates a Show module for an option with inner type of A.
- * 
- * @example
- *     const Show = getShow({ show: (n: number) => n.toString() }); // Show<Option<number>>
- *     const a = Show.show(some(1)); // "Some(1)"
- *     const b = Show.show(none); // "None"
- */
-export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Option<A>> => ({
-  show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
-});
-
-/**
- * Generates a Setoid module for an option with inner type of A.
- * 
- * @example
- *     const Setoid = getSetoid({ equals: (a: number, b: number) => a === b });
- *     const a = Setoid.equals(some(1), some(2)); // false
- *     const b = Setoid.equals(some(1), some(1)); // true
- *     const c = Setoid.equals(none, none); // true
- *     const d = Setoid.equals(some(1), none); // false
- */
-export const getSetoid = <A>(S: TC.Setoid<A>): TC.Setoid<Option<A>> => ({
-  equals: (a) =>
-    (b) =>
-      a === b || isNone(a)
-        ? isNone(b)
-        : (isNone(b) ? false : S.equals(a.value)(b.value)),
-});
-
-export const getOrd = <A>(O: TC.Ord<A>): TC.Ord<Option<A>> => ({
-  ...getSetoid(O),
-  lte: (a) =>
-    (b) =>
-      a === b || isNone(a)
-        ? isNone(b)
-        : (isNone(b) ? false : O.lte(a.value)(b.value)),
-});
-
-export const getSemigroup = <A>(
-  S: TC.Semigroup<A>,
-): TC.Semigroup<Option<A>> => ({
-  concat: (x) =>
-    (y) => isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value)(y.value)),
-});
-
-export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<Option<A>> => ({
-  ...getSemigroup(M),
-  empty: constNone,
-});
-
-export const getGroup = <A>(G: TC.Group<A>): TC.Group<Option<A>> => ({
-  ...getMonoid(G),
-  invert: (ta) => isNone(ta) ? ta : some(G.invert(ta.value)),
-});
 
 /*******************************************************************************
  * Modules
@@ -323,6 +265,70 @@ export const Traversable: TC.Traversable<URI> = {
       (ta) =>
         isNone(ta) ? A.of(constNone()) : pipe(favi(ta.value), A.map(some)),
 };
+
+/*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
+
+/**
+ * Generates a Show module for an option with inner type of A.
+ * 
+ * @example
+ *     const Show = getShow({ show: (n: number) => n.toString() }); // Show<Option<number>>
+ *     const a = Show.show(some(1)); // "Some(1)"
+ *     const b = Show.show(none); // "None"
+ */
+export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Option<A>> => ({
+  show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
+});
+
+/**
+ * Generates a Setoid module for an option with inner type of A.
+ * 
+ * @example
+ *     const Setoid = getSetoid({ equals: (a: number, b: number) => a === b });
+ *     const a = Setoid.equals(some(1), some(2)); // false
+ *     const b = Setoid.equals(some(1), some(1)); // true
+ *     const c = Setoid.equals(none, none); // true
+ *     const d = Setoid.equals(some(1), none); // false
+ */
+export const getSetoid = <A>(S: TC.Setoid<A>): TC.Setoid<Option<A>> => ({
+  equals: (a) =>
+    (b) =>
+      a === b ||
+      ((isSome(a) && isSome(b))
+        ? S.equals(a.value)(b.value)
+        : (isNone(a) && isNone(b))),
+});
+
+export const getOrd = <A>(O: TC.Ord<A>): TC.Ord<Option<A>> => ({
+  ...getSetoid(O),
+  lte: (a) =>
+    (b) => {
+      if (a === b) {
+        return true;
+      }
+      if (isNone(a)) {
+        return true;
+      }
+      if (isNone(b)) {
+        return false;
+      }
+      return O.lte(a.value)(b.value);
+    },
+});
+
+export const getSemigroup = <A>(
+  S: TC.Semigroup<A>,
+): TC.Semigroup<Option<A>> => ({
+  concat: (x) =>
+    (y) => isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value)(y.value)),
+});
+
+export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<Option<A>> => ({
+  ...getSemigroup(M),
+  empty: constNone,
+});
 
 /*******************************************************************************
  * Pipeables
