@@ -43,12 +43,13 @@ declare module "./hkt.ts" {
 
 export const nil: Nil = undefined;
 
-export const constNil = () => nil;
+export const constNil = <A = never>(): Nilable<A> => nil;
+
+export const make = <A = never>(a: A): Nilable<A> =>
+  isNotNil(a) ? a : nil;
 
 export const fromPredicate = <A>(predicate: Predicate<A>) =>
-  (
-    a: A,
-  ): Nilable<A> => (predicate(a) ? a : nil);
+  (ta: Nilable<A>): Nilable<A> => isNotNil(ta) && predicate(ta) ? ta : nil;
 
 export const tryCatch = <A>(f: Lazy<A>): Nilable<A> => {
   try {
@@ -62,16 +63,13 @@ export const tryCatch = <A>(f: Lazy<A>): Nilable<A> => {
  * Destructors
  ******************************************************************************/
 
-export const fold = <A, B>(onValue: (a: A) => B, onNil: (nil: Nil) => B) =>
-  (
-    ta: Nilable<A>,
-  ): B => (isNil(ta) ? onNil(ta) : onValue(ta));
+export const fold = <A, B>(onNil: () => B, onValue: (a: A) => B) =>
+  (ta: Nilable<A>): B => (isNil(ta) ? onNil() : onValue(ta));
 
-export const getOrElse = <B>(onNil: (nil: Nil) => B) =>
-  (ta: Nilable<B>): B => isNil(ta) ? onNil(ta) : ta;
+export const getOrElse = <B>(onNil: () => B) =>
+  (ta: Nilable<B>): B => isNil(ta) ? onNil() : ta;
 
-export const toNullable = <A>(ma: Nilable<A>): A | null =>
-  isNil(ma) ? null : ma;
+export const toNull = <A>(ma: Nilable<A>): A | null => isNil(ma) ? null : ma;
 
 export const toUndefined = <A>(ma: Nilable<A>): A | undefined =>
   isNil(ma) ? undefined : ma;
@@ -84,14 +82,6 @@ export const isNil = <A>(m: Nilable<A>): m is Nil =>
   m === undefined || m === null;
 
 export const isNotNil = <A>(m: Nilable<A>): m is NonNullable<A> => !isNil(m);
-
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
-
-export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Nilable<A>> => ({
-  show: (ma) => (isNil(ma) ? String(ma) : show(ma)),
-});
 
 /*******************************************************************************
  * Modules (Note that these modules do not follow the Type Class laws)
@@ -122,9 +112,17 @@ export const Monad: TC.Monad<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
-  join: identity,
+  join: Chain.chain(identity),
   chain: Chain.chain,
 };
+
+/*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
+
+export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Nilable<A>> => ({
+  show: (ma) => (isNil(ma) ? "nil" : show(ma)),
+});
 
 /*******************************************************************************
  * Pipeables

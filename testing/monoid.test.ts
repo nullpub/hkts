@@ -33,6 +33,8 @@ Deno.test("Monoid getTupleMonoid", () => {
   const Semigroup = M.getTupleMonoid(M.monoidSum, M.monoidString);
 
   AS.assertSemigroup(Semigroup, { a: [1, "a"], b: [2, "b"], c: [3, "c"] });
+
+  assertEquals(Semigroup.empty(), [0, ""]);
 });
 
 Deno.test("Monoid getDualMonoid", () => {
