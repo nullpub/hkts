@@ -58,22 +58,10 @@ const _make = <A>(value: A) =>
  * Constructors
  ******************************************************************************/
 
-export const make = <A>(value: A, forest: Forest<A> = A.zero): Tree<A> => ({
+export const make = <A>(value: A, forest: Forest<A> = A.empty()): Tree<A> => ({
   value,
   forest,
 });
-
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
-
-export const getShow = <A>(S: TC.Show<A>): TC.Show<Tree<A>> => {
-  const show = (ta: Tree<A>): string =>
-    ta.forest === A.zero || ta.forest.length === 0
-      ? `Tree(${S.show(ta.value)})`
-      : `Tree(${S.show(ta.value)}, [${ta.forest.map(show).join(", ")}])`;
-  return ({ show });
-};
 
 /*******************************************************************************
  * Modules
@@ -147,6 +135,18 @@ export const Traversable: TC.Traversable<URI> = {
             );
         return out(faub)(ta);
       },
+};
+
+/*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
+
+export const getShow = <A>(S: TC.Show<A>): TC.Show<Tree<A>> => {
+  const show = (ta: Tree<A>): string =>
+    ta.forest === A.zero || ta.forest.length === 0
+      ? `Tree(${S.show(ta.value)})`
+      : `Tree(${S.show(ta.value)}, [${ta.forest.map(show).join(", ")}])`;
+  return ({ show });
 };
 
 /*******************************************************************************
