@@ -2,8 +2,7 @@ import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
 
 import * as E from "./either.ts";
-import { identity, pipe } from "./fns.ts";
-import { createMonad } from "./derivations.ts";
+import { flow, identity, pipe } from "./fns.ts";
 
 /*******************************************************************************
  * Types
@@ -163,18 +162,18 @@ export const Traversable: TC.Traversable<URI> = {
   map: Functor.map,
   traverse: (A) =>
     (faub) =>
-      (ta) =>
-        isLeft(ta)
-          ? A.of(ta)
-          : isRight(ta)
-          ? pipe(faub(ta.right), A.map(right))
-          : pipe(faub(ta.right), A.map((r) => both(ta.left, r))),
+      fold(
+        flow(left, A.of),
+        flow(faub, A.map((b) => right(b))),
+        // deno-lint-ignore no-explicit-any
+        (l, r) => pipe(r, faub, A.map((b) => both(l, b))) as any,
+      ),
 };
 
 /*******************************************************************************
  * Pipeables
  ******************************************************************************/
 
-export const { bimap } = Bifunctor;
+export const { bimap, mapLeft } = Bifunctor;
 
-export const { reduce, traverse } = Traversable;
+export const { map, reduce, traverse } = Traversable;
