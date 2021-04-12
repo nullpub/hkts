@@ -4,14 +4,17 @@ import * as A from "../affect.ts";
 import * as E from "../either.ts";
 import { pipe } from "../fns.ts";
 
-Deno.test("Affect make", async () => assertEquals(await A.make(1), 1));
+Deno.test("Affect make", async () => {
+  const a = await A.make(1);
+  assertEquals(a, 1);
+});
 
 Deno.test("Affect then", async () => {
-  const t1 = pipe(
+  const t1 = await pipe(
     A.make(1),
     A.then((n) => n + 1),
   );
-  assertEquals(await t1, 2);
+  assertEquals(t1, 2);
 });
 
 Deno.test("Affect ask", async () => {

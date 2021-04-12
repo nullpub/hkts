@@ -57,9 +57,6 @@ export const fromFailableTask = <E, A>(onError: (e: unknown) => E) =>
 export const fromEither = <E, A>(ta: E.Either<E, A>): TaskEither<E, A> =>
   pipe(ta, E.fold((e) => left(e), right));
 
-export const orElse = <E, A>(onLeft: (e: E) => TaskEither<E, A>) =>
-  T.chain(E.fold<E, A, TaskEither<E, A>>(onLeft, right));
-
 /*******************************************************************************
  * Utilities
  ******************************************************************************/
@@ -68,22 +65,20 @@ export const then = <A, B>(fab: (a: A) => B) =>
   (p: Promise<A>): Promise<B> => p.then(fab);
 
 /*******************************************************************************
- * Modules (Sequential)
+ * Modules (Parallel)
  ******************************************************************************/
 
 export const Functor: TC.Functor<URI> = {
   map: (fai) => (ta) => flow(ta, then(E.map(fai))),
 };
 
-// TODO Refactor in terms of Task.ap (Sequential)
+export const Bifunctor: TC.Bifunctor<URI> = {
+  bimap: (fab, fcd) => (tac) => () => tac().then(E.bimap(fab, fcd)),
+  mapLeft: (fef) => (ta) => pipe(ta, Bifunctor.bimap(fef, identity)),
+};
+
 export const Apply: TC.Apply<URI> = {
-  ap: (tfab) =>
-    (ta) =>
-      async () => {
-        const efab = await tfab();
-        const ea = await ta();
-        return pipe(ea, E.ap(efab));
-      },
+  ap: flow(T.map(E.ap), T.ap),
   map: Functor.map,
 };
 
@@ -115,11 +110,6 @@ export const Monad: TC.Monad<URI> = {
   chain: Chain.chain,
 };
 
-export const Bifunctor: TC.Bifunctor<URI> = {
-  bimap: (fab, fcd) => (tac) => () => tac().then(E.bimap(fab, fcd)),
-  mapLeft: (fef) => (ta) => pipe(ta, Bifunctor.bimap(fef, identity)),
-};
-
 export const MonadThrow: TC.MonadThrow<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
@@ -135,28 +125,47 @@ export const Alt: TC.Alt<URI> = ({
 });
 
 /*******************************************************************************
- * Modules (Parallel)
+ * Modules (Sequential)
  ******************************************************************************/
 
-export const ApplyPar: TC.Apply<URI> = {
-  ap: flow(T.map(E.ap), T.ap),
+// TODO Refactor in terms of Task.ap (Sequential)
+export const ApplySeq: TC.Apply<URI> = {
+  ap: (tfab) =>
+    (ta) =>
+      async () => {
+        const efab = await tfab();
+        const ea = await ta();
+        return pipe(ea, E.ap(efab));
+      },
   map: Functor.map,
 };
 
-export const MonadPar: TC.Monad<URI> = {
-  of: Applicative.of,
-  ap: ApplyPar.ap,
+export const ApplicativeSeq: TC.Applicative<URI> = {
+  of: right,
+  ap: ApplySeq.ap,
   map: Functor.map,
-  join: Monad.join,
+};
+
+export const ChainSeq: TC.Chain<URI> = {
+  ap: ApplySeq.ap,
+  map: Functor.map,
   chain: Chain.chain,
 };
 
-export const MonadThrowPar: TC.MonadThrow<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
+export const MonadSeq: TC.Monad<URI> = {
+  of: ApplicativeSeq.of,
+  ap: ApplySeq.ap,
   map: Functor.map,
-  join: Monad.join,
-  chain: Chain.chain,
+  join: ChainSeq.chain(identity),
+  chain: ChainSeq.chain,
+};
+
+export const MonadThrowSeq: TC.MonadThrow<URI> = {
+  of: ApplicativeSeq.of,
+  ap: ApplySeq.ap,
+  map: Functor.map,
+  join: MonadSeq.join,
+  chain: ChainSeq.chain,
   throwError: left,
 };
 
@@ -168,13 +177,19 @@ export const { of, ap, map, join, chain } = Monad;
 
 export const { bimap, mapLeft } = Bifunctor;
 
+export const { ap: apSeq } = ApplySeq;
+
+export const chainLeft = <E, A>(onLeft: (e: E) => TaskEither<E, A>) =>
+  T.chain(E.fold<E, A, TaskEither<E, A>>(onLeft, right));
+
 export const widen: <F>() => <E, A>(
   ta: TaskEither<E, A>,
 ) => TaskEither<E | F, A> = constant(identity);
 
-export const timeout = <E, A>(ms: number, onTimeout: () => E) =>
-  (ta: TaskEither<E, A>): TaskEither<E, A> =>
-    () => Promise.race([ta(), wait(ms).then(flow(onTimeout, E.left))]);
+// This leaks async ops so we cut it for now.
+//export const timeout = <E, A>(ms: number, onTimeout: () => E) =>
+//  (ta: TaskEither<E, A>): TaskEither<E, A> =>
+//    () => Promise.race([ta(), wait(ms).then(flow(onTimeout, E.left))]);
 
 /*******************************************************************************
  * Do Notation
