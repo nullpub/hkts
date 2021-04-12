@@ -1,27 +1,7 @@
 import type * as TC from "./type_classes.ts";
 import type { Kind, URIS } from "./hkt.ts";
 
-import { identity, pipe } from "./fns.ts";
-
-/*******************************************************************************
- * Module Derivations
- ******************************************************************************/
-
-/**
- * Derive Monad module from of and chain
- */
-export const createMonad = <URI extends URIS>(
-  { of, chain }: Pick<TC.Monad<URI>, "of" | "chain">,
-): TC.Monad<URI> => {
-  const Monad: TC.Monad<URI> = {
-    of,
-    ap: (tfai) => (ta) => pipe(tfai, chain((fab) => pipe(ta, Monad.map(fab)))),
-    map: (fai) => (ta) => pipe(ta, chain((a) => of(fai(a)))),
-    chain,
-    join: chain(identity),
-  };
-  return Monad;
-};
+import { pipe } from "./fns.ts";
 
 /*******************************************************************************
  * Do notation Derivation

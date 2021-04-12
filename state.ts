@@ -8,9 +8,7 @@ import { flow, identity } from "./fns.ts";
  * Types
  ******************************************************************************/
 
-export interface State<S, A> {
-  (s: S): [A, S];
-}
+export type State<S, A> = (s: S) => [A, S];
 
 /*******************************************************************************
  * Kind Registration
@@ -31,21 +29,17 @@ declare module "./hkt.ts" {
  * Constructors
  ******************************************************************************/
 
-export const get: <S>() => State<S, S> = () => (s) => [s, s];
+export const get = <S>(): State<S, S> => (s: S) => [s, s];
 
-export const put: <S>(s: S) => State<S, void> = (s) => () => [undefined, s];
+export const gets = <S, A>(fsa: (s: S) => A): State<S, A> =>
+  (s: S) => [fsa(s), s];
 
-export const modify: <S>(f: (s: S) => S) => State<S, void> = (f) =>
-  (s) => [
-    undefined,
-    f(s),
-  ];
+export const put = <S>(s: S): State<S, void> => () => [undefined, s];
 
-export const gets: <S, A>(f: (s: S) => A) => State<S, A> = (f) =>
-  (s) => [
-    f(s),
-    s,
-  ];
+export const modify = <S>(fss: (s: S) => S): State<S, void> =>
+  (s: S) => [undefined, fss(s)];
+
+export const make = <S, A>(a: A, s: S): State<S, A> => () => [a, s];
 
 /*******************************************************************************
  * Modules
