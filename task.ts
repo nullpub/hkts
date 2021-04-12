@@ -2,7 +2,7 @@ import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
 import { Lazy } from "./types.ts";
 
-import { apply, flow, wait } from "./fns.ts";
+import { apply, flow, wait, identity } from "./fns.ts";
 import { createDo } from "./derivations.ts";
 
 /*******************************************************************************
@@ -29,6 +29,8 @@ declare module "./hkt.ts" {
 /*******************************************************************************
  * Combinators
  ******************************************************************************/
+
+export const make = <A>(a: A): Task<A> => () => Promise.resolve(a);
 
 export const delay = (ms: number) =>
   <A>(ma: Task<A>): Task<A> => () => wait(ms).then(ma);
@@ -75,7 +77,7 @@ export const Monad: TC.Monad<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
   map: Functor.map,
-  join: (tta) => () => tta().then(apply()),
+  join: Chain.chain(identity),
   chain: Chain.chain,
 };
 
@@ -92,7 +94,7 @@ export const MonadSeq: TC.Monad<URI> = {
   of: Applicative.of,
   ap: ApplySeq.ap,
   map: Functor.map,
-  join: (tta) => () => tta().then(apply()),
+  join: Chain.chain(identity),
   chain: Chain.chain,
 };
 
@@ -101,6 +103,8 @@ export const MonadSeq: TC.Monad<URI> = {
  ******************************************************************************/
 
 export const { of, ap, map, join, chain } = Monad;
+
+export const { ap: apSeq } = ApplySeq;
 
 /*******************************************************************************
  * Do Notation
