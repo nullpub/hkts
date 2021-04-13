@@ -43,8 +43,8 @@ export const asTraversal = <S, A>(sa: Optional<S, A>): Traversal<S, A> => ({
         pipe(
           sa.getOption(s),
           O.fold(
-            (a) => pipe(fata(a), F.map((a: A) => sa.set(a)(s))),
             () => F.of(s),
+            (a) => pipe(fata(a), F.map((a: A) => sa.set(a)(s))),
           ),
         ),
 });
@@ -73,7 +73,7 @@ export const compose = <J, K>(jk: Optional<J, K>) =>
         pipe(
           ij.getOption(s),
           O.map(jk.set(b)),
-          O.fold(ij.set, () => identity),
+          O.fold(() => identity, ij.set),
         )(s),
   });
 
@@ -91,7 +91,7 @@ export const composeLens = <A, B>(ab: Lens<A, B>) =>
         pipe(
           sa.getOption(s),
           O.map(ab.set(b)),
-          O.fold(flow(sa.set, apply(s)), constant(s)),
+          O.fold(constant(s), flow(sa.set, apply(s))),
         ),
   });
 
@@ -109,8 +109,8 @@ export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
           pipe(
             sa.getOption(s),
             O.fold(
-              flow(ab.traverse(T)(fata), T.map(flow(sa.set, apply(s)))),
               constant(T.of(s)),
+              flow(ab.traverse(T)(fata), T.map(flow(sa.set, apply(s)))),
             ),
           ),
   });
@@ -138,7 +138,7 @@ export const modify = <A>(faa: (a: A) => A) =>
       pipe(
         sa.getOption(s),
         O.map(faa),
-        O.fold(flow(sa.set, apply(s)), constant(s)),
+        O.fold(constant(s), flow(sa.set, apply(s))),
       );
 
 export const traverse = <URI extends URIS>(T: TC.Traversable<URI>) => {

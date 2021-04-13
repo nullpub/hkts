@@ -62,8 +62,8 @@ export const asTraversal = <S, A>(sa: Prism<S, A>): Traversal<S, A> => ({
         pipe(
           sa.getOption(s),
           O.fold(
-            flow(fata, T.map(flow(getSet(sa), apply(s)))),
             () => T.of(s),
+            flow(fata, T.map(flow(getSet(sa), apply(s)))),
           ),
         ),
 });
@@ -103,7 +103,7 @@ export const composeLens = <A, B>(ab: Lens<A, B>) =>
       (s) =>
         pipe(
           sa.getOption(s),
-          O.fold(flow(ab.set(b), sa.reverseGet), () => s),
+          O.fold(() => s, flow(ab.set(b), sa.reverseGet)),
         ),
   });
 
@@ -114,7 +114,7 @@ export const composeOptional = <A, B>(ab: Optional<A, B>) =>
       (s) =>
         pipe(
           sa.getOption(s),
-          O.fold(flow(ab.set(b), sa.reverseGet), () => s),
+          O.fold(() => s, flow(ab.set(b), sa.reverseGet)),
         ),
   });
 
@@ -126,8 +126,8 @@ export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
           pipe(
             sa.getOption(s),
             O.fold(
-              flow(ab.traverse(A)(fata), A.map(sa.reverseGet)),
               constant(A.of(s)),
+              flow(ab.traverse(A)(fata), A.map(sa.reverseGet)),
             ),
           ),
   });
