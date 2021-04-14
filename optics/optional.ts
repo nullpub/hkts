@@ -33,6 +33,15 @@ export type From<T> = T extends Optional<infer S, infer _> ? S : never;
 export type To<T> = T extends Optional<infer _, infer A> ? A : never;
 
 /*******************************************************************************
+ * Constructors
+ ******************************************************************************/
+
+export const make = <S, A>(
+  getOption: (s: S) => Option<A>,
+  set: (a: A) => (s: S) => S,
+): Optional<S, A> => ({ getOption, set });
+
+/*******************************************************************************
  * Converters
  ******************************************************************************/
 
