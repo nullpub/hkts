@@ -41,12 +41,14 @@ export type From<T> = T extends Traversal<infer S, infer _> ? S : never;
 export type To<T> = T extends Traversal<infer _, infer A> ? A : never;
 
 /*******************************************************************************
- * Pipeable Compose
+ * Constructors
  ******************************************************************************/
 
-export const id = <A>(): Traversal<A, A> => ({
-  traverse: () => identity,
-});
+export { fromTraversable };
+
+/*******************************************************************************
+ * Pipeable Compose
+ ******************************************************************************/
 
 export const compose = <J, K>(jk: Traversal<J, K>) =>
   <I>(ij: Traversal<I, J>): Traversal<I, K> => ({
@@ -64,6 +66,10 @@ export const composeOptional = flow(optionalAsTraversal, compose);
 /*******************************************************************************
  * Pipeables
  ******************************************************************************/
+
+export const id = <A>(): Traversal<A, A> => ({
+  traverse: () => identity,
+});
 
 export const modify = <A>(f: (a: A) => A) =>
   <S>(sa: Traversal<S, A>) => pipe(f, sa.traverse(I.Applicative));
@@ -121,7 +127,8 @@ export const traverse = <URI extends URIS>(T: TC.Traversable<URI>) => {
 export const foldMap = <M>(M: TC.Monoid<M>) => {
   const Applicative = C.getApplicative(M);
   return <A>(fam: (a: A) => M) =>
-    <S>(sa: Traversal<S, A>) => pipe(fam, sa.traverse(Applicative));
+    <S>(sa: Traversal<S, A>): ((s: S) => M) =>
+      pipe(fam, sa.traverse(Applicative));
 };
 
 export const getAll = <S, A>(sa: Traversal<S, A>) =>
