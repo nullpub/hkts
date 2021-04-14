@@ -32,6 +32,15 @@ export type From<T> = T extends Lens<infer S, infer _> ? S : never;
 export type To<T> = T extends Lens<infer _, infer A> ? A : never;
 
 /*******************************************************************************
+ * Constructors
+ ******************************************************************************/
+
+export const make = <S, A>(
+  get: (s: S) => A,
+  set: (a: A) => (s: S) => S,
+): Lens<S, A> => ({ get, set });
+
+/*******************************************************************************
  * Converters
  ******************************************************************************/
 
@@ -152,7 +161,7 @@ export const index = (i: number) =>
     pipe(sa, composeOptional(indexArray<A>().index(i)));
 
 export const key = (key: string) =>
-  <S, A>(sa: Lens<S, Readonly<Record<string, A>>>): Optional<S, A> =>
+  <S, A>(sa: Lens<S, Record<string, A>>): Optional<S, A> =>
     pipe(sa, composeOptional(indexRecord<A>().index(key)));
 
 export const atKey = (key: string) =>
