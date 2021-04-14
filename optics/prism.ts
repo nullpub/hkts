@@ -34,6 +34,14 @@ export type To<T> = T extends Prism<infer _, infer A> ? A : never;
  * Constructors
  ******************************************************************************/
 
+export const make = <S, A>(
+  getOption: (s: S) => O.Option<A>,
+  reverseGet: (a: A) => S,
+): Prism<S, A> => ({
+  getOption,
+  reverseGet,
+});
+
 type FromPredicate = {
   <S, A extends S>(refinement: Refinement<S, A>): Prism<S, A>;
   <A>(predicate: Predicate<A>): Prism<A, A>;
@@ -160,27 +168,20 @@ export const traverse = <URI extends URIS>(T: TC.Traversable<URI>) => {
     );
 };
 
-export const traverseOption = <S, A>(sa: Prism<S, A>) =>
-  (faa: (a: A) => A) =>
-    (s: S): O.Option<S> =>
-      pipe(
-        sa.getOption(s),
-        O.map((_a: A) => {
-          const na = faa(_a);
-          return na === _a ? s : sa.reverseGet(na);
-        }),
-      );
-
-export const modify = <S, A>(sa: Prism<S, A>) =>
-  (f: (a: A) => A) =>
+export const modify = <A>(f: (a: A) => A) =>
+  <S>(sa: Prism<S, A>) =>
     (s: S): S =>
       pipe(
-        traverseOption(sa)(f)(s),
+        sa.getOption(s),
+        O.map((a) => {
+          const na = f(a);
+          return na === a ? s : sa.reverseGet(na);
+        }),
         O.getOrElse(() => s),
       );
 
 export const getSet = <S, A>(sa: Prism<S, A>) =>
-  (a: A) => (s: S): S => modify(sa)(() => a)(s);
+  (a: A) => pipe(sa, modify(constant(a)));
 
 export const prop = <A, P extends keyof A>(
   prop: P,
