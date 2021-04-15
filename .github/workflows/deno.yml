@@ -36,11 +36,10 @@ jobs:
         run: deno test -A --unstable --coverage=coverage
 
       - name: Generate Coverage
-        run: deno coverage --unstable ./coverage --lcov > ./coverage/lcov.info
+        run: deno coverage --unstable ./coverage --lcov > ./coverage.lcov
 
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
+      - name: Collect coverage
+        uses: codecov/codecov-action@v1.0.10
         with:
-          flag-name: run-${{ matrix.deno }}-${{ matrix.os }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./coverage.lcov
 
