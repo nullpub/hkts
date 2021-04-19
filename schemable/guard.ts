@@ -100,7 +100,7 @@ export const PartialSchemable: S.PartialSchemable<URI> = {
     // deno-lint-ignore no-explicit-any
     (u: unknown): u is any => (isRecord(u) &&
       Object.keys(properties).every((key) =>
-        isNil(u) || properties[key as keyof typeof properties](u[key])
+        isNil(u[key]) || properties[key as keyof typeof properties](u[key])
       )),
 };
 
