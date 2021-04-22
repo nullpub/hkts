@@ -142,20 +142,32 @@ export const Schemable: S.Schemable<URI> = {
  * Pipeables
  ******************************************************************************/
 
-export const {
-  unknown,
-  string,
-  number,
-  boolean,
-  literal,
-  undefinable,
-  nullable,
-  record,
-  array,
-  tuple,
-  struct,
-  partial,
-  intersect,
-  union,
-  lazy,
-} = Schemable;
+export const unknown = Schemable.unknown();
+
+export const string = Schemable.string();
+
+export const number = Schemable.number();
+
+export const boolean = Schemable.boolean();
+
+export const literal = Schemable.literal;
+
+export const nullable = Schemable.nullable;
+
+export const undefinable = Schemable.undefinable;
+
+export const record = Schemable.record;
+
+export const array = Schemable.array;
+
+export const tuple = Schemable.tuple;
+
+export const struct = Schemable.struct;
+
+export const partial = Schemable.partial;
+
+export const intersect = Schemable.intersect;
+
+export const union = Schemable.union;
+
+export const lazy = Schemable.lazy;

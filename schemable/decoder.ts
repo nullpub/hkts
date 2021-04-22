@@ -144,24 +144,27 @@ const toForest: (e: Failure) => ReadonlyArray<T.Tree<string>> = Free.fold(
 export const draw = (e: Failure): string =>
   toForest(e).map(T.drawTree).join("\n");
 
+export const extract = <A>(decoded: Decoded<A>) =>
+  pipe(decoded, E.mapLeft(draw));
+
 /*******************************************************************************
  * Modules
  ******************************************************************************/
 
 export const UnknownSchemable: S.UnknownSchemable<URI> = {
-  unknown: () => fromGuard(G.unknown(), "unknown"),
+  unknown: () => fromGuard(G.unknown, "unknown"),
 };
 
 export const StringSchemable: S.StringSchemable<URI> = {
-  string: () => fromGuard(G.string(), "string"),
+  string: () => fromGuard(G.string, "string"),
 };
 
 export const NumberSchemable: S.NumberSchemable<URI> = {
-  number: () => fromGuard(G.number(), "number"),
+  number: () => fromGuard(G.number, "number"),
 };
 
 export const BooleanSchemable: S.BooleanSchemable<URI> = {
-  boolean: () => fromGuard(G.boolean(), "boolean"),
+  boolean: () => fromGuard(G.boolean, "boolean"),
 };
 
 export const LiteralSchemable: S.LiteralSchemable<URI> = {
@@ -220,21 +223,19 @@ export const ArraySchemable: S.ArraySchemable<URI> = {
 export const TupleSchemable: S.TupleSchemable<URI> = {
   tuple: (...components) =>
     // deno-lint-ignore no-explicit-any
-    (u: unknown): any => {
-      if (!Array.isArray(u) || u.length !== components.length) {
-        return failure(u, `tuple of length ${components.length}`);
-      }
-      return pipe(
-        u,
-        traverseArray((uu, i) =>
-          pipe(
-            components[i](uu),
-            E.mapLeft((e) => make.index(i, "required", e)),
-          )
-        ),
-        E.mapLeft((e) => make.wrap("cannot decode tuple", e)),
-      );
-    },
+    (u: unknown): any =>
+      Array.isArray(u) && u.length === components.length
+        ? pipe(
+          u,
+          traverseArray((uu, i) =>
+            pipe(
+              components[i](uu),
+              E.mapLeft((e) => make.index(i, "required", e)),
+            )
+          ),
+          E.mapLeft((e) => make.wrap("cannot decode tuple", e)),
+        )
+        : failure(u, `tuple of length ${components.length}`),
 };
 
 export const StructSchemable: S.StructSchemable<URI> = {
@@ -258,9 +259,9 @@ export const StructSchemable: S.StructSchemable<URI> = {
 export const PartialSchemable: S.PartialSchemable<URI> = {
   partial: (properties) =>
     // deno-lint-ignore no-explicit-any
-    (u: unknown): any => {
-      if (isRecord(u)) {
-        return pipe(
+    (u: unknown): any =>
+      isRecord(u)
+        ? pipe(
           properties,
           // deno-lint-ignore no-explicit-any
           traverseRecord((decoder: Decoder<any>, i) =>
@@ -271,10 +272,8 @@ export const PartialSchemable: S.PartialSchemable<URI> = {
             )
           ),
           E.mapLeft((e) => make.wrap("cannot decode partial", e)),
-        );
-      }
-      return failure(u, "struct");
-    },
+        )
+        : failure(u, "struct"),
 };
 
 export const IntersectSchemable: S.IntersectSchemable<URI> = {
@@ -332,20 +331,32 @@ export const Schemable: S.Schemable<URI> = {
   ...LazySchemable,
 };
 
-export const {
-  unknown,
-  string,
-  number,
-  boolean,
-  literal,
-  nullable,
-  undefinable,
-  record,
-  array,
-  tuple,
-  struct,
-  partial,
-  intersect,
-  union,
-  lazy,
-} = Schemable;
+export const unknown = Schemable.unknown();
+
+export const string = Schemable.string();
+
+export const number = Schemable.number();
+
+export const boolean = Schemable.boolean();
+
+export const literal = Schemable.literal;
+
+export const nullable = Schemable.nullable;
+
+export const undefinable = Schemable.undefinable;
+
+export const record = Schemable.record;
+
+export const array = Schemable.array;
+
+export const tuple = Schemable.tuple;
+
+export const struct = Schemable.struct;
+
+export const partial = Schemable.partial;
+
+export const intersect = Schemable.intersect;
+
+export const union = Schemable.union;
+
+export const lazy = Schemable.lazy;
