@@ -1,3 +1,10 @@
+# DEPRECATED
+
+This repository has been replaced by [functional](https://github.com/nullpub/fun)!
+
+It will be kept alive as a historical reference and as a deno target in the
+event that someone is relying on its existence.
+
 # hkts ![Deno](https://github.com/nullpub/hkts/workflows/Deno/badge.svg?branch=master)
 
 Higher kinded types for [Deno](https://deno.land). As an avid user of
