@@ -1,8 +1,58 @@
 # Changelog
 
-All notable changes to this project will be documented in this file. See
-[standard-version](https://github.com/conventional-changelog/standard-version)
-for commit guidelines.
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### [0.0.52](https://github.com/nullpub/hkts/compare/v0.0.51...v0.0.52) (2021-05-02)
+
+
+### Features
+
+* array part 1 ([fb6521d](https://github.com/nullpub/hkts/commit/fb6521def23e6619f09b2f7da94706f725cf8d91))
+* array tests complete ([a1f08b8](https://github.com/nullpub/hkts/commit/a1f08b8dfb987c973eb6b9aec03500b0520e0a09))
+* at optic tests complete ([e28d65b](https://github.com/nullpub/hkts/commit/e28d65bdb0aca548d2fcbf16d58f8ca8ac7dc96f))
+* const tests complete ([b8980c2](https://github.com/nullpub/hkts/commit/b8980c29f4623f10c344e8a127aa05025bb82d2d))
+* datum tests complete ([75ae1e1](https://github.com/nullpub/hkts/commit/75ae1e195bc72bb7950b85db6be1ca4a7bd77d17))
+* decode_error tests complete ([1ca5169](https://github.com/nullpub/hkts/commit/1ca5169fa1540f52c330b964b63a51e153f3b8cc))
+* either tests complete ([7df9295](https://github.com/nullpub/hkts/commit/7df92957235df82a71884ec0d3a74437ab618602))
+* fns tests complete ([13299cb](https://github.com/nullpub/hkts/commit/13299cbc4bd502d75ada3fac06e210b20845cf99))
+* fromTraversable tests complete ([2ec763f](https://github.com/nullpub/hkts/commit/2ec763fbf6fbd7f3f1211f082df16613670c5131))
+* guard schemable tests complete ([832669d](https://github.com/nullpub/hkts/commit/832669d258f5c81b8077f3a6b93a3b440b507b8f))
+* identity tests complete ([1134c3a](https://github.com/nullpub/hkts/commit/1134c3a6fe1eed8665cb95c9599bb89de8c9dda9))
+* index optic tests complete ([6970dff](https://github.com/nullpub/hkts/commit/6970dffe213fbdcc16207c60e9a153924e61fd4a))
+* io tests complete ([36b5248](https://github.com/nullpub/hkts/commit/36b5248618f6efe06a633882baead089df042ca5))
+* io_either tests complete ([237fa59](https://github.com/nullpub/hkts/commit/237fa599fd030f1c6b7d76efefc855046032359c))
+* iso optic tests complete ([31890bd](https://github.com/nullpub/hkts/commit/31890bd83c7933bba06c693b467acd1cb67c5ebd))
+* lens optic tests complete ([c3ff73b](https://github.com/nullpub/hkts/commit/c3ff73b8c798c8ed269f55efbba9c50c7ea82815))
+* major type system rewrite ([32ddaa0](https://github.com/nullpub/hkts/commit/32ddaa0ddde4d437807a66e914c7854867ed847d))
+* map tests complete ([9a03095](https://github.com/nullpub/hkts/commit/9a03095329a06786defbdb538d8fe86f2d0bf9ff))
+* monoid tests complete ([363d974](https://github.com/nullpub/hkts/commit/363d9745643967b3f9f71142d77cb61be962c991))
+* nilable tests complete ([e74e93a](https://github.com/nullpub/hkts/commit/e74e93aa4542ab492e206fbf70b4bf65d5f511ba))
+* option tests complete ([a3a3fa3](https://github.com/nullpub/hkts/commit/a3a3fa349217df35ad94efb72e6b23e0456e67ab))
+* optional optic tests complete ([cf3aa3c](https://github.com/nullpub/hkts/commit/cf3aa3cb46e7309294eb6df6b31fec36f65166a4))
+* ord tests complete ([dc6978d](https://github.com/nullpub/hkts/commit/dc6978d71b21ec96bf6d1cc67d42685972702356))
+* partial decoder tests ([b1d7aa8](https://github.com/nullpub/hkts/commit/b1d7aa8c37004427295b1e914a87c2410ae9d6ae))
+* prism optic tests complete ([4a07033](https://github.com/nullpub/hkts/commit/4a070333498ed69131479d4277b682391b67c50a))
+* reader tests complete ([4bbd7ec](https://github.com/nullpub/hkts/commit/4bbd7ec8d530171a8208e2c4e164d91dad5e3c7f))
+* reader_either tests complete ([afed1f4](https://github.com/nullpub/hkts/commit/afed1f4f09ab3ce1fcdaf17f2f184ba9a65bd076))
+* record tests complete ([146c6f4](https://github.com/nullpub/hkts/commit/146c6f41988dc242f406cf5cb26b7ae8d9e26f1b))
+* semigroup tests complete ([d59167b](https://github.com/nullpub/hkts/commit/d59167bd10dfcf508c6d03f102d6dfd93f1449fd))
+* set tests complete ([ed65f51](https://github.com/nullpub/hkts/commit/ed65f51ae8a2eacaecf5ceb0acc780e494fd222f))
+* setoid tests complete ([c8fdbe7](https://github.com/nullpub/hkts/commit/c8fdbe7328fce9123e01ccd5a977ea326edafa63))
+* state tests complete ([57d9a84](https://github.com/nullpub/hkts/commit/57d9a8494dc09c9a809363afb94a407be25cd617))
+* task tests complete ([0da0ab9](https://github.com/nullpub/hkts/commit/0da0ab9d798898a229e7be6bd6b7ff3d1e7ad348))
+* task_either tests complete ([cb72c4d](https://github.com/nullpub/hkts/commit/cb72c4db1ae1ee3b5104f2f854301b93344f0b98))
+* these tests complete ([9c6e386](https://github.com/nullpub/hkts/commit/9c6e3866bbc4b8f52e220163dd0bd257021a8388))
+* traversal optic tests complete ([f1b6714](https://github.com/nullpub/hkts/commit/f1b6714f802f0e9851ce0bee34eb06ff800b406c))
+* tree tests done ([65783d3](https://github.com/nullpub/hkts/commit/65783d3757b6364c97ce85e5d367c02cc0039349))
+
+
+### Bug Fixes
+
+* better logging on wait test failure ([359c968](https://github.com/nullpub/hkts/commit/359c9681fdc35f938dc740f3769ca831ae9bdae8))
+* correct workflow branches ([6c63207](https://github.com/nullpub/hkts/commit/6c63207d64fd53dddb4e41012478156cf6609ef8))
+* remove . ([1178fdb](https://github.com/nullpub/hkts/commit/1178fdbccef0d4b5d7154cc2f9165eb36e8ebfc4))
+* remove coverage files from repo ([beac050](https://github.com/nullpub/hkts/commit/beac050c759bc873958884283d5815ee9095af3a))
+* update types on Do derivation ([0c7e022](https://github.com/nullpub/hkts/commit/0c7e02203afbb05eea285eb1c0da7946140c2681))
 
 ### [0.0.51](https://github.com/nullpub/hkts/compare/v0.0.50...v0.0.51) (2021-03-07)
 
